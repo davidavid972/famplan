@@ -104,6 +104,16 @@ export const translations = {
     docs_camera: 'צלם',
     docs_gallery: 'גלריה/קבצים',
     docs_multi: 'בחר כמה',
+    auth_continue_google: 'המשך עם Google',
+    auth_welcome: 'התחבר כדי לגשת ליומן המשפחתי שלך',
+    auth_or_email: 'או הזן אימייל',
+    auth_email_label: 'אימייל',
+    auth_email_placeholder: 'your@email.com',
+    auth_placeholder_note: 'V1: חיבור מקומי בלבד. OAuth אמיתי יגיע בשלב הבא.',
+    auth_connected: 'מחובר',
+    auth_not_connected: 'לא מחובר',
+    auth_profile: 'פרופיל מחובר',
+    auth_disconnect: 'התנתק',
   },
   en: {
     app_name: 'FamPlan',
@@ -210,6 +220,16 @@ export const translations = {
     docs_camera: 'Camera',
     docs_gallery: 'Gallery/Files',
     docs_multi: 'Select multiple',
+    auth_continue_google: 'Continue with Google',
+    auth_welcome: 'Sign in to access your family calendar',
+    auth_or_email: 'Or enter email',
+    auth_email_label: 'Email',
+    auth_email_placeholder: 'your@email.com',
+    auth_placeholder_note: 'V1: Local placeholder only. Real OAuth coming in next phase.',
+    auth_connected: 'Connected',
+    auth_not_connected: 'Not connected',
+    auth_profile: 'Connected profile',
+    auth_disconnect: 'Disconnect',
   }
 };
 
