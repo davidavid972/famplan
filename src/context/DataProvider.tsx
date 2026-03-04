@@ -9,7 +9,7 @@ interface DataContextType {
   addPerson: (person: Omit<Person, 'id' | 'createdAt'>) => void;
   updatePerson: (id: string, person: Partial<Person>) => void;
   deletePerson: (id: string) => void;
-  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => void;
+  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => Appointment;
   updateAppointment: (id: string, appointment: Partial<Appointment>) => void;
   deleteAppointment: (id: string) => void;
   addAttachment: (attachment: Omit<Attachment, 'id' | 'createdAt'>) => void;
@@ -74,13 +74,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAttachments((prev) => prev.filter((a) => !appointmentsToDelete.includes(a.appointmentId)));
   };
 
-  const addAppointment = (appointment: Omit<Appointment, 'id' | 'createdAt'>) => {
+  const addAppointment = (appointment: Omit<Appointment, 'id' | 'createdAt'>): Appointment => {
+    const reminders = appointment.reminders?.length
+      ? appointment.reminders
+      : [{ minutesBeforeStart: 15 }];
     const newAppointment: Appointment = {
       ...appointment,
+      reminders,
       id: uuidv4(),
       createdAt: Date.now(),
     };
     setAppointments((prev) => [...prev, newAppointment]);
+    return newAppointment;
   };
 
   const updateAppointment = (id: string, data: Partial<Appointment>) => {

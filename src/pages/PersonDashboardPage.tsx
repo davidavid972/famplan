@@ -289,27 +289,23 @@ export const PersonDashboardPage: React.FC = () => {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
               <div className="flex items-center gap-3">
-                <label className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium cursor-pointer">
-                  <Upload className="w-5 h-5" />
-                  <span>{t('upload_files')}</span>
-                  <input
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
-                </label>
-                <label className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-stone-700 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors shadow-sm font-medium cursor-pointer">
-                  <FileText className="w-5 h-5" />
-                  <span>{t('camera_capture')}</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
-                </label>
+                <span className="text-sm text-stone-500">{t('docs_usage').replace('{used}', String(personAttachments.length)).replace('{max}', '20')}</span>
+                {personAttachments.length >= 20 ? (
+                  <span className="text-sm text-amber-600">{t('documents_limit_reached')}</span>
+                ) : (
+                  <>
+                    <label className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium cursor-pointer">
+                      <Upload className="w-5 h-5" />
+                      <span>{t('upload_files')}</span>
+                      <input type="file" multiple className="hidden" onChange={handleFileUpload} />
+                    </label>
+                    <label className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-stone-700 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors shadow-sm font-medium cursor-pointer">
+                      <FileText className="w-5 h-5" />
+                      <span>{t('camera_capture')}</span>
+                      <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
+                    </label>
+                  </>
+                )}
               </div>
 
               {personAttachments.length > 0 && (

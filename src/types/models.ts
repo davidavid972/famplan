@@ -7,6 +7,10 @@ export interface Person {
 
 export type AppointmentStatus = 'PLANNED' | 'DONE';
 
+export interface Reminder {
+  minutesBeforeStart: number;
+}
+
 export interface Appointment {
   id: string;
   personId: string;
@@ -16,6 +20,7 @@ export interface Appointment {
   location?: string;
   notes?: string;
   status: AppointmentStatus;
+  reminders?: Reminder[];
   createdAt: number;
 }
 

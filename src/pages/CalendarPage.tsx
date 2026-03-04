@@ -3,13 +3,21 @@ import { useI18n } from '../i18n/I18nProvider';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastProvider';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, MapPin, AlignLeft } from 'lucide-react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, isToday, parseISO } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { he, enUS } from 'date-fns/locale';
-import { Appointment, AppointmentStatus } from '../types/models';
+import { Reminder } from '../types/models';
+
+type ReminderUnit = 'minutes' | 'hours' | 'days';
+interface ReminderEntry { value: number; unit: ReminderUnit; }
+function toMinutes(entry: ReminderEntry): number {
+  if (entry.unit === 'minutes') return entry.value;
+  if (entry.unit === 'hours') return entry.value * 60;
+  return entry.value * 1440;
+}
 
 export const CalendarPage: React.FC = () => {
   const { t, language, dir } = useI18n();
-  const { appointments, people, addAppointment } = useData();
+  const { appointments, people, addAppointment, attachments, addAttachment } = useData();
   const { showToast } = useToast();
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -46,6 +54,12 @@ export const CalendarPage: React.FC = () => {
     location: '',
     notes: '',
   });
+  const [reminders, setReminders] = useState<ReminderEntry[]>([{ value: 15, unit: 'minutes' }]);
+  const [pendingDocs, setPendingDocs] = useState<Array<{ name: string; type: string; size: number }>>([]);
+
+  const MAX_DOCS = 20;
+  const totalDocs = attachments.length + pendingDocs.length;
+  const remainingSlots = Math.max(0, MAX_DOCS - attachments.length);
 
   const handleOpenModal = (date: Date) => {
     setSelectedDate(date);
@@ -57,8 +71,43 @@ export const CalendarPage: React.FC = () => {
       location: '',
       notes: '',
     });
+    setReminders([{ value: 15, unit: 'minutes' }]);
+    setPendingDocs([]);
     setIsModalOpen(true);
   };
+
+  const addReminder = () => setReminders((prev) => [...prev, { value: 15, unit: 'minutes' }]);
+  const removeReminder = (idx: number) => setReminders((prev) => prev.filter((_, i) => i !== idx));
+  const updateReminder = (idx: number, patch: Partial<ReminderEntry>) =>
+    setReminders((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  const togglePreset = (minutes: number) => {
+    setReminders((prev) => {
+      const already = prev.some((r) => toMinutes(r) === minutes);
+      if (already) {
+        const next = prev.filter((r) => toMinutes(r) !== minutes);
+        return next.length > 0 ? next : [{ value: 15, unit: 'minutes' }];
+      }
+      const entry: ReminderEntry = minutes >= 1440 ? { value: minutes / 1440, unit: 'days' }
+        : minutes >= 60 ? { value: minutes / 60, unit: 'hours' }
+        : { value: minutes, unit: 'minutes' };
+      const next = [...prev, entry];
+      next.sort((a, b) => toMinutes(b) - toMinutes(a));
+      return next;
+    });
+  };
+
+  const addPendingDoc = (file: File) => {
+    if (totalDocs >= MAX_DOCS) return;
+    setPendingDocs((prev) => [...prev, { name: file.name, type: file.type || 'application/octet-stream', size: file.size }]);
+  };
+  const addPendingDocsMulti = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const canAdd = Math.min(files.length, remainingSlots - pendingDocs.length);
+    if (canAdd <= 0) return;
+    const arr = Array.from(files).slice(0, canAdd);
+    setPendingDocs((prev) => [...prev, ...arr.map((f) => ({ name: f.name, type: f.type || 'application/octet-stream', size: f.size }))]);
+  };
+  const removePendingDoc = (idx: number) => setPendingDocs((prev) => prev.filter((_, i) => i !== idx));
 
   const handleSaveAppointment = () => {
     if (!newAppt.title || !newAppt.personId || !newAppt.start || !newAppt.end) {
@@ -74,7 +123,13 @@ export const CalendarPage: React.FC = () => {
       return;
     }
 
-    addAppointment({
+    const minutesList = reminders.map(toMinutes).filter((m) => m > 0);
+    const unique = [...new Set(minutesList)].sort((a, b) => b - a);
+    const remindersPayload: Reminder[] = unique.length > 0
+      ? unique.map((m) => ({ minutesBeforeStart: m }))
+      : [{ minutesBeforeStart: 15 }];
+
+    const newAppointment = addAppointment({
       title: newAppt.title,
       personId: newAppt.personId,
       start: startMs,
@@ -82,6 +137,17 @@ export const CalendarPage: React.FC = () => {
       location: newAppt.location,
       notes: newAppt.notes,
       status: 'PLANNED',
+      reminders: remindersPayload,
+    });
+
+    pendingDocs.forEach((doc) => {
+      addAttachment({
+        appointmentId: newAppointment.id,
+        name: doc.name,
+        type: doc.type,
+        size: doc.size,
+        uploaderId: 'local',
+      });
     });
 
     showToast(t('appointment_added'), 'success');
@@ -339,6 +405,75 @@ export const CalendarPage: React.FC = () => {
                         dir={dir}
                       />
                     </div>
+                  </div>
+
+                  {/* Reminders */}
+                  <div className="pt-4 border-t border-stone-200">
+                    <label className="block text-sm font-medium text-stone-700 mb-2">{t('rem_section')}</label>
+                    <div className="flex gap-2 flex-wrap mb-2">
+                      {([1440, 180, 60, 15] as const).map((mins) => {
+                        const selected = reminders.some((r) => toMinutes(r) === mins);
+                        return (
+                          <button key={mins} type="button" onClick={() => togglePreset(mins)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${selected ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>
+                            {mins === 1440 ? t('rem_preset_1d') : mins === 180 ? t('rem_preset_3h') : mins === 60 ? t('rem_preset_1h') : t('rem_preset_15m')}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="space-y-2">
+                      {reminders.map((r, idx) => (
+                        <div key={idx} className="flex items-center gap-2 flex-wrap">
+                          <input type="number" min={1} value={r.value || ''} onChange={(e) => updateReminder(idx, { value: Number(e.target.value) || 0 })}
+                            className="w-16 px-2 py-1.5 rounded-lg border border-stone-200 text-sm" />
+                          <select value={r.unit} onChange={(e) => updateReminder(idx, { unit: e.target.value as ReminderUnit })}
+                            className="px-2 py-1.5 rounded-lg border border-stone-200 text-sm">
+                            <option value="minutes">{t('rem_unit_minutes')}</option>
+                            <option value="hours">{t('rem_unit_hours')}</option>
+                            <option value="days">{t('rem_unit_days')}</option>
+                          </select>
+                          <span className="text-sm text-stone-500">{t('rem_before')}</span>
+                          <button type="button" onClick={() => removeReminder(idx)} className="px-2 py-1 text-red-600 hover:bg-red-50 rounded-lg text-sm">{t('rem_delete')}</button>
+                        </div>
+                      ))}
+                      <button type="button" onClick={addReminder} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">{t('rem_add')}</button>
+                    </div>
+                  </div>
+
+                  {/* Documents */}
+                  <div className="pt-4 border-t border-stone-200">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-stone-700">{t('docs_section')}</label>
+                      <span className="text-xs text-stone-500">{t('docs_usage').replace('{used}', String(totalDocs)).replace('{max}', String(MAX_DOCS))}</span>
+                    </div>
+                    {pendingDocs.length > 0 && (
+                      <div className="space-y-1 mb-2">
+                        {pendingDocs.map((p, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm py-1.5 px-2 bg-stone-50 rounded-lg">
+                            <span className="truncate text-stone-700">{p.name}</span>
+                            <button type="button" onClick={() => removePendingDoc(idx)} className="text-red-600 hover:text-red-700 text-xs font-medium">{t('delete')}</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {totalDocs >= MAX_DOCS ? (
+                      <p className="text-sm text-amber-600">{t('docs_limit_reached').replace('{max}', String(MAX_DOCS))}</p>
+                    ) : (
+                      <div className="flex gap-2 flex-wrap">
+                        <label className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
+                          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) addPendingDoc(f); e.target.value = ''; }} />
+                          {t('docs_camera')}
+                        </label>
+                        <label className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
+                          <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) addPendingDoc(f); e.target.value = ''; }} />
+                          {t('docs_gallery')}
+                        </label>
+                        <label className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
+                          <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={(e) => addPendingDocsMulti(e.target.files)} />
+                          {t('docs_multi')}
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
 
