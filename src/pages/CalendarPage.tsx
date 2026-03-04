@@ -421,6 +421,7 @@ export const CalendarPage: React.FC = () => {
                         );
                       })}
                     </div>
+                    <p className="text-xs text-stone-500 mb-1">{t('rem_custom')}</p>
                     <div className="space-y-2">
                       {reminders.map((r, idx) => (
                         <div key={idx} className="flex items-center gap-2 flex-wrap">
@@ -443,8 +444,8 @@ export const CalendarPage: React.FC = () => {
                   {/* Documents */}
                   <div className="pt-4 border-t border-stone-200">
                     <div className="flex justify-between items-center mb-2">
-                      <label className="block text-sm font-medium text-stone-700">{t('docs_section')}</label>
-                      <span className="text-xs text-stone-500">{t('docs_usage').replace('{used}', String(totalDocs)).replace('{max}', String(MAX_DOCS))}</span>
+                      <label className="block text-sm font-medium text-stone-700">{t('docs_section_attached')}</label>
+                      <span className="text-xs text-stone-500">{t('docs_counter').replace('{used}', String(totalDocs))}</span>
                     </div>
                     {pendingDocs.length > 0 && (
                       <div className="space-y-1 mb-2">
@@ -457,7 +458,7 @@ export const CalendarPage: React.FC = () => {
                       </div>
                     )}
                     {totalDocs >= MAX_DOCS ? (
-                      <p className="text-sm text-amber-600">{t('docs_limit_reached').replace('{max}', String(MAX_DOCS))}</p>
+                      <p className="text-sm text-amber-600">{t('docs_limit_reached')}</p>
                     ) : (
                       <div className="flex gap-2 flex-wrap">
                         <label className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">

@@ -289,7 +289,7 @@ export const PersonDashboardPage: React.FC = () => {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
               <div className="flex items-center gap-3">
-                <span className="text-sm text-stone-500">{t('docs_usage').replace('{used}', String(personAttachments.length)).replace('{max}', '20')}</span>
+                <span className="text-sm text-stone-500">{t('docs_counter').replace('{used}', String(attachments.length))}</span>
                 {personAttachments.length >= 20 ? (
                   <span className="text-sm text-amber-600">{t('documents_limit_reached')}</span>
                 ) : (

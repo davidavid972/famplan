@@ -8,7 +8,7 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('settings')}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('settings_title')}</h1>
       </div>
 
       <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
@@ -19,36 +19,36 @@ export const SettingsPage: React.FC = () => {
           
           <div className="max-w-md mx-auto space-y-2">
             <h2 className="text-xl font-semibold text-stone-900">
-              {t('future_placeholder')}
+              {t('settings_subtitle')}
             </h2>
             <p className="text-stone-500">
-              {t('settings_placeholder_desc')}
+              {t('settings_reserved_area')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto pt-8">
             <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100">
-              <Share2 className="w-8 h-8 text-emerald-600 mb-3" />
-              <h3 className="font-medium text-stone-900">{t('settings_family_sharing')}</h3>
-              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_family_sharing_desc')}</p>
-            </div>
-            
-            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100">
               <Shield className="w-8 h-8 text-blue-600 mb-3" />
-              <h3 className="font-medium text-stone-900">{t('settings_roles')}</h3>
-              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_roles_desc')}</p>
+              <h3 className="font-medium text-stone-900">{t('settings_cards_access_title')}</h3>
+              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_access_subtitle')}</p>
             </div>
             
             <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100">
-              <HardDrive className="w-8 h-8 text-amber-600 mb-3" />
-              <h3 className="font-medium text-stone-900">{t('settings_drive_sync')}</h3>
-              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_drive_sync_desc')}</p>
+              <Share2 className="w-8 h-8 text-emerald-600 mb-3" />
+              <h3 className="font-medium text-stone-900">{t('settings_cards_sharing_title')}</h3>
+              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_sharing_subtitle')}</p>
             </div>
             
             <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100">
               <CalendarIcon className="w-8 h-8 text-purple-600 mb-3" />
-              <h3 className="font-medium text-stone-900">{t('settings_calendar')}</h3>
-              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_calendar_desc')}</p>
+              <h3 className="font-medium text-stone-900">{t('settings_cards_calendar_title')}</h3>
+              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_calendar_subtitle')}</p>
+            </div>
+            
+            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100">
+              <HardDrive className="w-8 h-8 text-amber-600 mb-3" />
+              <h3 className="font-medium text-stone-900">{t('settings_cards_drive_title')}</h3>
+              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_drive_subtitle')}</p>
             </div>
           </div>
         </div>
