@@ -50,7 +50,7 @@ export const Layout: React.FC = () => {
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors font-medium border border-stone-200"
         >
           <Globe className="w-5 h-5" />
-          <span>{language === 'he' ? 'English' : 'עברית'}</span>
+          <span>{language === 'he' ? t('lang_en') : t('lang_he')}</span>
         </button>
       </header>
 
