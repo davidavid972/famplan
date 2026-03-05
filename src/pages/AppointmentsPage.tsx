@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
@@ -6,7 +6,7 @@ import { useFamily } from '../context/FamilyProvider';
 import { useToast } from '../context/ToastProvider';
 import { PlanModal } from '../components/PlanModal';
 import { PlansFilterBar } from '../components/PlansFilterBar';
-import { Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle, Trash2, X, Square, CheckSquare } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Appointment, AppointmentStatus } from '../types/models';
 import { format } from 'date-fns';
@@ -15,12 +15,17 @@ import { he, enUS } from 'date-fns/locale';
 export const AppointmentsPage: React.FC = () => {
   const { t, language, dir } = useI18n();
   const { canEdit } = useAuth();
-  const { planFilterPersonIds } = useFamily();
-  const { appointments, people, updateAppointment, deleteAppointment } = useData();
+  const { planFilterPersonIds, selectionColor } = useFamily();
+  const { appointments, people, updateAppointment, deleteAppointment, deleteAppointments } = useData();
   const { showToast } = useToast();
 
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPressRef = useRef(false);
 
   const dateLocale = language === 'he' ? he : enUS;
 
@@ -40,6 +45,54 @@ export const AppointmentsPage: React.FC = () => {
       setAppointmentToDelete(null);
     }
   };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size > 0) {
+      await deleteAppointments(Array.from(selectedIds));
+      showToast(t('appointment_deleted'), 'success');
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      setBulkDeleteConfirm(false);
+    }
+  };
+
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleCardTouchStart = useCallback((appointment: Appointment) => {
+    didLongPressRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTimerRef.current = null;
+      didLongPressRef.current = true;
+      setIsSelectMode(true);
+      setSelectedIds((prev) => new Set(prev).add(appointment.id));
+    }, 500);
+  }, []);
+
+  const handleCardTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleCardClick = useCallback((appointment: Appointment) => {
+    if (didLongPressRef.current) {
+      didLongPressRef.current = false;
+      return;
+    }
+    if (isSelectMode) {
+      toggleSelection(appointment.id);
+    } else {
+      setEditingAppointment(appointment);
+    }
+  }, [isSelectMode, toggleSelection]);
 
   const handleSaveFromModal = async (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
     if (editingAppointment) {
@@ -69,11 +122,48 @@ export const AppointmentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('appointments')}</h1>
+        {canEdit && (
+          <button
+            onClick={() => { setIsSelectMode((m) => !m); if (isSelectMode) setSelectedIds(new Set()); }}
+            className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors min-h-[44px] ${
+              isSelectMode ? 'text-white' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
+            }`}
+            style={isSelectMode ? { backgroundColor: selectionColor } : undefined}
+          >
+            {isSelectMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+            {t('plans_select_mode')}
+          </button>
+        )}
       </div>
 
       <PlansFilterBar people={people} />
+
+      {selectedIds.size > 0 && (
+        <div
+          className="sticky top-20 z-30 flex items-center justify-between gap-4 p-4 rounded-2xl border shadow-lg"
+          style={{ backgroundColor: `${selectionColor}15`, borderColor: `${selectionColor}40` }}
+        >
+          <span className="font-semibold text-stone-900">{t('plans_selected_count').replace('{count}', String(selectedIds.size))}</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setBulkDeleteConfirm(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors min-h-[44px]"
+            >
+              <Trash2 className="w-4 h-4" />
+              {t('delete_selected')}
+            </button>
+            <button
+              onClick={() => { setSelectedIds(new Set()); setIsSelectMode(false); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 transition-colors min-h-[44px]"
+            >
+              <X className="w-4 h-4" />
+              {t('plans_clear_selection')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {sortedAppointments.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-stone-200 border-dashed text-center">
@@ -91,26 +181,42 @@ export const AppointmentsPage: React.FC = () => {
 
             const isDone = appointment.status === 'DONE';
 
+            const isSelected = selectedIds.has(appointment.id);
             return (
               <div
                 key={appointment.id}
-                onClick={() => setEditingAppointment(appointment)}
+                onClick={() => handleCardClick(appointment)}
+                onTouchStart={() => handleCardTouchStart(appointment)}
+                onTouchEnd={handleCardTouchEnd}
+                onTouchCancel={handleCardTouchEnd}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && setEditingAppointment(appointment)}
-                className={`group flex flex-col sm:flex-row gap-4 p-5 bg-white rounded-2xl border border-stone-200 shadow-sm transition-all relative overflow-hidden cursor-pointer hover:border-stone-300 ${
+                onKeyDown={(e) => e.key === 'Enter' && handleCardClick(appointment)}
+                className={`group flex flex-col sm:flex-row gap-4 p-5 bg-white rounded-2xl border shadow-sm transition-all relative overflow-hidden cursor-pointer hover:border-stone-300 ${
                   isDone ? 'opacity-60' : ''
-                }`}
+                } ${isSelected ? 'border-2' : 'border-stone-200'}`}
+                style={isSelected ? { borderColor: selectionColor } : undefined}
               >
                 <div
                   className="absolute top-0 bottom-0 w-2 left-0"
                   style={{ backgroundColor: person.color }}
                 />
-                
+                {isSelectMode && (
+                  <div className="flex-shrink-0 flex items-center min-h-[44px] min-w-[44px]">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelection(appointment.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-5 h-5 rounded border-stone-300 cursor-pointer"
+                      style={{ accentColor: selectionColor }}
+                    />
+                  </div>
+                )}
                 <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ml-2">
                   <button
-                    onClick={(e) => toggleStatus(appointment, e)}
-                    disabled={!canEdit}
+                    onClick={(e) => { e.stopPropagation(); toggleStatus(appointment, e); }}
+                    disabled={!canEdit || isSelectMode}
                     className="flex-shrink-0 min-h-[44px] min-w-[44px] text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isDone ? (
@@ -159,6 +265,7 @@ export const AppointmentsPage: React.FC = () => {
                   </div>
                 </div>
 
+                {!isSelectMode && (
                 <div className="flex items-center gap-2 sm:self-start justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={(e) => { e.stopPropagation(); setAppointmentToDelete(appointment.id); }}
@@ -168,6 +275,7 @@ export const AppointmentsPage: React.FC = () => {
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
+                )}
               </div>
             );
           })}
@@ -192,6 +300,14 @@ export const AppointmentsPage: React.FC = () => {
         onConfirm={handleDelete}
         title={t('delete')}
         message={t('confirm_delete_appointment')}
+      />
+
+      <ConfirmModal
+        isOpen={bulkDeleteConfirm}
+        onClose={() => setBulkDeleteConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={t('delete')}
+        message={t('confirm_delete_appointments')}
       />
     </div>
   );

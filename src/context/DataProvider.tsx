@@ -39,6 +39,7 @@ interface DataContextType {
   addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => Promise<Appointment>;
   updateAppointment: (id: string, appointment: Partial<Appointment>) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
+  deleteAppointments: (ids: string[]) => Promise<void>;
   addAttachment: (attachment: Omit<Attachment, 'id' | 'createdAt'>) => void;
   deleteAttachment: (id: string) => void;
   deleteAttachments: (ids: string[]) => void;
@@ -217,6 +218,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAttachments((prev) => prev.filter((a) => a.appointmentId !== id));
   };
 
+  const deleteAppointments = async (ids: string[]) => {
+    if (!canEdit || ids.length === 0) return;
+    const idSet = new Set(ids);
+    const toDelete = appointments.filter((a) => idSet.has(a.id));
+    for (const app of toDelete) {
+      if (app.calendarEventId) {
+        try {
+          const calendarId = await ensureFamPlanCalendar();
+          await deleteEvent(calendarId, app.calendarEventId);
+        } catch (e) {
+          console.warn('[FamPlan] Calendar sync on delete failed:', e);
+        }
+      }
+    }
+    setAppointments((prev) => prev.filter((a) => !idSet.has(a.id)));
+    setAttachments((prev) => prev.filter((a) => !idSet.has(a.appointmentId)));
+  };
+
   const addAttachment = (attachment: Omit<Attachment, 'id' | 'createdAt'>) => {
     if (!canEdit) return;
     const newAttachment: Attachment = {
@@ -249,6 +268,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addAppointment,
         updateAppointment,
         deleteAppointment,
+        deleteAppointments,
         addAttachment,
         deleteAttachment,
         deleteAttachments,
