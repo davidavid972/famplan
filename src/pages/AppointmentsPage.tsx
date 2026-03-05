@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
+import { useFamily } from '../context/FamilyProvider';
 import { useToast } from '../context/ToastProvider';
 import { PlanModal } from '../components/PlanModal';
+import { PlansFilterBar } from '../components/PlansFilterBar';
 import { Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle, Trash2 } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Appointment, AppointmentStatus } from '../types/models';
@@ -13,6 +15,7 @@ import { he, enUS } from 'date-fns/locale';
 export const AppointmentsPage: React.FC = () => {
   const { t, language, dir } = useI18n();
   const { canEdit } = useAuth();
+  const { planFilterPersonIds } = useFamily();
   const { appointments, people, updateAppointment, deleteAppointment } = useData();
   const { showToast } = useToast();
 
@@ -59,14 +62,18 @@ export const AppointmentsPage: React.FC = () => {
     setEditingAppointment(null);
   };
 
-  // Sort appointments by start date
-  const sortedAppointments = [...appointments].sort((a, b) => a.start - b.start);
+  // Filter by people (multi-select)
+  const filterSet = planFilterPersonIds && planFilterPersonIds.length > 0 ? new Set(planFilterPersonIds) : null;
+  const filteredAppointments = filterSet ? appointments.filter((a) => filterSet.has(a.personId)) : appointments;
+  const sortedAppointments = [...filteredAppointments].sort((a, b) => a.start - b.start);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('appointments')}</h1>
       </div>
+
+      <PlansFilterBar people={people} />
 
       {sortedAppointments.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-stone-200 border-dashed text-center">

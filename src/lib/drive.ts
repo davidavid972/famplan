@@ -30,6 +30,7 @@ export interface FamilyData {
   /** UI preferences */
   ui?: {
     selectionColor?: string | null;
+    planFilterPersonIds?: string[] | null;
   };
 }
 

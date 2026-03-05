@@ -24,7 +24,7 @@ const SYNC_STATUS_KEY = 'famplan_drive_sync_status';
 
 export function DriveSyncEffect() {
   const { isConnected } = useAuth();
-  const { familyDisplayName, familyPhoto, selectionColor, setFamilyDisplayName, setFamilyPhoto, setSelectionColor } = useFamily();
+  const { familyDisplayName, familyPhoto, selectionColor, planFilterPersonIds, setFamilyDisplayName, setFamilyPhoto, setSelectionColor, setPlanFilterPersonIds } = useFamily();
   const location = useLocation();
   const fileIdRef = useRef<string | null>(null);
   const familyDataRef = useRef<FamilyData | null>(null);
@@ -66,7 +66,8 @@ export function DriveSyncEffect() {
         setFamilyDisplayName(data.familyDisplayName || '');
         setFamilyPhoto(data.familyPhoto ?? null);
         setSelectionColor(data.ui?.selectionColor || '#10b981');
-        cacheSet(CACHE_KEYS.family, { familyDisplayName: data.familyDisplayName || '', familyPhoto: data.familyPhoto ?? null, selectionColor: data.ui?.selectionColor || '#10b981' });
+        setPlanFilterPersonIds(data.ui?.planFilterPersonIds ?? null);
+        cacheSet(CACHE_KEYS.family, { familyDisplayName: data.familyDisplayName || '', familyPhoto: data.familyPhoto ?? null, selectionColor: data.ui?.selectionColor || '#10b981', planFilterPersonIds: data.ui?.planFilterPersonIds ?? null });
         localStorage.setItem(SYNC_STATUS_KEY, 'Success');
         window.dispatchEvent(new CustomEvent('famplan-drive-sync-done'));
       } catch (e) {
@@ -86,7 +87,7 @@ export function DriveSyncEffect() {
     return () => {
       cancelled = true;
     };
-  }, [isConnected, location.pathname, setFamilyDisplayName, setFamilyPhoto, setSelectionColor, syncTrigger]);
+  }, [isConnected, location.pathname, setFamilyDisplayName, setFamilyPhoto, setSelectionColor, setPlanFilterPersonIds, syncTrigger]);
 
   useEffect(() => {
     if (!isConnected || !fileIdRef.current || !initialLoadDoneRef.current) return;
@@ -101,14 +102,17 @@ export function DriveSyncEffect() {
       familyPhoto: familyPhoto || undefined,
       createdAt: prev?.createdAt ?? new Date().toISOString(),
       calendarId: prev?.calendarId ?? undefined,
-      ui: { selectionColor: selectionColor || undefined },
+      ui: {
+        selectionColor: selectionColor || undefined,
+        planFilterPersonIds: planFilterPersonIds && planFilterPersonIds.length > 0 ? planFilterPersonIds : undefined,
+      },
     };
 
     const t = setTimeout(() => {
       driveWriteJson(fileId, payload).catch((e) => console.warn('Drive write failed:', e));
     }, 500);
     return () => clearTimeout(t);
-  }, [isConnected, familyDisplayName, familyPhoto, selectionColor]);
+  }, [isConnected, familyDisplayName, familyPhoto, selectionColor, planFilterPersonIds]);
 
   return null;
 }

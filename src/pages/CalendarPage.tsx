@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
+import { useFamily } from '../context/FamilyProvider';
 import { useToast } from '../context/ToastProvider';
 import { PlanModal } from '../components/PlanModal';
+import { PlansFilterBar } from '../components/PlansFilterBar';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { he, enUS } from 'date-fns/locale';
@@ -12,11 +14,11 @@ import type { Appointment } from '../types/models';
 export const CalendarPage: React.FC = () => {
   const { t, language, dir } = useI18n();
   const { canEdit } = useAuth();
+  const { planFilterPersonIds } = useFamily();
   const { appointments, people, addAppointment, updateAppointment, deleteAppointment, attachments, addAttachment } = useData();
   const { showToast } = useToast();
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
@@ -36,9 +38,8 @@ export const CalendarPage: React.FC = () => {
   const dateFormat = "MMMM yyyy";
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-  const filteredAppointments = appointments.filter(
-    (app) => !selectedPersonId || app.personId === selectedPersonId
-  );
+  const filterSet = planFilterPersonIds && planFilterPersonIds.length > 0 ? new Set(planFilterPersonIds) : null;
+  const filteredAppointments = filterSet ? appointments.filter((a) => filterSet.has(a.personId)) : appointments;
 
   const getAppointmentsForDay = (day: Date) => {
     return filteredAppointments.filter((app) => isSameDay(new Date(app.start), day));
@@ -159,40 +160,7 @@ export const CalendarPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        <button
-          onClick={() => setSelectedPersonId(null)}
-          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-            selectedPersonId === null
-              ? 'bg-stone-900 text-white'
-              : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
-          }`}
-        >
-          {t('all')}
-        </button>
-        {people.map((person) => (
-          <button
-            key={person.id}
-            onClick={() => setSelectedPersonId(person.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${
-              selectedPersonId === person.id
-                ? 'text-white'
-                : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
-            }`}
-            style={{
-              backgroundColor: selectedPersonId === person.id ? person.color : 'white',
-              borderColor: selectedPersonId === person.id ? person.color : undefined,
-            }}
-          >
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: selectedPersonId === person.id ? 'white' : person.color }}
-            />
-            {person.name}
-          </button>
-        ))}
-      </div>
+      <PlansFilterBar people={people} />
 
       {/* Calendar Grid */}
       <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
@@ -263,7 +231,7 @@ export const CalendarPage: React.FC = () => {
         appointment={editingAppointment}
         initialDate={initialDate}
         people={people}
-        selectedPersonId={selectedPersonId}
+        selectedPersonId={planFilterPersonIds?.[0] ?? null}
         onSave={handleSave}
         onDelete={handleDelete}
         pendingDocs={pendingDocs}
