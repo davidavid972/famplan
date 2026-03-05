@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
+import { useUserRole } from '../context/UserRoleProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { useToast } from '../context/ToastProvider';
 import { cacheClear } from '../lib/cache';
@@ -20,7 +21,8 @@ const SYNC_INDEX_KEY = 'famplan_drive_sync_index';
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
   const location = useLocation();
-  const { isConnected, canEdit, email, connect, disconnect, connectError, clearConnectError } = useAuth();
+  const { isConnected, isOnline, canEdit, email, connect, disconnect, connectError, clearConnectError } = useAuth();
+  const { userRole } = useUserRole();
   const { showToast } = useToast();
   const { familyDisplayName, familyPhoto, selectionColor, setFamilyDisplayName, setFamilyPhoto, setSelectionColor } = useFamily();
   const [isConnecting, setIsConnecting] = useState(false);
@@ -371,6 +373,18 @@ export const SettingsPage: React.FC = () => {
             >
               {t('clear_cache')}
             </button>
+          </div>
+
+          {/* Debug: role, online, last Drive write (temporary) */}
+          <div className="w-full pt-4 border-t border-stone-200">
+            <h3 className="text-xs font-medium text-stone-500 mb-2">Debug</h3>
+            <div className="p-3 bg-amber-50 rounded-xl text-sm text-stone-700 space-y-1 font-mono">
+              <div>role: {userRole ?? 'null'}</div>
+              <div>online: {String(isOnline)}</div>
+              <div>connected: {String(isConnected)}</div>
+              <div>canEdit: {String(canEdit)}</div>
+              <div>last Drive write: {[dataSyncTimes.people, dataSyncTimes.appointments, dataSyncTimes.index].filter(Boolean).sort().pop() || '—'}</div>
+            </div>
           </div>
 
           {/* Sync status (temporary) */}

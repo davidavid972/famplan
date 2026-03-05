@@ -4,6 +4,7 @@ import { useUserRole } from './UserRoleProvider';
 
 interface AuthContextType {
   isConnected: boolean;
+  isOnline: boolean;
   email: string;
   connect: () => Promise<void>;
   disconnect: () => void;
@@ -36,7 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const disconnect = () => {
     googleAuth.clearGoogleSession();
-    ['famplan_drive_family_file_id', 'famplan_drive_root_folder_id', 'famplan_drive_data_folder_id', 'famplan_drive_sync_status', 'famplan_drive_people_file_id', 'famplan_drive_appointments_file_id', 'famplan_drive_attachments_index_file_id', 'famplan_drive_users_file_id', 'famplan_drive_sync_people', 'famplan_drive_sync_appointments', 'famplan_drive_sync_index', 'famplan_calendar_id'].forEach((k) => localStorage.removeItem(k));
+    ['famplan_drive_family_file_id', 'famplan_drive_root_folder_id', 'famplan_drive_data_folder_id', 'famplan_drive_people_photos_folder_id', 'famplan_drive_sync_status', 'famplan_drive_people_file_id', 'famplan_drive_appointments_file_id', 'famplan_drive_attachments_index_file_id', 'famplan_drive_users_file_id', 'famplan_drive_sync_people', 'famplan_drive_sync_appointments', 'famplan_drive_sync_index', 'famplan_calendar_id'].forEach((k) => localStorage.removeItem(k));
     setIsConnected(false);
     setEmailState('');
     setConnectError(null);
@@ -68,7 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const canEdit = isConnected && isOnline && (userRole === null || userRole === 'admin' || userRole === 'editor');
 
   return (
-    <AuthContext.Provider value={{ isConnected, email, connect, disconnect, connectError, clearConnectError, canEdit }}>
+    <AuthContext.Provider value={{ isConnected, isOnline, email, connect, disconnect, connectError, clearConnectError, canEdit }}>
       {children}
     </AuthContext.Provider>
   );

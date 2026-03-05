@@ -47,8 +47,8 @@ export function DriveDataSyncEffect() {
       hasRunRef.current = false;
       return;
     }
-    // Load on mount, or re-load when opening Settings (cross-device refresh), or manual Sync now
-    const shouldLoad = !hasRunRef.current || location.pathname === '/settings';
+    // Load on mount, or re-load when opening Settings/People (cross-device refresh, ensure people_photos), or manual Sync now
+    const shouldLoad = !hasRunRef.current || location.pathname === '/settings' || location.pathname === '/people';
 
     if (!shouldLoad) return;
 

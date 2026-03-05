@@ -66,29 +66,43 @@ export const PeoplePage: React.FC = () => {
     if (editingPerson) {
       let photoFileId: string | null | undefined = removePhoto ? null : editingPerson.photoFileId;
       if (pendingPhotoFile && isConnected && canEdit) {
+        const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
+        if (!folderId) {
+          window.dispatchEvent(new CustomEvent('famplan-drive-sync-request'));
+          showToast(t('person_photo_sync_required'), 'error');
+          return;
+        }
         try {
-          const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
-          if (folderId) {
-            photoFileId = await driveUploadPersonPhoto(pendingPhotoFile, editingPerson.id, folderId);
-          }
+          photoFileId = await driveUploadPersonPhoto(pendingPhotoFile, editingPerson.id, folderId);
         } catch (e) {
-          console.warn('Person photo upload failed:', e);
-          showToast(t('person_updated'), 'success');
+          const msg = e instanceof Error ? e.message : String(e);
+          showToast(`${t('person_photo_upload_error')}: ${msg}`, 'error');
+          return;
         }
       }
       updatePerson(editingPerson.id, { name, color, photoFileId: photoFileId ?? undefined });
       showToast(t('person_updated'), 'success');
     } else {
+      if (pendingPhotoFile && isConnected && canEdit) {
+        const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
+        if (!folderId) {
+          window.dispatchEvent(new CustomEvent('famplan-drive-sync-request'));
+          showToast(t('person_photo_sync_required'), 'error');
+          return;
+        }
+      }
       const added = addPerson({ name, color });
       if (pendingPhotoFile && isConnected && canEdit) {
-        try {
-          const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
-          if (folderId) {
+        const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
+        if (folderId) {
+          try {
             const photoFileId = await driveUploadPersonPhoto(pendingPhotoFile, added.id, folderId);
             updatePerson(added.id, { photoFileId });
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            showToast(`${t('person_photo_upload_error')}: ${msg}`, 'error');
+            return;
           }
-        } catch (e) {
-          console.warn('Person photo upload failed:', e);
         }
       }
       showToast(t('person_added'), 'success');

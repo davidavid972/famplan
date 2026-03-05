@@ -121,15 +121,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       driveWriteJson(pid, peoplePayload).then(() => {
         localStorage.setItem(SYNC_PEOPLE_KEY, now);
         window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
-      }).catch((e) => console.warn('Drive people write failed:', e));
+      }).catch((e) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        window.dispatchEvent(new CustomEvent('famplan-drive-write-error', { detail: { message: `People: ${msg}` } }));
+      });
       driveWriteJson(aid, appointmentsPayload).then(() => {
         localStorage.setItem(SYNC_APPOINTMENTS_KEY, now);
         window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
-      }).catch((e) => console.warn('Drive appointments write failed:', e));
+      }).catch((e) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        window.dispatchEvent(new CustomEvent('famplan-drive-write-error', { detail: { message: `Appointments: ${msg}` } }));
+      });
       driveWriteJson(iid, indexPayload).then(() => {
         localStorage.setItem(SYNC_INDEX_KEY, now);
         window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
-      }).catch((e) => console.warn('Drive index write failed:', e));
+      }).catch((e) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        window.dispatchEvent(new CustomEvent('famplan-drive-write-error', { detail: { message: `Index: ${msg}` } }));
+      });
     }, 500);
     return () => clearTimeout(t);
   }, [isConnected, people, appointments, attachments]);

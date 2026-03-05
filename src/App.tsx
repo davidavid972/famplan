@@ -11,6 +11,7 @@ import { Layout } from './components/Layout';
 import { CalendarErrorListener } from './components/CalendarErrorListener';
 import { DriveSyncEffect } from './components/DriveSyncEffect';
 import { DriveDataSyncEffect } from './components/DriveDataSyncEffect';
+import { DriveErrorListener } from './components/DriveErrorListener';
 import { CalendarPage } from './pages/CalendarPage';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { PeoplePage } from './pages/PeoplePage';
@@ -21,6 +22,7 @@ function AppContent() {
   return (
     <ToastProvider>
       <CalendarErrorListener />
+      <DriveErrorListener />
       <FamilyProvider>
         <DataProvider>
         <BrowserRouter>
