@@ -8,6 +8,7 @@ import {
   driveLoadAppointments,
   driveLoadAttachmentsIndex,
   driveWriteJson,
+  driveReadJson,
   type PeopleData,
   type AppointmentsData,
   type AttachmentsIndexData,
@@ -19,8 +20,9 @@ import {
   deleteEvent,
   planToEventPayload,
 } from '../lib/calendar';
-import { cacheGet, cacheSet, CACHE_KEYS } from '../lib/cache';
+import { cacheGet, cacheSet, cacheGetPeopleFallback, cacheSetPeopleFallback, CACHE_KEYS } from '../lib/cache';
 import { validateAppointments } from '../lib/validateAppointments';
+import { auditLogAppend } from '../lib/auditLog';
 
 const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
 const APPOINTMENTS_FILE_ID_KEY = 'famplan_drive_appointments_file_id';
@@ -34,6 +36,7 @@ interface DataContextType {
   people: Person[];
   appointments: Appointment[];
   attachments: Attachment[];
+  syncError: string | null;
   addPerson: (person: Omit<Person, 'id' | 'createdAt'>) => Person;
   updatePerson: (id: string, person: Partial<Person>) => void;
   deletePerson: (id: string) => void;
@@ -44,14 +47,20 @@ interface DataContextType {
   addAttachment: (attachment: Omit<Attachment, 'id' | 'createdAt'>) => void;
   deleteAttachment: (id: string) => void;
   deleteAttachments: (ids: string[]) => void;
-  syncFromDrive: (data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string }) => void;
+  syncFromDrive: (data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string; peopleVersion?: number }) => void;
+  setSyncError: (err: string | null) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 const loadFromCache = <T,>(cacheKey: string, defaultValue: T[]): T[] => {
   const cached = cacheGet<T[]>(cacheKey);
-  return cached ?? defaultValue;
+  if (cached != null && Array.isArray(cached)) return cached;
+  if (cacheKey === CACHE_KEYS.people) {
+    const fallback = cacheGetPeopleFallback();
+    if (fallback != null && Array.isArray(fallback) && fallback.length > 0) return fallback as T[];
+  }
+  return defaultValue;
 };
 
 const loadAppointmentsFromCache = (): Appointment[] => {
@@ -60,14 +69,16 @@ const loadAppointmentsFromCache = (): Appointment[] => {
 };
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { isConnected, canEdit } = useAuth();
+  const { isConnected, canEdit, email } = useAuth();
   const [people, setPeople] = useState<Person[]>(() => loadFromCache(CACHE_KEYS.people, []));
   const [appointments, setAppointments] = useState<Appointment[]>(() => loadAppointmentsFromCache());
   const [attachments, setAttachments] = useState<Attachment[]>(() => loadFromCache(CACHE_KEYS.attachments_index, []));
+  const [syncError, setSyncError] = useState<string | null>(null);
   const peopleFileIdRef = useRef<string | null>(null);
   const appointmentsFileIdRef = useRef<string | null>(null);
   const indexFileIdRef = useRef<string | null>(null);
   const dataFolderIdRef = useRef<string | null>(null);
+  const peopleVersionRef = useRef<number>(1);
   const initialDriveLoadDoneRef = useRef(false);
 
   useEffect(() => {
@@ -82,6 +93,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [isConnected]);
 
   const syncFromDrive = useCallback((data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string }) => {
+    setSyncError(null);
     setPeople(Array.isArray(data.people) ? data.people : []);
     setAppointments(validateAppointments(data.appointments ?? []));
     setAttachments(Array.isArray(data.attachments) ? data.attachments : []);
@@ -90,11 +102,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       appointmentsFileIdRef.current = fileIds.appointments;
       indexFileIdRef.current = fileIds.index;
       dataFolderIdRef.current = fileIds.dataFolderId;
+      if (fileIds.peopleVersion != null) {
+        if (initialDriveLoadDoneRef.current && fileIds.peopleVersion > peopleVersionRef.current) {
+          window.dispatchEvent(new CustomEvent('famplan-remote-changes'));
+        }
+        peopleVersionRef.current = fileIds.peopleVersion;
+      }
       initialDriveLoadDoneRef.current = true;
       localStorage.setItem(PEOPLE_FILE_ID_KEY, fileIds.people);
       localStorage.setItem(APPOINTMENTS_FILE_ID_KEY, fileIds.appointments);
       localStorage.setItem(ATTACHMENTS_INDEX_FILE_ID_KEY, fileIds.index);
       localStorage.setItem(DATA_FOLDER_KEY, fileIds.dataFolderId);
+      if (Array.isArray(data.people) && data.people.length > 0) {
+        cacheSetPeopleFallback(data.people);
+      }
     }
   }, []);
 
@@ -121,16 +142,41 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const t = setTimeout(() => {
       const now = new Date().toISOString();
-      const peoplePayload: PeopleData = { version: 1, updatedAt: now, people };
       const appointmentsPayload: AppointmentsData = { version: 1, updatedAt: now, appointments };
       const indexPayload: AttachmentsIndexData = { version: 1, updatedAt: now, items: attachments, freeLimit: 20 };
-      driveWriteJson(pid, peoplePayload).then(() => {
-        localStorage.setItem(SYNC_PEOPLE_KEY, now);
-        window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
-      }).catch((e) => {
-        const msg = e instanceof Error ? e.message : String(e);
-        window.dispatchEvent(new CustomEvent('famplan-drive-write-error', { detail: { message: `People: ${msg}` } }));
-      });
+      driveReadJson<PeopleData>(pid)
+        .then((remote) => {
+          const merged: Person[] = [...people];
+          for (const p of remote.people ?? []) {
+            if (!merged.some((x) => x.id === p.id)) merged.push(p);
+          }
+          const newVersion = (remote.version ?? 1) + 1;
+          const peoplePayload: PeopleData = {
+            version: newVersion,
+            updatedAt: now,
+            updatedBy: email || undefined,
+            people: merged,
+          };
+          return driveWriteJson(pid, peoplePayload).then((id) => {
+            peopleVersionRef.current = newVersion;
+            return id;
+          });
+        })
+        .catch(() => {
+          const peoplePayload: PeopleData = { version: 1, updatedAt: now, updatedBy: email || undefined, people };
+          return driveWriteJson(pid, peoplePayload).then((id) => {
+            peopleVersionRef.current = 1;
+            return id;
+          });
+        })
+        .then(() => {
+          localStorage.setItem(SYNC_PEOPLE_KEY, now);
+          window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
+        })
+        .catch((e) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          window.dispatchEvent(new CustomEvent('famplan-drive-write-error', { detail: { message: `People: ${msg}` } }));
+        });
       driveWriteJson(aid, appointmentsPayload).then(() => {
         localStorage.setItem(SYNC_APPOINTMENTS_KEY, now);
         window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
@@ -157,22 +203,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     if (canEdit) {
       setPeople((prev) => [...prev, newPerson]);
+      const df = dataFolderIdRef.current;
+      if (df && email) {
+        auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'people.add', entityId: newPerson.id, summary: newPerson.name }).catch(() => {});
+      }
     }
     return newPerson;
   };
 
   const updatePerson = (id: string, data: Partial<Person>) => {
     if (!canEdit) return;
-    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
+    const prev = people.find((p) => p.id === id);
+    setPeople((prevP) => prevP.map((p) => (p.id === id ? { ...p, ...data } : p)));
+    const df = dataFolderIdRef.current;
+    if (df && email && prev) {
+      auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'people.update', entityId: id, summary: data.name ?? prev.name }).catch(() => {});
+    }
   };
 
   const deletePerson = (id: string) => {
     if (!canEdit) return;
-    setPeople((prev) => prev.filter((p) => p.id !== id));
-    setAppointments((prev) => prev.filter((a) => a.personId !== id));
-    // Also delete attachments for those appointments
+    const prev = people.find((p) => p.id === id);
+    setPeople((prevP) => prevP.filter((p) => p.id !== id));
+    setAppointments((prevP) => prevP.filter((a) => a.personId !== id));
     const appointmentsToDelete = appointments.filter(a => a.personId === id).map(a => a.id);
-    setAttachments((prev) => prev.filter((a) => !appointmentsToDelete.includes(a.appointmentId)));
+    setAttachments((prevP) => prevP.filter((a) => !appointmentsToDelete.includes(a.appointmentId)));
+    const df = dataFolderIdRef.current;
+    if (df && email && prev) {
+      auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'people.delete', entityId: id, summary: prev.name }).catch(() => {});
+    }
   };
 
   const addAppointment = async (appointment: Omit<Appointment, 'id' | 'createdAt'>): Promise<Appointment> => {
@@ -290,6 +349,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         deleteAttachment,
         deleteAttachments,
         syncFromDrive,
+        syncError,
+        setSyncError,
       }}
     >
       {children}

@@ -5,6 +5,7 @@ import { UserRoleProvider } from './context/UserRoleProvider';
 import { AuthProvider } from './context/AuthProvider';
 import { FamilyProvider } from './context/FamilyProvider';
 import { DataProvider } from './context/DataProvider';
+import { ActivityProvider } from './context/ActivityContext';
 import { ToastProvider } from './context/ToastProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
@@ -12,6 +13,7 @@ import { CalendarErrorListener } from './components/CalendarErrorListener';
 import { DriveSyncEffect } from './components/DriveSyncEffect';
 import { DriveDataSyncEffect } from './components/DriveDataSyncEffect';
 import { DriveErrorListener } from './components/DriveErrorListener';
+import { RemoteChangesListener } from './components/RemoteChangesListener';
 import { CalendarPage } from './pages/CalendarPage';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { PeoplePage } from './pages/PeoplePage';
@@ -23,9 +25,12 @@ function AppContent() {
     <ToastProvider>
       <CalendarErrorListener />
       <DriveErrorListener />
+      <RemoteChangesListener />
       <FamilyProvider>
         <DataProvider>
+        <ActivityProvider>
         <BrowserRouter>
+          <RemoteChangesListener />
           <DriveSyncEffect />
           <DriveDataSyncEffect />
           <Routes>
@@ -39,6 +44,7 @@ function AppContent() {
             </Route>
           </Routes>
         </BrowserRouter>
+        </ActivityProvider>
       </DataProvider>
       </FamilyProvider>
     </ToastProvider>

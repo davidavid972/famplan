@@ -3,16 +3,18 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { useAuth } from '../context/AuthProvider';
+import { useActivity } from '../context/ActivityContext';
 import { OfflineBanner } from './OfflineBanner';
-import { UserAvatar } from './UserAvatar';
+import { SyncErrorBanner } from './SyncErrorBanner';
 import { ProfileModal } from './ProfileModal';
 import { Calendar, Users, List, Settings, Globe } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 export const Layout: React.FC = () => {
   const { t, language, setLanguage, dir } = useI18n();
-  const { familyDisplayName, selectionColor } = useFamily();
+  const { familyDisplayName, familyPhoto, selectionColor } = useFamily();
   const { canEdit, isConnected, isOnline } = useAuth();
+  const { hasNewActivity } = useActivity();
   const location = useLocation();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
@@ -28,7 +30,7 @@ export const Layout: React.FC = () => {
     { path: '/calendar', icon: Calendar, label: t('calendar') },
     { path: '/appointments', icon: List, label: t('appointments') },
     { path: '/people', icon: Users, label: t('people') },
-    { path: '/settings', icon: Settings, label: t('settings') },
+    { path: '/settings', icon: Settings, label: t('settings'), badge: hasNewActivity },
   ];
 
   const toggleLanguage = () => {
@@ -48,7 +50,13 @@ export const Layout: React.FC = () => {
               aria-label={t('auth_profile')}
             >
               {isConnected ? (
-                <UserAvatar size="md" className="w-8 h-8" />
+                familyPhoto ? (
+                  <img src={familyPhoto} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-600 text-sm">
+                    {(familyDisplayName || '?').charAt(0).toUpperCase()}
+                  </div>
+                )
               ) : (
                 <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
                   <Settings className="w-4 h-4 text-emerald-600" />
@@ -64,7 +72,7 @@ export const Layout: React.FC = () => {
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200",
+                    "relative flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200",
                     isActive
                       ? "text-stone-900"
                       : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
@@ -74,6 +82,9 @@ export const Layout: React.FC = () => {
               >
                 <item.icon className="w-5 h-5" />
                 <span>{item.label}</span>
+                {'badge' in item && item.badge && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-500 rounded-full" aria-label="חדש" />
+                )}
               </NavLink>
             ))}
           </nav>
@@ -88,6 +99,7 @@ export const Layout: React.FC = () => {
       </header>
 
       <OfflineBanner isOnline={isOnline} isConnected={isConnected} />
+      <SyncErrorBanner />
 
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between gap-2 px-4 py-4 bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">
@@ -99,7 +111,13 @@ export const Layout: React.FC = () => {
             aria-label={t('auth_profile')}
           >
             {isConnected ? (
-              <UserAvatar size="sm" className="w-7 h-7" />
+              familyPhoto ? (
+                <img src={familyPhoto} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-600 text-xs">
+                  {(familyDisplayName || '?').charAt(0).toUpperCase()}
+                </div>
+              )
             ) : (
               <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
                 <Settings className="w-4 h-4 text-emerald-600" />
@@ -133,17 +151,21 @@ export const Layout: React.FC = () => {
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+            const showBadge = 'badge' in item && item.badge;
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
+                  "relative flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
                   isActive ? "" : "text-stone-500 hover:text-stone-900"
                 )}
                 style={isActive ? { color: selectionColor } : {}}
               >
-                <item.icon className={cn("w-6 h-6", isActive && "opacity-80")} style={isActive ? { color: selectionColor } : {}} />
+                <span className="relative">
+                  <item.icon className={cn("w-6 h-6", isActive && "opacity-80")} style={isActive ? { color: selectionColor } : {}} />
+                  {showBadge && <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full" aria-label="חדש" />}
+                </span>
                 <span className="text-[10px] font-medium">{item.label}</span>
               </NavLink>
             );

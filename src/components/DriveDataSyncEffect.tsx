@@ -14,7 +14,7 @@ import {
   driveLoadAppointments,
   driveLoadAttachmentsIndex,
 } from '../lib/drive';
-import { cacheGet, CACHE_KEYS } from '../lib/cache';
+import { cacheGet, cacheGetPeopleFallback, CACHE_KEYS } from '../lib/cache';
 import { validateAppointments } from '../lib/validateAppointments';
 import type { Person, Appointment, Attachment } from '../types/models';
 
@@ -29,7 +29,7 @@ const SYNC_INDEX_KEY = 'famplan_drive_sync_index';
 
 export function DriveDataSyncEffect() {
   const { isConnected } = useAuth();
-  const { syncFromDrive } = useData();
+  const { syncFromDrive, setSyncError } = useData();
   const location = useLocation();
   const hasRunRef = useRef(false);
   const [syncTrigger, setSyncTrigger] = useState(0);
@@ -57,8 +57,8 @@ export function DriveDataSyncEffect() {
 
     async function loadFromDrive() {
       try {
-        // Show cache immediately for fast UI
-        const cachedPeople = cacheGet<Person[]>(CACHE_KEYS.people);
+        // Show cache/fallback immediately for fast UI (never overwrite with empty on failure)
+        const cachedPeople = cacheGet<Person[]>(CACHE_KEYS.people) ?? cacheGetPeopleFallback() as Person[] | null;
         const cachedAppointments = cacheGet<Appointment[]>(CACHE_KEYS.appointments);
         const cachedIndex = cacheGet<Attachment[]>(CACHE_KEYS.attachments_index);
         if (cachedPeople || cachedAppointments || cachedIndex) {
@@ -99,6 +99,7 @@ export function DriveDataSyncEffect() {
             appointments: appointmentsRes.fileId,
             index: indexRes.fileId,
             dataFolderId,
+            peopleVersion: peopleRes.data.version,
           }
         );
         const now = new Date().toISOString();
@@ -109,6 +110,9 @@ export function DriveDataSyncEffect() {
         window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
       } catch (e) {
         console.warn('Drive data sync load failed:', e);
+        if (!cancelled) {
+          setSyncError('sync_error_load');
+        }
       }
     }
 

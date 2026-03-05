@@ -4,14 +4,17 @@ import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useUserRole } from '../context/UserRoleProvider';
 import { useFamily } from '../context/FamilyProvider';
+import { useActivity } from '../context/ActivityContext';
 import { useToast } from '../context/ToastProvider';
 import { cacheClear } from '../lib/cache';
-import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X } from 'lucide-react';
+import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X, Activity } from 'lucide-react';
 import { FamilySharingModal } from '../components/FamilySharingModal';
 import { CalendarModal } from '../components/CalendarModal';
+import { auditLogLoad, type AuditLogEntry } from '../lib/auditLog';
 
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
+const ACTIVITY_LAST_VIEWED_KEY = 'famplan_activity_last_viewed';
 const FILE_ID_KEY = 'famplan_drive_family_file_id';
 const SYNC_STATUS_KEY = 'famplan_drive_sync_status';
 const SYNC_PEOPLE_KEY = 'famplan_drive_sync_people';
@@ -25,6 +28,7 @@ export const SettingsPage: React.FC = () => {
   const { userRole } = useUserRole();
   const { showToast } = useToast();
   const { familyDisplayName, familyPhoto, selectionColor, setFamilyDisplayName, setFamilyPhoto, setSelectionColor } = useFamily();
+  const { hasNewActivity, clearBadge, refreshBadge } = useActivity();
   const [isConnecting, setIsConnecting] = useState(false);
   const [driveDebug, setDriveDebug] = useState({ rootFolderId: '', dataFolderId: '', familyFileId: '', syncStatus: '' });
   const [dataSyncTimes, setDataSyncTimes] = useState({ people: '', appointments: '', index: '' });
@@ -36,6 +40,9 @@ export const SettingsPage: React.FC = () => {
   const [sharingModalOpen, setSharingModalOpen] = useState(false);
   const [sharingModalMode, setSharingModalMode] = useState<'sharing' | 'roles'>('sharing');
   const [calendarModalOpen, setCalendarModalOpen] = useState(false);
+  const [activityModalOpen, setActivityModalOpen] = useState(false);
+  const [activityEntries, setActivityEntries] = useState<AuditLogEntry[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
   const authSectionRef = useRef<HTMLDivElement>(null);
 
   const refreshDriveDebug = () => {
@@ -75,6 +82,37 @@ export const SettingsPage: React.FC = () => {
       document.getElementById('family-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [location.hash]);
+
+  useEffect(() => {
+    if (isConnected && location.pathname === '/settings') refreshBadge();
+  }, [isConnected, location.pathname, refreshBadge]);
+
+  const openActivityModal = () => {
+    setActivityModalOpen(true);
+    setActivityLoading(true);
+    const dataFolderId = localStorage.getItem(DATA_FOLDER_KEY);
+    if (!dataFolderId) {
+      setActivityLoading(false);
+      return;
+    }
+    auditLogLoad(dataFolderId)
+      .then(({ data }) => {
+        const last50 = (data.entries ?? []).slice(-50).reverse();
+        setActivityEntries(last50);
+        const latest = last50[0]?.ts;
+        if (latest) localStorage.setItem(ACTIVITY_LAST_VIEWED_KEY, latest);
+        clearBadge();
+      })
+      .catch(() => setActivityEntries([]))
+      .finally(() => setActivityLoading(false));
+  };
+
+  const formatAction = (action: string) => {
+    if (action === 'people.add') return 'הוספת בן/בת משפחה';
+    if (action === 'people.update') return 'עדכון בן/בת משפחה';
+    if (action === 'people.delete') return 'מחיקת בן/בת משפחה';
+    return action;
+  };
 
   const handleConnect = async () => {
     setIsConnecting(true);
@@ -359,6 +397,19 @@ export const SettingsPage: React.FC = () => {
                 {isConnected ? t('auth_connected') : t('auth_not_connected')}
               </p>
             </button>
+
+            <button
+              type="button"
+              onClick={openActivityModal}
+              className="relative flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px] w-full text-left cursor-pointer hover:bg-stone-100 hover:border-stone-200 transition-colors active:bg-stone-100"
+            >
+              <Activity className="w-8 h-8 text-indigo-600 mb-3" />
+              <h3 className="font-medium text-stone-900">{t('activity_title')}</h3>
+              <p className="text-sm text-stone-500 text-center mt-1">{t('activity_subtitle')}</p>
+              {hasNewActivity && (
+                <span className="absolute top-3 right-3 w-3 h-3 bg-amber-500 rounded-full" aria-label="חדש" />
+              )}
+            </button>
           </div>
 
           {/* Clear cache */}
@@ -485,6 +536,37 @@ export const SettingsPage: React.FC = () => {
 
       {/* Calendar modal */}
       <CalendarModal open={calendarModalOpen} onClose={() => setCalendarModalOpen(false)} />
+
+      {/* Activity modal */}
+      {activityModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-stone-100 shrink-0">
+              <h2 className="text-lg font-semibold text-stone-900">{t('activity_title')}</h2>
+              <button onClick={() => setActivityModalOpen(false)} className="p-2 rounded-full hover:bg-stone-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <X className="w-5 h-5 text-stone-500" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1 min-h-0">
+              {activityLoading ? (
+                <p className="text-stone-500 text-sm">טוען...</p>
+              ) : activityEntries.length === 0 ? (
+                <p className="text-stone-500 text-sm">{t('activity_empty')}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {activityEntries.map((e, i) => (
+                    <li key={i} className="text-sm p-3 bg-stone-50 rounded-xl">
+                      <span className="font-medium text-stone-700">{formatAction(e.action)}</span>
+                      {e.summary && <span className="text-stone-600"> — {e.summary}</span>}
+                      <div className="text-xs text-stone-500 mt-1">{e.userEmail} · {new Date(e.ts).toLocaleString()}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Family Sharing / Roles & Permissions modal */}
       <FamilySharingModal

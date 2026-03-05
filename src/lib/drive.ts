@@ -239,6 +239,7 @@ export async function driveGetPersonPhotoUrl(fileId: string): Promise<string> {
 export interface PeopleData {
   version: number;
   updatedAt: string;
+  updatedBy?: string | null;
   people: Array<{ id: string; name: string; color: string; createdAt: number; photoFileId?: string | null }>;
 }
 
@@ -310,6 +311,7 @@ function createEmptyUsersData(): UsersData {
 
 /**
  * Load or create a data file. Does NOT overwrite existing content.
+ * On read failure when file exists: THROWS (never creates empty file over existing).
  */
 export async function driveLoadOrCreateDataFile<T extends object>(
   dataFolderId: string,
@@ -317,14 +319,10 @@ export async function driveLoadOrCreateDataFile<T extends object>(
   createDefault: () => T,
   cachedFileId?: string | null
 ): Promise<{ data: T; fileId: string }> {
-  let fileId = cachedFileId || (await driveFindFile(fileName, dataFolderId));
+  const fileId = cachedFileId || (await driveFindFile(fileName, dataFolderId));
   if (fileId) {
-    try {
-      const data = await driveReadJson<T>(fileId);
-      return { data, fileId };
-    } catch {
-      fileId = await driveFindFile(fileName, dataFolderId);
-    }
+    const data = await driveReadJson<T>(fileId);
+    return { data, fileId };
   }
   const defaultData = createDefault();
   const newFileId = await driveWriteJson(null, defaultData, dataFolderId, fileName);
