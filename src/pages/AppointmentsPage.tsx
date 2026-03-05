@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
+import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastProvider';
 import { Plus, Edit2, Trash2, Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle } from 'lucide-react';
@@ -10,6 +11,7 @@ import { he, enUS } from 'date-fns/locale';
 
 export const AppointmentsPage: React.FC = () => {
   const { t, language, dir } = useI18n();
+  const { canEdit } = useAuth();
   const { appointments, people, updateAppointment, deleteAppointment } = useData();
   const { showToast } = useToast();
 
@@ -73,7 +75,8 @@ export const AppointmentsPage: React.FC = () => {
                 <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ml-2">
                   <button
                     onClick={() => toggleStatus(appointment)}
-                    className="flex-shrink-0 text-stone-400 hover:text-emerald-600 transition-colors"
+                    disabled={!canEdit}
+                    className="flex-shrink-0 min-h-[44px] min-w-[44px] text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isDone ? (
                       <CheckCircle2 className="w-8 h-8 text-emerald-600" />
@@ -124,7 +127,8 @@ export const AppointmentsPage: React.FC = () => {
                 <div className="flex items-center gap-2 sm:self-start justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => setAppointmentToDelete(appointment.id)}
-                    className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                    disabled={!canEdit}
+                    className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>

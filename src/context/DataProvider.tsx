@@ -12,6 +12,7 @@ import {
   type AppointmentsData,
   type AttachmentsIndexData,
 } from '../lib/drive';
+import { cacheGet, cacheSet, CACHE_KEYS } from '../lib/cache';
 
 const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
 const APPOINTMENTS_FILE_ID_KEY = 'famplan_drive_appointments_file_id';
@@ -39,28 +40,16 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const loadData = <T,>(key: string, defaultValue: T[]): T[] => {
-  const saved = localStorage.getItem(key);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      console.error(`Error parsing ${key} from localStorage`, e);
-      return defaultValue;
-    }
-  }
-  return defaultValue;
-};
-
-const saveData = (key: string, data: any) => {
-  localStorage.setItem(key, JSON.stringify(data));
+const loadFromCache = <T,>(cacheKey: string, defaultValue: T[]): T[] => {
+  const cached = cacheGet<T[]>(cacheKey);
+  return cached ?? defaultValue;
 };
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { isConnected } = useAuth();
-  const [people, setPeople] = useState<Person[]>(() => loadData('famplan_people', []));
-  const [appointments, setAppointments] = useState<Appointment[]>(() => loadData('famplan_appointments', []));
-  const [attachments, setAttachments] = useState<Attachment[]>(() => loadData('famplan_attachments', []));
+  const { isConnected, canEdit } = useAuth();
+  const [people, setPeople] = useState<Person[]>(() => loadFromCache(CACHE_KEYS.people, []));
+  const [appointments, setAppointments] = useState<Appointment[]>(() => loadFromCache(CACHE_KEYS.appointments, []));
+  const [attachments, setAttachments] = useState<Attachment[]>(() => loadFromCache(CACHE_KEYS.attachments_index, []));
   const peopleFileIdRef = useRef<string | null>(null);
   const appointmentsFileIdRef = useRef<string | null>(null);
   const indexFileIdRef = useRef<string | null>(null);
@@ -95,16 +84,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  // Update cache when data changes (cache is TTL-based, not persistent source)
   useEffect(() => {
-    saveData('famplan_people', people);
+    cacheSet(CACHE_KEYS.people, people);
   }, [people]);
 
   useEffect(() => {
-    saveData('famplan_appointments', appointments);
+    cacheSet(CACHE_KEYS.appointments, appointments);
   }, [appointments]);
 
   useEffect(() => {
-    saveData('famplan_attachments', attachments);
+    cacheSet(CACHE_KEYS.attachments_index, attachments);
   }, [attachments]);
 
   // Write to Drive when connected (debounced)
@@ -137,6 +127,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [isConnected, people, appointments, attachments]);
 
   const addPerson = (person: Omit<Person, 'id' | 'createdAt'>) => {
+    if (!canEdit) return;
     const newPerson: Person = {
       ...person,
       id: uuidv4(),
@@ -146,10 +137,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updatePerson = (id: string, data: Partial<Person>) => {
+    if (!canEdit) return;
     setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
   };
 
   const deletePerson = (id: string) => {
+    if (!canEdit) return;
     setPeople((prev) => prev.filter((p) => p.id !== id));
     setAppointments((prev) => prev.filter((a) => a.personId !== id));
     // Also delete attachments for those appointments
@@ -158,6 +151,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addAppointment = (appointment: Omit<Appointment, 'id' | 'createdAt'>): Appointment => {
+    if (!canEdit) return { ...appointment, id: '', createdAt: 0 } as Appointment;
     const reminders = appointment.reminders?.length
       ? appointment.reminders
       : [{ minutesBeforeStart: 15 }];
@@ -172,15 +166,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateAppointment = (id: string, data: Partial<Appointment>) => {
+    if (!canEdit) return;
     setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, ...data } : a)));
   };
 
   const deleteAppointment = (id: string) => {
+    if (!canEdit) return;
     setAppointments((prev) => prev.filter((a) => a.id !== id));
     setAttachments((prev) => prev.filter((a) => a.appointmentId !== id));
   };
 
   const addAttachment = (attachment: Omit<Attachment, 'id' | 'createdAt'>) => {
+    if (!canEdit) return;
     const newAttachment: Attachment = {
       ...attachment,
       id: uuidv4(),
@@ -190,10 +187,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteAttachment = (id: string) => {
+    if (!canEdit) return;
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
   const deleteAttachments = (ids: string[]) => {
+    if (!canEdit) return;
     setAttachments((prev) => prev.filter((a) => !ids.includes(a.id)));
   };
 

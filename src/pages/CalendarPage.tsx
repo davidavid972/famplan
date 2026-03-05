@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
+import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastProvider';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, MapPin, AlignLeft } from 'lucide-react';
@@ -17,6 +18,7 @@ function toMinutes(entry: ReminderEntry): number {
 
 export const CalendarPage: React.FC = () => {
   const { t, language, dir } = useI18n();
+  const { canEdit } = useAuth();
   const { appointments, people, addAppointment, attachments, addAttachment } = useData();
   const { showToast } = useToast();
 
@@ -62,6 +64,7 @@ export const CalendarPage: React.FC = () => {
   const remainingSlots = Math.max(0, MAX_DOCS - attachments.length);
 
   const handleOpenModal = (date: Date) => {
+    if (!canEdit) return;
     setSelectedDate(date);
     setNewAppt({
       title: '',
@@ -179,7 +182,8 @@ export const CalendarPage: React.FC = () => {
         </div>
         <button
           onClick={() => handleOpenModal(new Date())}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium"
+          disabled={!canEdit}
+          className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
         >
           <Plus className="w-5 h-5" />
           <span>{t('add_appointment')}</span>
@@ -243,10 +247,10 @@ export const CalendarPage: React.FC = () => {
             return (
               <div
                 key={day.toString()}
-                onClick={() => handleOpenModal(day)}
-                className={`min-h-[100px] p-2 border-b border-r border-stone-100 cursor-pointer hover:bg-stone-50 transition-colors relative ${
-                  !isCurrentMonth ? 'bg-stone-50/50 text-stone-400' : 'text-stone-900'
-                } ${dayIdx % 7 === 6 ? 'border-r-0' : ''}`}
+                onClick={() => canEdit && handleOpenModal(day)}
+                className={`min-h-[100px] p-2 border-b border-r border-stone-100 transition-colors relative ${
+                  canEdit ? 'cursor-pointer hover:bg-stone-50' : 'cursor-default'
+                } ${!isCurrentMonth ? 'bg-stone-50/50 text-stone-400' : 'text-stone-900'} ${dayIdx % 7 === 6 ? 'border-r-0' : ''}`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span

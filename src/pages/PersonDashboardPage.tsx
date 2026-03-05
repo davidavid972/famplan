@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
+import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastProvider';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, FileText, Upload, Trash2, CheckCircle2, Circle, MapPin, AlignLeft } from 'lucide-react';
@@ -13,6 +14,7 @@ export const PersonDashboardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t, language, dir } = useI18n();
+  const { canEdit } = useAuth();
   const { people, appointments, attachments, updateAppointment, deleteAppointment, addAttachment, deleteAttachment, deleteAttachments } = useData();
   const { showToast } = useToast();
 
@@ -171,7 +173,8 @@ export const PersonDashboardPage: React.FC = () => {
               <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ml-2">
                 <button
                   onClick={() => toggleStatus(appointment.id, appointment.status)}
-                  className="flex-shrink-0 text-stone-400 hover:text-emerald-600 transition-colors"
+                  disabled={!canEdit}
+                  className="flex-shrink-0 min-h-[44px] min-w-[44px] text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isDone ? (
                     <CheckCircle2 className="w-8 h-8 text-emerald-600" />
@@ -214,7 +217,8 @@ export const PersonDashboardPage: React.FC = () => {
               <div className="flex items-center gap-2 sm:self-start justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => setAppointmentToDelete(appointment.id)}
-                  className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                  disabled={!canEdit}
+                  className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
@@ -290,36 +294,36 @@ export const PersonDashboardPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-stone-500">{t('docs_counter').replace('{used}', String(attachments.length))}</span>
-                {personAttachments.length >= 20 ? (
+                {canEdit && personAttachments.length >= 20 ? (
                   <span className="text-sm text-amber-600">{t('documents_limit_reached')}</span>
-                ) : (
+                ) : canEdit ? (
                   <>
-                    <label className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium cursor-pointer">
+                    <label className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium cursor-pointer">
                       <Upload className="w-5 h-5" />
                       <span>{t('upload_files')}</span>
                       <input type="file" multiple className="hidden" onChange={handleFileUpload} />
                     </label>
-                    <label className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-stone-700 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors shadow-sm font-medium cursor-pointer">
+                    <label className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white text-stone-700 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors shadow-sm font-medium cursor-pointer">
                       <FileText className="w-5 h-5" />
                       <span>{t('camera_capture')}</span>
                       <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
                     </label>
                   </>
-                )}
+                ) : null}
               </div>
 
-              {personAttachments.length > 0 && (
+              {personAttachments.length > 0 && canEdit && (
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                   <button
                     onClick={toggleSelectAll}
-                    className="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
+                    className="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors min-h-[44px] flex items-center"
                   >
                     {selectedDocuments.size === personAttachments.length ? t('cancel') : t('select_all')}
                   </button>
                   {selectedDocuments.size > 0 && (
                     <button
                       onClick={() => setIsBulkDeleteModalOpen(true)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                      className="flex items-center gap-1 px-3 py-1.5 min-h-[44px] bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
                     >
                       <Trash2 className="w-4 h-4" />
                       <span>{t('delete_selected')} ({selectedDocuments.size})</span>
@@ -342,10 +346,10 @@ export const PersonDashboardPage: React.FC = () => {
                 {personAttachments.map((doc) => (
                   <div
                     key={doc.id}
-                    className={`flex items-start gap-3 p-4 bg-white rounded-2xl border transition-all cursor-pointer ${
-                      selectedDocuments.has(doc.id) ? 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50/30' : 'border-stone-200 hover:border-stone-300'
-                    }`}
-                    onClick={() => toggleDocumentSelection(doc.id)}
+                    className={`flex items-start gap-3 p-4 bg-white rounded-2xl border transition-all ${
+                      canEdit ? 'cursor-pointer' : 'cursor-default'
+                    } ${selectedDocuments.has(doc.id) ? 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50/30' : 'border-stone-200 hover:border-stone-300'}`}
+                    onClick={() => canEdit && toggleDocumentSelection(doc.id)}
                   >
                     <div className="flex-shrink-0 pt-1">
                       <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
@@ -362,9 +366,10 @@ export const PersonDashboardPage: React.FC = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setDocumentToDelete(doc.id);
+                            if (canEdit) setDocumentToDelete(doc.id);
                           }}
-                          className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors flex-shrink-0"
+                          disabled={!canEdit}
+                          className="p-1 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
+import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastProvider';
 import { Plus, Edit2, Trash2, User, ChevronLeft, ChevronRight, Users } from 'lucide-react';
@@ -15,6 +16,7 @@ const COLORS = [
 
 export const PeoplePage: React.FC = () => {
   const { t, dir } = useI18n();
+  const { canEdit } = useAuth();
   const { people, addPerson, updatePerson, deletePerson } = useData();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -75,7 +77,8 @@ export const PeoplePage: React.FC = () => {
         <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('people')}</h1>
         <button
           onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium"
+          disabled={!canEdit}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600 min-h-[44px]"
         >
           <Plus className="w-5 h-5" />
           <span className="hidden sm:inline">{t('add_person')}</span>
@@ -91,7 +94,8 @@ export const PeoplePage: React.FC = () => {
           <p className="text-stone-500 mb-6 max-w-sm">{t('add_first_person')}</p>
           <button
             onClick={() => handleOpenModal()}
-            className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-medium shadow-sm"
+            disabled={!canEdit}
+            className="px-6 py-3 min-h-[44px] bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
           >
             {t('add_person')}
           </button>
@@ -123,13 +127,15 @@ export const PeoplePage: React.FC = () => {
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleOpenModal(person)}
-                    className="p-2 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors"
+                    disabled={!canEdit}
+                    className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setPersonToDelete(person.id)}
-                    className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                    disabled={!canEdit}
+                    className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

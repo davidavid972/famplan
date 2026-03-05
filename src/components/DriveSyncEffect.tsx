@@ -15,6 +15,7 @@ import {
   driveWriteJson,
   type FamilyData,
 } from '../lib/drive';
+import { cacheSet, CACHE_KEYS } from '../lib/cache';
 
 const FILE_ID_KEY = 'famplan_drive_family_file_id';
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
@@ -53,6 +54,7 @@ export function DriveSyncEffect() {
         localStorage.setItem('famplan_family_id', data.familyId);
         setFamilyDisplayName(data.familyDisplayName || '');
         setFamilyPhoto(data.familyPhoto ?? null);
+        cacheSet(CACHE_KEYS.family, { familyDisplayName: data.familyDisplayName || '', familyPhoto: data.familyPhoto ?? null });
         localStorage.setItem(SYNC_STATUS_KEY, 'Success');
         window.dispatchEvent(new CustomEvent('famplan-drive-sync-done'));
       } catch (e) {

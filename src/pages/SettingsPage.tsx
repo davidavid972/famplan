@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useFamily } from '../context/FamilyProvider';
+import { useToast } from '../context/ToastProvider';
+import { cacheClear } from '../lib/cache';
 import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil } from 'lucide-react';
 
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
@@ -14,7 +16,8 @@ const SYNC_INDEX_KEY = 'famplan_drive_sync_index';
 
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
-  const { isConnected, email, connect, disconnect, connectError, clearConnectError } = useAuth();
+  const { isConnected, canEdit, email, connect, disconnect, connectError, clearConnectError } = useAuth();
+  const { showToast } = useToast();
   const { familyDisplayName, familyPhoto, setFamilyDisplayName, setFamilyPhoto } = useFamily();
   const [isConnecting, setIsConnecting] = useState(false);
   const [driveDebug, setDriveDebug] = useState({ rootFolderId: '', dataFolderId: '', familyFileId: '', syncStatus: '' });
@@ -50,10 +53,10 @@ export const SettingsPage: React.FC = () => {
   }, [isConnected]);
 
   useEffect(() => {
-    if (!isConnected && isFamilyEditMode) {
+    if (!canEdit && isFamilyEditMode) {
       setIsFamilyEditMode(false);
     }
-  }, [isConnected, isFamilyEditMode]);
+  }, [canEdit, isFamilyEditMode]);
 
   const handleConnect = async () => {
     setIsConnecting(true);
@@ -151,7 +154,7 @@ export const SettingsPage: React.FC = () => {
           <div className="w-full pt-4">
             <h3 className="text-sm font-medium text-stone-700 mb-3">{t('family_profile_title')}</h3>
             <div className="w-full p-4 sm:p-5 bg-stone-100 rounded-2xl border border-stone-200 space-y-4">
-              {isFamilyEditMode && isConnected ? (
+              {isFamilyEditMode && canEdit ? (
                 /* Edit mode */
                 <>
                   <input
@@ -230,7 +233,7 @@ export const SettingsPage: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    {isConnected && (
+                    {canEdit && (
                       <button
                         onClick={startFamilyEdit}
                         className="w-full sm:w-auto min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2 active:bg-stone-100"
@@ -240,7 +243,7 @@ export const SettingsPage: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  {!isConnected && (
+                  {!canEdit && (
                     <p className="text-sm text-stone-500">{t('family_connect_to_edit')}</p>
                   )}
                 </>
@@ -278,6 +281,20 @@ export const SettingsPage: React.FC = () => {
                 {isConnected ? t('auth_connected') : t('auth_not_connected')}
               </p>
             </div>
+          </div>
+
+          {/* Clear cache */}
+          <div className="w-full pt-4 border-t border-stone-200">
+            <button
+              onClick={() => {
+                cacheClear();
+                showToast(t('cache_cleared'), 'success');
+                window.location.reload();
+              }}
+              className="min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 active:bg-stone-100"
+            >
+              {t('clear_cache')}
+            </button>
           </div>
 
           {/* Sync status (temporary) */}

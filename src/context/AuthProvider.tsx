@@ -8,6 +8,8 @@ interface AuthContextType {
   disconnect: () => void;
   connectError: string | null;
   clearConnectError: () => void;
+  /** Can edit when online AND connected to Google */
+  canEdit: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +18,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isConnected, setIsConnected] = useState(googleAuth.isConnected);
   const [email, setEmailState] = useState(googleAuth.getStoredEmail() || '');
   const [connectError, setConnectError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
   const connect = async () => {
     setConnectError(null);
@@ -48,8 +51,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     check();
   }, []);
 
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+
+  const canEdit = isConnected && isOnline;
+
   return (
-    <AuthContext.Provider value={{ isConnected, email, connect, disconnect, connectError, clearConnectError }}>
+    <AuthContext.Provider value={{ isConnected, email, connect, disconnect, connectError, clearConnectError, canEdit }}>
       {children}
     </AuthContext.Provider>
   );

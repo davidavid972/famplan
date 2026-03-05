@@ -57,7 +57,6 @@ export const translations = {
     documents_limit_reached: 'הגעת למגבלה של 20 מסמכים בתכנית החינמית. מחק מסמכים או שדרג.',
     select_all: 'בחר הכל',
     delete_selected: 'מחק נבחרים',
-    clear_cache: 'נקה מטמון מקומי',
     error_boundary_title: 'אופס! משהו השתבש.',
     error_boundary_desc: 'אנו מתנצלים על אי הנוחות. אנא נסה לרענן את הדף או לנקות את המטמון המקומי.',
     refresh_page: 'רענן דף',
@@ -130,6 +129,9 @@ export const translations = {
     sync_people: 'אנשים',
     sync_appointments: 'תכניות',
     sync_index: 'מסמכים',
+    offline_banner: 'אין חיבור לאינטרנט. אפשר לצפות בנתונים, אבל כדי לערוך/להוסיף צריך להתחבר.',
+    clear_cache: 'נקה מטמון',
+    cache_cleared: 'המטמון נוקה',
   },
   en: {
     app_name: 'FamPlan',
@@ -189,7 +191,6 @@ export const translations = {
     documents_limit_reached: 'You reached the free limit of 20 documents. Delete some or upgrade.',
     select_all: 'Select All',
     delete_selected: 'Delete Selected',
-    clear_cache: 'Clear local cache',
     error_boundary_title: 'Oops! Something went wrong.',
     error_boundary_desc: 'We apologize for the inconvenience. Please try refreshing the page or clearing the local cache.',
     refresh_page: 'Refresh Page',
@@ -262,6 +263,9 @@ export const translations = {
     sync_people: 'People',
     sync_appointments: 'Plans',
     sync_index: 'Documents',
+    offline_banner: 'No internet connection. You can view data, but editing requires being online.',
+    clear_cache: 'Clear cache',
+    cache_cleared: 'Cache cleared',
   }
 };
 

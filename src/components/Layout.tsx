@@ -2,12 +2,15 @@ import React from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { useFamily } from '../context/FamilyProvider';
+import { useAuth } from '../context/AuthProvider';
+import { OfflineBanner } from './OfflineBanner';
 import { Calendar, Users, List, Settings, Globe } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 export const Layout: React.FC = () => {
   const { t, language, setLanguage, dir } = useI18n();
   const { familyDisplayName, familyPhoto } = useFamily();
+  const { canEdit } = useAuth();
   const location = useLocation();
 
   const titlePart = familyDisplayName.trim()
@@ -64,6 +67,8 @@ export const Layout: React.FC = () => {
           <span>{language === 'he' ? t('lang_en') : t('lang_he')}</span>
         </button>
       </header>
+
+      <OfflineBanner visible={!canEdit} />
 
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between gap-2 px-4 py-4 bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">

@@ -14,6 +14,8 @@ import {
   driveLoadAppointments,
   driveLoadAttachmentsIndex,
 } from '../lib/drive';
+import { cacheGet, cacheSet, CACHE_KEYS } from '../lib/cache';
+import type { Person, Appointment, Attachment } from '../types/models';
 
 const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
 const APPOINTMENTS_FILE_ID_KEY = 'famplan_drive_appointments_file_id';
@@ -42,6 +44,18 @@ export function DriveDataSyncEffect() {
 
     async function loadFromDrive() {
       try {
+        // Show cache immediately for fast UI
+        const cachedPeople = cacheGet<Person[]>(CACHE_KEYS.people);
+        const cachedAppointments = cacheGet<Appointment[]>(CACHE_KEYS.appointments);
+        const cachedIndex = cacheGet<Attachment[]>(CACHE_KEYS.attachments_index);
+        if (cachedPeople || cachedAppointments || cachedIndex) {
+          syncFromDrive({
+            people: cachedPeople ?? [],
+            appointments: cachedAppointments ?? [],
+            attachments: cachedIndex ?? [],
+          });
+        }
+
         const { dataFolderId } = await driveEnsureFamPlanStructure();
         if (cancelled) return;
 
