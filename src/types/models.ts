@@ -3,6 +3,8 @@ export interface Person {
   name: string;
   color: string;
   createdAt: number;
+  /** Drive file id for person photo (stored in FamPlan/people_photos/) */
+  photoFileId?: string | null;
 }
 
 export type AppointmentStatus = 'PLANNED' | 'DONE';

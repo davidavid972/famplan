@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useFamily } from '../context/FamilyProvider';
+import { PersonAvatar } from './PersonAvatar';
 import { ChevronDown, Users } from 'lucide-react';
 import type { Person } from '../types/models';
 
@@ -86,10 +87,7 @@ export const PlansFilterBar: React.FC<PlansFilterBarProps> = ({ people }) => {
                     className="w-5 h-5 rounded border-stone-300 text-stone-600 focus:ring-2 focus:ring-offset-0 cursor-pointer"
                     style={{ accentColor: selectionColor }}
                   />
-                  <span
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: person.color }}
-                  />
+                  <PersonAvatar person={person} size="sm" />
                   <span className="text-stone-900 font-medium">{person.name}</span>
                 </label>
               );

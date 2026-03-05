@@ -6,6 +6,7 @@ import { useData } from '../context/DataProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { PlanModal } from '../components/PlanModal';
 import { useToast } from '../context/ToastProvider';
+import { PersonAvatar } from '../components/PersonAvatar';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, FileText, Upload, Trash2, CheckCircle2, Circle, MapPin, AlignLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { he, enUS } from 'date-fns/locale';
@@ -271,12 +272,7 @@ export const PersonDashboardPage: React.FC = () => {
           {dir === 'rtl' ? <ChevronRight className="w-6 h-6" /> : <ChevronLeft className="w-6 h-6" />}
         </button>
         <div className="flex items-center gap-4">
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-sm"
-            style={{ backgroundColor: person.color }}
-          >
-            {person.name.charAt(0).toUpperCase()}
-          </div>
+          <PersonAvatar person={person} size="lg" />
           <h1 className="text-3xl font-bold tracking-tight text-stone-900">{person.name}</h1>
         </div>
       </div>

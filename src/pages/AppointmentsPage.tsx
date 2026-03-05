@@ -6,6 +6,7 @@ import { useFamily } from '../context/FamilyProvider';
 import { useToast } from '../context/ToastProvider';
 import { PlanModal } from '../components/PlanModal';
 import { PlansFilterBar } from '../components/PlansFilterBar';
+import { PersonAvatar } from '../components/PersonAvatar';
 import { Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle, Trash2, X, Square, CheckSquare } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Appointment, AppointmentStatus } from '../types/models';
@@ -228,6 +229,7 @@ export const AppointmentsPage: React.FC = () => {
 
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
+                      <PersonAvatar person={person} size="sm" />
                       <span
                         className="px-2 py-0.5 rounded-full text-xs font-medium text-white"
                         style={{ backgroundColor: person.color }}

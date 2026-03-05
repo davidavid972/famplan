@@ -3,7 +3,9 @@ import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastProvider';
-import { Plus, Edit2, Trash2, User, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { PersonAvatar } from '../components/PersonAvatar';
+import { driveUploadPersonPhoto } from '../lib/drive';
+import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Person } from '../types/models';
 import { useNavigate } from 'react-router-dom';
@@ -14,9 +16,11 @@ const COLORS = [
   '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
 ];
 
+const PEOPLE_PHOTOS_FOLDER_KEY = 'famplan_drive_people_photos_folder_id';
+
 export const PeoplePage: React.FC = () => {
   const { t, dir } = useI18n();
-  const { canEdit } = useAuth();
+  const { canEdit, isConnected } = useAuth();
   const { people, addPerson, updatePerson, deletePerson } = useData();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -25,6 +29,8 @@ export const PeoplePage: React.FC = () => {
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [name, setName] = useState('');
   const [color, setColor] = useState(COLORS[0]);
+  const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
   const [personToDelete, setPersonToDelete] = useState<string | null>(null);
 
   const handleOpenModal = (person?: Person) => {
@@ -41,6 +47,8 @@ export const PeoplePage: React.FC = () => {
       setName('');
       setColor(COLORS[Math.floor(Math.random() * COLORS.length)]);
     }
+    setPendingPhotoFile(null);
+    setRemovePhoto(false);
     setIsModalOpen(true);
   };
 
@@ -48,16 +56,41 @@ export const PeoplePage: React.FC = () => {
     setIsModalOpen(false);
     setEditingPerson(null);
     setName('');
+    setPendingPhotoFile(null);
+    setRemovePhoto(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) return;
 
     if (editingPerson) {
-      updatePerson(editingPerson.id, { name, color });
+      let photoFileId: string | null | undefined = removePhoto ? null : editingPerson.photoFileId;
+      if (pendingPhotoFile && isConnected && canEdit) {
+        try {
+          const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
+          if (folderId) {
+            photoFileId = await driveUploadPersonPhoto(pendingPhotoFile, editingPerson.id, folderId);
+          }
+        } catch (e) {
+          console.warn('Person photo upload failed:', e);
+          showToast(t('person_updated'), 'success');
+        }
+      }
+      updatePerson(editingPerson.id, { name, color, photoFileId: photoFileId ?? undefined });
       showToast(t('person_updated'), 'success');
     } else {
-      addPerson({ name, color });
+      const added = addPerson({ name, color });
+      if (pendingPhotoFile && isConnected && canEdit) {
+        try {
+          const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
+          if (folderId) {
+            const photoFileId = await driveUploadPersonPhoto(pendingPhotoFile, added.id, folderId);
+            updatePerson(added.id, { photoFileId });
+          }
+        } catch (e) {
+          console.warn('Person photo upload failed:', e);
+        }
+      }
       showToast(t('person_added'), 'success');
     }
     handleCloseModal();
@@ -114,12 +147,7 @@ export const PeoplePage: React.FC = () => {
               />
               <div className="flex items-start justify-between mt-2">
                 <div className="flex items-center gap-4">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-sm"
-                    style={{ backgroundColor: person.color }}
-                  >
-                    {person.name.charAt(0).toUpperCase()}
-                  </div>
+                      <PersonAvatar person={person} size="md" />
                   <div>
                     <h3 className="text-lg font-semibold text-stone-900">{person.name}</h3>
                   </div>
@@ -159,6 +187,54 @@ export const PeoplePage: React.FC = () => {
               </h2>
             </div>
             <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">
+                  {t('person_photo_label')}
+                </label>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-stone-100">
+                    {pendingPhotoFile ? (
+                      <img src={URL.createObjectURL(pendingPhotoFile)} alt="" className="w-full h-full object-cover" />
+                    ) : editingPerson && !removePhoto ? (
+                      <PersonAvatar person={editingPerson} size="lg" />
+                    ) : (
+                      <span className="text-2xl font-bold text-stone-400">?</span>
+                    )}
+                  </div>
+                  {canEdit && isConnected ? (
+                    <label className="flex-1 min-h-[44px] flex items-center justify-center px-4 py-3 rounded-xl border border-stone-200 bg-white text-sm text-stone-600 hover:bg-stone-50 cursor-pointer font-medium">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) {
+                            setPendingPhotoFile(f);
+                            setRemovePhoto(false);
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                      {pendingPhotoFile || (editingPerson?.photoFileId && !removePhoto) ? t('person_photo_change') : t('person_photo_upload')}
+                    </label>
+                  ) : (
+                    <p className="text-sm text-stone-500">{t('person_photo_connect_required')}</p>
+                  )}
+                  {(pendingPhotoFile || (editingPerson?.photoFileId && !removePhoto)) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPendingPhotoFile(null);
+                        setRemovePhoto(!!editingPerson?.photoFileId);
+                      }}
+                      className="min-h-[44px] px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl font-medium"
+                    >
+                      {t('delete')}
+                    </button>
+                  )}
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
                   {t('name')}

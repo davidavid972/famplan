@@ -21,6 +21,7 @@ const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
 const APPOINTMENTS_FILE_ID_KEY = 'famplan_drive_appointments_file_id';
 const ATTACHMENTS_INDEX_FILE_ID_KEY = 'famplan_drive_attachments_index_file_id';
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
+const PEOPLE_PHOTOS_FOLDER_KEY = 'famplan_drive_people_photos_folder_id';
 const SYNC_PEOPLE_KEY = 'famplan_drive_sync_people';
 const SYNC_APPOINTMENTS_KEY = 'famplan_drive_sync_appointments';
 const SYNC_INDEX_KEY = 'famplan_drive_sync_index';
@@ -68,9 +69,10 @@ export function DriveDataSyncEffect() {
         }
 
         const cachedRoot = localStorage.getItem(ROOT_FOLDER_KEY);
-        const { rootFolderId, dataFolderId } = await driveEnsureFamPlanStructure(cachedRoot);
+        const { rootFolderId, dataFolderId, peoplePhotosFolderId } = await driveEnsureFamPlanStructure(cachedRoot);
         if (cancelled) return;
         localStorage.setItem(ROOT_FOLDER_KEY, rootFolderId);
+        localStorage.setItem(PEOPLE_PHOTOS_FOLDER_KEY, peoplePhotosFolderId);
 
         const cachedPeopleId = localStorage.getItem(PEOPLE_FILE_ID_KEY);
         const cachedAppointmentsId = localStorage.getItem(APPOINTMENTS_FILE_ID_KEY);

@@ -14,6 +14,7 @@ const JSON_MIME = 'application/json';
 const FAMPLAN_ROOT = 'FamPlan';
 const DATA_FOLDER = 'data';
 const ATTACHMENTS_FOLDER = 'attachments';
+const PEOPLE_PHOTOS_FOLDER = 'people_photos';
 const FAMILY_FILE = 'family.json';
 const PEOPLE_FILE = 'people.json';
 const APPOINTMENTS_FILE = 'appointments.json';
@@ -149,11 +150,62 @@ export async function driveWriteJson<T extends object>(
   return data.id;
 }
 
+const PERSON_PHOTO_URL_CACHE = new Map<string, string>();
+
+/**
+ * Upload a person photo to FamPlan/people_photos/.
+ * @returns Drive file id
+ */
+export async function driveUploadPersonPhoto(
+  file: File,
+  personId: string,
+  peoplePhotosFolderId: string
+): Promise<string> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const mime = file.type || (ext === 'png' ? 'image/png' : 'image/jpeg');
+  const fileName = `${personId}.${ext}`;
+
+  const metadata = {
+    name: fileName,
+    mimeType: mime,
+    parents: [peoplePhotosFolderId],
+  };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', file);
+
+  const res = await fetch(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id`, {
+    method: 'POST',
+    headers: getAuthHeader(),
+    body: form,
+  });
+  if (!res.ok) throw new Error(`Failed to upload person photo: ${res.status}`);
+  const data = await res.json();
+  return data.id;
+}
+
+/**
+ * Get a displayable URL for a person photo (fetches from Drive, caches blob URL).
+ */
+export async function driveGetPersonPhotoUrl(fileId: string): Promise<string> {
+  const cached = PERSON_PHOTO_URL_CACHE.get(fileId);
+  if (cached) return cached;
+
+  const res = await fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error(`Failed to load person photo: ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  PERSON_PHOTO_URL_CACHE.set(fileId, url);
+  return url;
+}
+
 /** People.json schema */
 export interface PeopleData {
   version: number;
   updatedAt: string;
-  people: Array<{ id: string; name: string; color: string; createdAt: number }>;
+  people: Array<{ id: string; name: string; color: string; createdAt: number; photoFileId?: string | null }>;
 }
 
 /** Appointments.json schema */
@@ -381,11 +433,12 @@ export async function driveResolveFamPlanFolder(cachedRootFolderId?: string | nu
  * Ensure FamPlan folder structure and return folder ids.
  * Resolves root: shared first, then own, then create. Uses cache when valid.
  */
-export async function driveEnsureFamPlanStructure(cachedRootFolderId?: string | null): Promise<{ rootFolderId: string; dataFolderId: string; attachmentsFolderId: string }> {
+export async function driveEnsureFamPlanStructure(cachedRootFolderId?: string | null): Promise<{ rootFolderId: string; dataFolderId: string; attachmentsFolderId: string; peoplePhotosFolderId: string }> {
   const rootFolderId = await driveResolveFamPlanFolder(cachedRootFolderId);
   const dataFolderId = await driveEnsureFolder(DATA_FOLDER, rootFolderId);
   const attachmentsFolderId = await driveEnsureFolder(ATTACHMENTS_FOLDER, rootFolderId);
-  return { rootFolderId, dataFolderId, attachmentsFolderId };
+  const peoplePhotosFolderId = await driveEnsureFolder(PEOPLE_PHOTOS_FOLDER, rootFolderId);
+  return { rootFolderId, dataFolderId, attachmentsFolderId, peoplePhotosFolderId };
 }
 
 /**

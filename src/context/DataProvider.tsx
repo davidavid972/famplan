@@ -33,7 +33,7 @@ interface DataContextType {
   people: Person[];
   appointments: Appointment[];
   attachments: Attachment[];
-  addPerson: (person: Omit<Person, 'id' | 'createdAt'>) => void;
+  addPerson: (person: Omit<Person, 'id' | 'createdAt'>) => Person;
   updatePerson: (id: string, person: Partial<Person>) => void;
   deletePerson: (id: string) => void;
   addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => Promise<Appointment>;
@@ -134,14 +134,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => clearTimeout(t);
   }, [isConnected, people, appointments, attachments]);
 
-  const addPerson = (person: Omit<Person, 'id' | 'createdAt'>) => {
-    if (!canEdit) return;
+  const addPerson = (person: Omit<Person, 'id' | 'createdAt'>): Person => {
     const newPerson: Person = {
       ...person,
       id: uuidv4(),
       createdAt: Date.now(),
     };
-    setPeople((prev) => [...prev, newPerson]);
+    if (canEdit) {
+      setPeople((prev) => [...prev, newPerson]);
+    }
+    return newPerson;
   };
 
   const updatePerson = (id: string, data: Partial<Person>) => {
