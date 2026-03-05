@@ -171,6 +171,7 @@ export const translations = {
     cal_ready: 'יומן FamPlan מוכן',
     cal_detected_created: 'יומן FamPlan זוהה/נוצר',
     cal_permission_error: 'אין הרשאה ליומן Google. התנתק/התחבר מחדש ואשר הרשאות ליומן.',
+    saved_to_google_calendar: 'נשמר ביומן Google',
   },
   en: {
     app_name: 'FamPlan',
@@ -344,6 +345,7 @@ export const translations = {
     cal_ready: 'FamPlan calendar ready',
     cal_detected_created: 'FamPlan calendar detected/created',
     cal_permission_error: 'No Google Calendar permission. Disconnect and reconnect, then approve Calendar access.',
+    saved_to_google_calendar: 'Saved to Google Calendar',
   }
 };
 

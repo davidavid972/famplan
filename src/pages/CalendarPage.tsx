@@ -78,9 +78,9 @@ export const CalendarPage: React.FC = () => {
   };
   const removePendingDoc = (idx: number) => setPendingDocs((prev) => prev.filter((_, i) => i !== idx));
 
-  const handleSave = (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
+  const handleSave = async (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
     if (modalMode === 'edit' && editingAppointment) {
-      updateAppointment(editingAppointment.id, {
+      await updateAppointment(editingAppointment.id, {
         title: data.title,
         personId: data.personId,
         start: data.start,
@@ -89,9 +89,9 @@ export const CalendarPage: React.FC = () => {
         notes: data.notes,
         reminders: data.reminders,
       });
-      showToast(t('appointment_updated'), 'success');
+      showToast(t('saved_to_google_calendar'), 'success');
     } else {
-      const newAppointment = addAppointment({
+      const newAppointment = await addAppointment({
         title: data.title,
         personId: data.personId,
         start: data.start,
@@ -110,12 +110,13 @@ export const CalendarPage: React.FC = () => {
           uploaderId: 'local',
         });
       });
-      showToast(t('appointment_added'), 'success');
+      showToast(t('saved_to_google_calendar'), 'success');
+      return { calendarEventId: newAppointment.calendarEventId };
     }
   };
 
-  const handleDelete = (id: string) => {
-    deleteAppointment(id);
+  const handleDelete = async (id: string) => {
+    await deleteAppointment(id);
     showToast(t('appointment_deleted'), 'success');
   };
 

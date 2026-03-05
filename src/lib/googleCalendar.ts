@@ -146,6 +146,80 @@ export function getCalendarId(): string | null {
 }
 
 /**
+ * Get or ensure calendar ID. If not in localStorage, ensures and stores.
+ */
+export async function getOrEnsureCalendarId(storedFromFamily?: string | null): Promise<string | null> {
+  const cached = getCalendarId();
+  if (cached) return cached;
+  try {
+    const { calendarId } = await ensureFamPlanCalendar(storedFromFamily ?? null);
+    localStorage.setItem('famplan_calendar_id', calendarId);
+    return calendarId;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build Calendar API event from appointment.
+ */
+function appointmentToEvent(appointment: {
+  title: string;
+  start: number;
+  end: number;
+  location?: string;
+  notes?: string;
+  reminders?: { minutesBeforeStart: number }[];
+}): {
+  summary: string;
+  description?: string;
+  location?: string;
+  start: { dateTime: string; timeZone: string };
+  end: { dateTime: string; timeZone: string };
+  reminders?: { overrides: { method: string; minutes: number }[] };
+} {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const startDt = new Date(appointment.start).toISOString();
+  const endDt = new Date(appointment.end).toISOString();
+  const overrides = (appointment.reminders ?? [{ minutesBeforeStart: 15 }]).map((r) => ({
+    method: 'popup' as const,
+    minutes: r.minutesBeforeStart,
+  }));
+  return {
+    summary: appointment.title,
+    description: appointment.notes || undefined,
+    location: appointment.location || undefined,
+    start: { dateTime: startDt, timeZone: tz },
+    end: { dateTime: endDt, timeZone: tz },
+    reminders: { overrides },
+  };
+}
+
+/**
+ * Create or update calendar event for an appointment. Returns event id.
+ */
+export async function syncAppointmentToCalendar(
+  calendarId: string,
+  appointment: {
+    title: string;
+    start: number;
+    end: number;
+    location?: string;
+    notes?: string;
+    reminders?: { minutesBeforeStart: number }[];
+  },
+  existingEventId?: string | null
+): Promise<string> {
+  const eventPayload = appointmentToEvent(appointment);
+  if (existingEventId) {
+    await updateEvent(calendarId, existingEventId, eventPayload);
+    return existingEventId;
+  }
+  const { id } = await createEvent(calendarId, eventPayload);
+  return id;
+}
+
+/**
  * Delete an event.
  */
 export async function deleteEvent(calendarId: string, eventId: string): Promise<void> {

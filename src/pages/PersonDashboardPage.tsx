@@ -52,16 +52,16 @@ export const PersonDashboardPage: React.FC = () => {
   const personAppointmentIds = personAppointments.map(a => a.id);
   const personAttachments = attachments.filter(a => personAppointmentIds.includes(a.appointmentId));
 
-  const toggleStatus = (appointmentId: string, currentStatus: AppointmentStatus, e: React.MouseEvent) => {
+  const toggleStatus = async (appointmentId: string, currentStatus: AppointmentStatus, e: React.MouseEvent) => {
     e.stopPropagation();
     const newStatus: AppointmentStatus = currentStatus === 'PLANNED' ? 'DONE' : 'PLANNED';
-    updateAppointment(appointmentId, { status: newStatus });
+    await updateAppointment(appointmentId, { status: newStatus });
     showToast(t('appointment_updated'), 'success');
   };
 
-  const handleSaveFromModal = (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
+  const handleSaveFromModal = async (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
     if (editingAppointment) {
-      updateAppointment(editingAppointment.id, {
+      await updateAppointment(editingAppointment.id, {
         title: data.title,
         personId: data.personId,
         start: data.start,
@@ -70,20 +70,20 @@ export const PersonDashboardPage: React.FC = () => {
         notes: data.notes,
         reminders: data.reminders,
       });
-      showToast(t('appointment_updated'), 'success');
+      showToast(t('saved_to_google_calendar'), 'success');
     }
   };
 
-  const handleDeleteFromModal = (id: string) => {
-    deleteAppointment(id);
+  const handleDeleteFromModal = async (id: string) => {
+    await deleteAppointment(id);
     showToast(t('appointment_deleted'), 'success');
     setEditingAppointment(null);
   };
 
-  const handleDeleteAppointment = (e?: React.MouseEvent) => {
+  const handleDeleteAppointment = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (appointmentToDelete) {
-      deleteAppointment(appointmentToDelete);
+      await deleteAppointment(appointmentToDelete);
       showToast(t('appointment_deleted'), 'success');
       setAppointmentToDelete(null);
     }

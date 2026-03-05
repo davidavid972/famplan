@@ -166,6 +166,7 @@ export interface AppointmentsData {
     status: string;
     reminders?: { minutesBeforeStart: number }[];
     createdAt: number;
+    calendarEventId?: string;
   }>;
 }
 

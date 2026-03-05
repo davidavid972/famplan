@@ -30,17 +30,17 @@ export const AppointmentsPage: React.FC = () => {
     showToast(t('appointment_updated'), 'success');
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (appointmentToDelete) {
-      deleteAppointment(appointmentToDelete);
+      await deleteAppointment(appointmentToDelete);
       showToast(t('appointment_deleted'), 'success');
       setAppointmentToDelete(null);
     }
   };
 
-  const handleSaveFromModal = (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
+  const handleSaveFromModal = async (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
     if (editingAppointment) {
-      updateAppointment(editingAppointment.id, {
+      await updateAppointment(editingAppointment.id, {
         title: data.title,
         personId: data.personId,
         start: data.start,
@@ -49,12 +49,12 @@ export const AppointmentsPage: React.FC = () => {
         notes: data.notes,
         reminders: data.reminders,
       });
-      showToast(t('appointment_updated'), 'success');
+      showToast(t('saved_to_google_calendar'), 'success');
     }
   };
 
-  const handleDeleteFromModal = (id: string) => {
-    deleteAppointment(id);
+  const handleDeleteFromModal = async (id: string) => {
+    await deleteAppointment(id);
     showToast(t('appointment_deleted'), 'success');
     setEditingAppointment(null);
   };

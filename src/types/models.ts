@@ -22,6 +22,7 @@ export interface Appointment {
   status: AppointmentStatus;
   reminders?: Reminder[];
   createdAt: number;
+  calendarEventId?: string;
 }
 
 export interface Attachment {

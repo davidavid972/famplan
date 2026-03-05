@@ -12,6 +12,11 @@ import {
   type AppointmentsData,
   type AttachmentsIndexData,
 } from '../lib/drive';
+import {
+  getOrEnsureCalendarId,
+  syncAppointmentToCalendar,
+  deleteEvent,
+} from '../lib/googleCalendar';
 import { cacheGet, cacheSet, CACHE_KEYS } from '../lib/cache';
 
 const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
@@ -29,9 +34,9 @@ interface DataContextType {
   addPerson: (person: Omit<Person, 'id' | 'createdAt'>) => void;
   updatePerson: (id: string, person: Partial<Person>) => void;
   deletePerson: (id: string) => void;
-  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => Appointment;
-  updateAppointment: (id: string, appointment: Partial<Appointment>) => void;
-  deleteAppointment: (id: string) => void;
+  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => Promise<Appointment>;
+  updateAppointment: (id: string, appointment: Partial<Appointment>) => Promise<void>;
+  deleteAppointment: (id: string) => Promise<void>;
   addAttachment: (attachment: Omit<Attachment, 'id' | 'createdAt'>) => void;
   deleteAttachment: (id: string) => void;
   deleteAttachments: (ids: string[]) => void;
@@ -150,7 +155,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAttachments((prev) => prev.filter((a) => !appointmentsToDelete.includes(a.appointmentId)));
   };
 
-  const addAppointment = (appointment: Omit<Appointment, 'id' | 'createdAt'>): Appointment => {
+  const addAppointment = async (appointment: Omit<Appointment, 'id' | 'createdAt'>): Promise<Appointment> => {
     if (!canEdit) return { ...appointment, id: '', createdAt: 0 } as Appointment;
     const reminders = appointment.reminders?.length
       ? appointment.reminders
@@ -161,17 +166,49 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       id: uuidv4(),
       createdAt: Date.now(),
     };
+    try {
+      const calendarId = await getOrEnsureCalendarId(null);
+      if (calendarId) {
+        const eventId = await syncAppointmentToCalendar(calendarId, newAppointment, null);
+        newAppointment.calendarEventId = eventId;
+      }
+    } catch (e) {
+      console.warn('Calendar sync on add failed:', e);
+    }
     setAppointments((prev) => [...prev, newAppointment]);
     return newAppointment;
   };
 
-  const updateAppointment = (id: string, data: Partial<Appointment>) => {
+  const updateAppointment = async (id: string, data: Partial<Appointment>) => {
     if (!canEdit) return;
-    setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, ...data } : a)));
+    const prev = appointments.find((a) => a.id === id);
+    if (!prev) return;
+    const merged = { ...prev, ...data };
+    let calendarEventId = merged.calendarEventId ?? prev.calendarEventId;
+    try {
+      const calId = await getOrEnsureCalendarId(null);
+      if (calId) {
+        const eventId = await syncAppointmentToCalendar(calId, merged, calendarEventId);
+        if (!calendarEventId) calendarEventId = eventId;
+      }
+    } catch (e) {
+      console.warn('Calendar sync on update failed:', e);
+    }
+    const finalData = calendarEventId ? { ...data, calendarEventId } : data;
+    setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, ...finalData } : a)));
   };
 
-  const deleteAppointment = (id: string) => {
+  const deleteAppointment = async (id: string) => {
     if (!canEdit) return;
+    const prev = appointments.find((a) => a.id === id);
+    if (prev?.calendarEventId) {
+      try {
+        const calendarId = await getOrEnsureCalendarId(null);
+        if (calendarId) await deleteEvent(calendarId, prev.calendarEventId);
+      } catch (e) {
+        console.warn('Calendar sync on delete failed:', e);
+      }
+    }
     setAppointments((prev) => prev.filter((a) => a.id !== id));
     setAttachments((prev) => prev.filter((a) => a.appointmentId !== id));
   };

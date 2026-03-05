@@ -28,7 +28,7 @@ interface PlanModalProps {
     location: string;
     notes: string;
     reminders: Reminder[];
-  }) => void;
+  }) => void | Promise<void | { calendarEventId?: string }>;
   onDelete?: (id: string) => void;
   pendingDocs?: Array<{ name: string; type: string; size: number }>;
   onAddPendingDoc?: (file: File) => void;
@@ -69,6 +69,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   const [reminders, setReminders] = useState<ReminderEntry[]>([{ value: 15, unit: 'minutes' }]);
   const endManuallyEditedRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedCalendarEventId, setSavedCalendarEventId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -140,8 +141,9 @@ export const PlanModal: React.FC<PlanModalProps> = ({
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSaveError(null);
+    setSavedCalendarEventId(null);
     if (!title.trim() || !personId || !start || !end) {
       setSaveError(t('required_field'));
       return;
@@ -157,7 +159,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
     const remindersPayload: Reminder[] = unique.length > 0
       ? unique.map((m) => ({ minutesBeforeStart: m }))
       : [{ minutesBeforeStart: 15 }];
-    onSave({
+    const result = await onSave({
       title: title.trim(),
       personId,
       start: startMs,
@@ -166,7 +168,13 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       notes,
       reminders: remindersPayload,
     });
-    onClose();
+    const res = result as { calendarEventId?: string } | undefined;
+    if (res?.calendarEventId) {
+      setSavedCalendarEventId(res.calendarEventId);
+      setTimeout(() => onClose(), 800);
+    } else {
+      onClose();
+    }
   };
 
   const handleDelete = () => {
@@ -388,6 +396,11 @@ export const PlanModal: React.FC<PlanModalProps> = ({
               )}
             </div>
 
+            {savedCalendarEventId && (
+              <div className="px-6 py-2 text-xs text-stone-500 font-mono bg-stone-100 rounded-lg mx-6 mb-2">
+                calendarEventId: {savedCalendarEventId}
+              </div>
+            )}
             <div className="flex justify-between gap-3 p-6 bg-stone-50 border-t border-stone-100 sticky bottom-0 z-10">
               <div>
                 {mode === 'edit' && appointment && onDelete && canEdit && (
