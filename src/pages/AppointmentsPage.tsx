@@ -27,7 +27,18 @@ export const AppointmentsPage: React.FC = () => {
 
   const dateLocale = language === 'he' ? he : enUS;
 
-  const getPerson = (id: string) => people.find((p) => p.id === id);
+  const safeFormat = (ts: number | undefined, fmt: string) => {
+    const val = ts ?? 0;
+    const d = new Date(val);
+    if (Number.isNaN(d.getTime())) return '—';
+    try {
+      return format(d, fmt, { locale: dateLocale });
+    } catch {
+      return '—';
+    }
+  };
+
+  const getPerson = (id: string) => people.find((p) => p && p.id === id);
 
   const toggleStatus = (appointment: Appointment, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -117,7 +128,7 @@ export const AppointmentsPage: React.FC = () => {
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">{t('appointments')}</h1>
       </div>
 
-      <PlansFilterBar people={people} />
+      <PlansFilterBar people={Array.isArray(people) ? people.filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string') : []} />
 
       {selectedIds.size > 0 && (
         <div
@@ -220,8 +231,7 @@ export const AppointmentsPage: React.FC = () => {
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="w-4 h-4" />
                         <span>
-                          {format(appointment.start ?? 0, 'PPp', { locale: dateLocale })} -{' '}
-                          {format(appointment.end ?? 0, 'p', { locale: dateLocale })}
+                          {safeFormat(appointment.start, 'PPp')} - {safeFormat(appointment.end, 'p')}
                         </span>
                       </div>
                       

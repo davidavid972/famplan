@@ -52,9 +52,9 @@ export const PersonAvatar: React.FC<PersonAvatarProps> = ({ person, size = 'md',
   return (
     <div
       className={`${sizeClass} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${className}`}
-      style={{ backgroundColor: person.color }}
+      style={{ backgroundColor: person.color || '#94a3b8' }}
     >
-      {person.name.charAt(0).toUpperCase()}
+      {((person.name && String(person.name).charAt(0)) || '?').toUpperCase()}
     </div>
   );
 };
