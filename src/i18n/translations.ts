@@ -171,6 +171,7 @@ export const translations = {
     cal_ready: 'יומן FamPlan מוכן',
     cal_detected_created: 'יומן FamPlan זוהה/נוצר',
     cal_permission_error: 'אין הרשאה ליומן Google. התנתק/התחבר מחדש ואשר הרשאות ליומן.',
+    cal_api_key_required: 'הוסף VITE_GOOGLE_API_KEY ל-.env (צור API Key ב-Google Cloud Console)',
     saved_to_google_calendar: 'נשמר ביומן Google',
   },
   en: {
@@ -345,6 +346,7 @@ export const translations = {
     cal_ready: 'FamPlan calendar ready',
     cal_detected_created: 'FamPlan calendar detected/created',
     cal_permission_error: 'No Google Calendar permission. Disconnect and reconnect, then approve Calendar access.',
+    cal_api_key_required: 'Add VITE_GOOGLE_API_KEY to .env (create API key in Google Cloud Console)',
     saved_to_google_calendar: 'Saved to Google Calendar',
   }
 };

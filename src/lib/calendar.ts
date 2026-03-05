@@ -2,6 +2,7 @@
  * Google Calendar API - direct fetch calls.
  * All requests visible in DevTools Network (filter "calendar").
  * Every request MUST include Authorization: Bearer <token> from GSI.
+ * API key (VITE_GOOGLE_API_KEY) is required for "unregistered callers" fix.
  */
 
 import { getStoredAccessToken } from './googleAuth';
@@ -9,6 +10,18 @@ import { getStoredAccessToken } from './googleAuth';
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
 const FAMPLAN_SUMMARY = 'FamPlan';
 const DEFAULT_TZ = 'Asia/Jerusalem';
+
+function getGoogleApiKey(): string | undefined {
+  return import.meta.env.VITE_GOOGLE_API_KEY as string | undefined;
+}
+
+/** Append API key to URL if configured (fixes 403 unregistered callers) */
+function withApiKey(url: string): string {
+  const key = getGoogleApiKey();
+  if (!key?.trim()) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}key=${encodeURIComponent(key.trim())}`;
+}
 
 function getCalendarHeaders(): Record<string, string> {
   const token = getStoredAccessToken();
@@ -31,11 +44,17 @@ function getCalendarHeaders(): Record<string, string> {
  */
 export async function listCalendars(): Promise<{ items: Array<{ id: string; summary?: string }> }> {
   const params = new URLSearchParams({ maxResults: '250' });
-  const url = `${CALENDAR_API}/users/me/calendarList?${params}`;
+  const url = withApiKey(`${CALENDAR_API}/users/me/calendarList?${params}`);
   const headers = getCalendarHeaders();
-  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url.replace(/key=[^&]+/, 'key=***'), 'headers:', Object.keys(headers));
   const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`Calendar list failed: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text();
+    const hint = res.status === 403 && /unregistered callers/i.test(body) && !getGoogleApiKey()?.trim()
+      ? ' Add VITE_GOOGLE_API_KEY to .env'
+      : '';
+    throw new Error(`Calendar list failed: ${res.status}${hint}`);
+  }
   return res.json();
 }
 
@@ -48,9 +67,9 @@ export async function ensureFamPlanCalendar(): Promise<string> {
   const famPlanList = (data.items ?? []).filter((c) => (c.summary ?? '').trim() === FAMPLAN_SUMMARY);
   if (famPlanList.length > 0) return famPlanList[0].id;
 
-  const url = `${CALENDAR_API}/calendars`;
+  const url = withApiKey(`${CALENDAR_API}/calendars`);
   const headers = getCalendarHeaders();
-  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url.replace(/key=[^&]+/, 'key=***'), 'headers:', Object.keys(headers));
   const res = await fetch(url, {
     method: 'POST',
     headers,
@@ -147,9 +166,9 @@ export async function createEvent(
   const payload = validateEventPayload(eventPayload);
   console.log('[FamPlan] Calendar event insert payload:', JSON.stringify(payload));
 
-  const url = `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`;
+  const url = withApiKey(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`);
   const headers = getCalendarHeaders();
-  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url.replace(/key=[^&]+/, 'key=***'), 'headers:', Object.keys(headers));
   const res = await fetch(url, {
     method: 'POST',
     headers,
@@ -160,7 +179,11 @@ export async function createEvent(
     const bodyText = await res.text();
     const reason = extractErrorReason(bodyText);
     console.error(`[FamPlan] Calendar event insert failed: ${res.status}`, bodyText);
-    window.dispatchEvent(new CustomEvent('famplan-calendar-error', { detail: { status: res.status, reason, body: bodyText } }));
+    const needsApiKey = res.status === 403 && /unregistered callers/i.test(bodyText) && !getGoogleApiKey()?.trim();
+    if (needsApiKey) {
+      console.warn('[FamPlan] Add VITE_GOOGLE_API_KEY to .env - create API key in Google Cloud Console');
+    }
+    window.dispatchEvent(new CustomEvent('famplan-calendar-error', { detail: { status: res.status, reason, body: bodyText, needsApiKey } }));
     throw new Error(`Event create failed: ${res.status} - ${reason}`);
   }
 
@@ -184,9 +207,9 @@ export async function updateEvent(
     reminders: { overrides: { method: string; minutes: number }[] };
   }>
 ): Promise<void> {
-  const url = `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
+  const url = withApiKey(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`);
   const headers = getCalendarHeaders();
-  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url.replace(/key=[^&]+/, 'key=***'), 'headers:', Object.keys(headers));
   const res = await fetch(url, {
     method: 'PATCH',
     headers,
@@ -201,9 +224,9 @@ export async function updateEvent(
  * DELETE calendars/{calendarId}/events/{eventId}
  */
 export async function deleteEvent(calendarId: string, eventId: string): Promise<void> {
-  const url = `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
+  const url = withApiKey(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`);
   const headers = getCalendarHeaders();
-  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url.replace(/key=[^&]+/, 'key=***'), 'headers:', Object.keys(headers));
   const res = await fetch(url, { method: 'DELETE', headers });
   if (!res.ok && res.status !== 204) throw new Error(`Event delete failed: ${res.status}`);
 }

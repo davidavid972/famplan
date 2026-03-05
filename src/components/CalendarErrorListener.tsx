@@ -11,8 +11,8 @@ export function CalendarErrorListener() {
 
   useEffect(() => {
     const calendarErrorHandler = (e: Event) => {
-      const ev = e as CustomEvent<{ status: number; reason: string; body: string }>;
-      const reason = ev.detail?.reason ?? ev.detail?.body ?? 'Unknown error';
+      const ev = e as CustomEvent<{ status: number; reason: string; body: string; needsApiKey?: boolean }>;
+      const reason = ev.detail?.needsApiKey ? t('cal_api_key_required') : (ev.detail?.reason ?? ev.detail?.body ?? 'Unknown error');
       showToast(`שגיאת יומן: ${reason}`, 'error');
     };
     const tokenMissingHandler = () => {
