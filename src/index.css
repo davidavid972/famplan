@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* Plans selection bar: above bottom nav on mobile, top on desktop */
+.plans-selection-bar {
+  bottom: calc(4rem + 8px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .plans-selection-bar {
+    bottom: auto;
+    top: 0;
+  }
+}
+
+/* Page padding when selection bar visible - mobile only */
+.plans-page-with-selection {
+  padding-bottom: calc(140px + 4rem + 8px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .plans-page-with-selection {
+    padding-bottom: 0;
+  }
+}
