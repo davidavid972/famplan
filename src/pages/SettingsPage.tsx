@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
+import { useFamily } from '../context/FamilyProvider';
 import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
   const { isConnected, email, connect, disconnect } = useAuth();
+  const { familyDisplayName, familyPhoto, setFamilyDisplayName, setFamilyPhoto } = useFamily();
   const [emailInput, setEmailInput] = useState('');
 
   useEffect(() => {
@@ -81,6 +83,54 @@ export const SettingsPage: React.FC = () => {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+
+          {/* Family name + photo */}
+          <div className="w-full pt-4">
+            <h3 className="text-sm font-medium text-stone-700 mb-3">{t('family_name_label')}</h3>
+            <div className="w-full p-4 sm:p-5 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
+              <input
+                type="text"
+                value={familyDisplayName}
+                onChange={(e) => setFamilyDisplayName(e.target.value)}
+                placeholder={t('family_name_placeholder')}
+                className="w-full px-4 py-3 rounded-xl border border-stone-200 text-sm bg-white"
+              />
+              <div>
+                <label className="block text-xs text-stone-500 mb-1">{t('family_photo_label')}</label>
+                <div className="flex items-center gap-3 w-full">
+                  {familyPhoto && (
+                    <img src={familyPhoto} alt="" className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                  )}
+                  <label className="flex-1 min-h-[44px] flex items-center justify-center px-4 py-2 rounded-xl border border-stone-200 bg-white text-sm text-stone-600 hover:bg-stone-50 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          const r = new FileReader();
+                          r.onload = () => setFamilyPhoto(r.result as string);
+                          r.readAsDataURL(f);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                    {familyPhoto ? t('family_photo_change') : t('family_photo_upload')}
+                  </label>
+                  {familyPhoto && (
+                    <button
+                      type="button"
+                      onClick={() => setFamilyPhoto(null)}
+                      className="px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      {t('delete')}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

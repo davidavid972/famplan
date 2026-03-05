@@ -1,12 +1,18 @@
 import React from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
+import { useFamily } from '../context/FamilyProvider';
 import { Calendar, Users, List, Settings, Globe } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 export const Layout: React.FC = () => {
   const { t, language, setLanguage, dir } = useI18n();
+  const { familyDisplayName, familyPhoto } = useFamily();
   const location = useLocation();
+
+  const titlePart = familyDisplayName.trim()
+    ? `${t('app_name')} | ${familyDisplayName}`
+    : t('app_name');
 
   const navItems = [
     { path: '/calendar', icon: Calendar, label: t('calendar') },
@@ -24,7 +30,12 @@ export const Layout: React.FC = () => {
       {/* Top Navigation (Desktop) */}
       <header className="hidden md:flex items-center justify-between px-8 py-4 bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-8">
-          <h1 className="text-2xl font-bold text-emerald-700 tracking-tight">{t('app_name')}</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            {familyPhoto && (
+              <img src={familyPhoto} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+            )}
+            <h1 className="text-2xl font-bold text-emerald-700 tracking-tight truncate">{titlePart}</h1>
+          </div>
           <nav className="flex gap-1">
             {navItems.map((item) => (
               <NavLink
@@ -55,8 +66,13 @@ export const Layout: React.FC = () => {
       </header>
 
       {/* Mobile Header */}
-      <header className="md:hidden flex items-center justify-between px-4 py-4 bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">
-        <h1 className="text-xl font-bold text-emerald-700 tracking-tight">{t('app_name')}</h1>
+      <header className="md:hidden flex items-center justify-between gap-2 px-4 py-4 bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {familyPhoto && (
+            <img src={familyPhoto} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+          )}
+          <h1 className="text-lg font-bold text-emerald-700 tracking-tight truncate">{titlePart}</h1>
+        </div>
         <button
           onClick={toggleLanguage}
           className="p-2 rounded-full text-stone-600 hover:bg-stone-100 transition-colors border border-stone-200"
@@ -69,6 +85,11 @@ export const Layout: React.FC = () => {
       <main className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 pb-24 md:pb-8">
         <Outlet />
       </main>
+
+      {/* Footer */}
+      <footer className="py-4 pb-20 md:pb-4 text-center">
+        <p className="text-xs text-stone-400">{t('footer_copyright')}</p>
+      </footer>
 
       {/* Bottom Navigation (Mobile) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 pb-safe z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">

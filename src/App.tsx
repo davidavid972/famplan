@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { I18nProvider } from './i18n/I18nProvider';
 import { AuthProvider } from './context/AuthProvider';
+import { FamilyProvider } from './context/FamilyProvider';
 import { DataProvider } from './context/DataProvider';
 import { ToastProvider } from './context/ToastProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -15,7 +16,8 @@ import { SettingsPage } from './pages/SettingsPage';
 function AppContent() {
   return (
     <ToastProvider>
-      <DataProvider>
+      <FamilyProvider>
+        <DataProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
@@ -29,6 +31,7 @@ function AppContent() {
           </Routes>
         </BrowserRouter>
       </DataProvider>
+      </FamilyProvider>
     </ToastProvider>
   );
 }

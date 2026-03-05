@@ -115,6 +115,12 @@ export const translations = {
     auth_profile: 'פרופיל מחובר',
     auth_connect_google: 'התחבר עם Google',
     auth_disconnect: 'התנתק',
+    footer_copyright: '© David David — כל הזכויות שמורות',
+    family_name_label: 'שם המשפחה',
+    family_name_placeholder: 'משפחת כהן',
+    family_photo_label: 'תמונת משפחה',
+    family_photo_upload: 'העלה תמונה',
+    family_photo_change: 'החלף',
   },
   en: {
     app_name: 'FamPlan',
@@ -232,6 +238,12 @@ export const translations = {
     auth_profile: 'Connected profile',
     auth_connect_google: 'Connect with Google',
     auth_disconnect: 'Disconnect',
+    footer_copyright: '© David David — All rights reserved',
+    family_name_label: 'Family name',
+    family_name_placeholder: 'The Cohen Family',
+    family_photo_label: 'Family photo',
+    family_photo_upload: 'Upload photo',
+    family_photo_change: 'Change',
   }
 };
 
