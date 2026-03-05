@@ -15,6 +15,7 @@ const FAMPLAN_ROOT = 'FamPlan';
 const DATA_FOLDER = 'data';
 const ATTACHMENTS_FOLDER = 'attachments';
 const PEOPLE_PHOTOS_FOLDER = 'people_photos';
+const PROFILE_PHOTOS_FOLDER = 'profile_photos';
 const FAMILY_FILE = 'family.json';
 const PEOPLE_FILE = 'people.json';
 const APPOINTMENTS_FILE = 'appointments.json';
@@ -185,6 +186,39 @@ export async function driveUploadPersonPhoto(
 }
 
 /**
+ * Upload a user profile photo to FamPlan/profile_photos/.
+ * @returns Drive file id
+ */
+export async function driveUploadProfilePhoto(
+  file: File,
+  email: string,
+  profilePhotosFolderId: string
+): Promise<string> {
+  const safeEmail = email.replace(/[^a-zA-Z0-9._-]/g, '_').toLowerCase();
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const mime = file.type || (ext === 'png' ? 'image/png' : 'image/jpeg');
+  const fileName = `${safeEmail}.${ext}`;
+
+  const metadata = {
+    name: fileName,
+    mimeType: mime,
+    parents: [profilePhotosFolderId],
+  };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', file);
+
+  const res = await fetch(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id`, {
+    method: 'POST',
+    headers: getAuthHeader(),
+    body: form,
+  });
+  if (!res.ok) throw new Error(`Failed to upload profile photo: ${res.status}`);
+  const data = await res.json();
+  return data.id;
+}
+
+/**
  * Get a displayable URL for a person photo (fetches from Drive, caches blob URL).
  */
 export async function driveGetPersonPhotoUrl(fileId: string): Promise<string> {
@@ -250,6 +284,7 @@ export interface UsersDataMember {
   role: UserRoleType;
   addedAt: string;
   permissionId?: string;
+  profilePhotoFileId?: string | null;
 }
 export interface UsersData {
   version: number;
@@ -433,12 +468,13 @@ export async function driveResolveFamPlanFolder(cachedRootFolderId?: string | nu
  * Ensure FamPlan folder structure and return folder ids.
  * Resolves root: shared first, then own, then create. Uses cache when valid.
  */
-export async function driveEnsureFamPlanStructure(cachedRootFolderId?: string | null): Promise<{ rootFolderId: string; dataFolderId: string; attachmentsFolderId: string; peoplePhotosFolderId: string }> {
+export async function driveEnsureFamPlanStructure(cachedRootFolderId?: string | null): Promise<{ rootFolderId: string; dataFolderId: string; attachmentsFolderId: string; peoplePhotosFolderId: string; profilePhotosFolderId: string }> {
   const rootFolderId = await driveResolveFamPlanFolder(cachedRootFolderId);
   const dataFolderId = await driveEnsureFolder(DATA_FOLDER, rootFolderId);
   const attachmentsFolderId = await driveEnsureFolder(ATTACHMENTS_FOLDER, rootFolderId);
   const peoplePhotosFolderId = await driveEnsureFolder(PEOPLE_PHOTOS_FOLDER, rootFolderId);
-  return { rootFolderId, dataFolderId, attachmentsFolderId, peoplePhotosFolderId };
+  const profilePhotosFolderId = await driveEnsureFolder(PROFILE_PHOTOS_FOLDER, rootFolderId);
+  return { rootFolderId, dataFolderId, attachmentsFolderId, peoplePhotosFolderId, profilePhotosFolderId };
 }
 
 /**

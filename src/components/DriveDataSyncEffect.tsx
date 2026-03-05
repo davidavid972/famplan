@@ -69,10 +69,11 @@ export function DriveDataSyncEffect() {
         }
 
         const cachedRoot = localStorage.getItem(ROOT_FOLDER_KEY);
-        const { rootFolderId, dataFolderId, peoplePhotosFolderId } = await driveEnsureFamPlanStructure(cachedRoot);
+        const { rootFolderId, dataFolderId, peoplePhotosFolderId, profilePhotosFolderId } = await driveEnsureFamPlanStructure(cachedRoot);
         if (cancelled) return;
         localStorage.setItem(ROOT_FOLDER_KEY, rootFolderId);
         localStorage.setItem(PEOPLE_PHOTOS_FOLDER_KEY, peoplePhotosFolderId);
+        localStorage.setItem('famplan_drive_profile_photos_folder_id', profilePhotosFolderId);
 
         const cachedPeopleId = localStorage.getItem(PEOPLE_FILE_ID_KEY);
         const cachedAppointmentsId = localStorage.getItem(APPOINTMENTS_FILE_ID_KEY);

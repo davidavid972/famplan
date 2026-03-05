@@ -1,24 +1,24 @@
-import React from 'react';
-import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { useAuth } from '../context/AuthProvider';
 import { OfflineBanner } from './OfflineBanner';
+import { UserAvatar } from './UserAvatar';
+import { ProfileModal } from './ProfileModal';
 import { Calendar, Users, List, Settings, Globe } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 export const Layout: React.FC = () => {
   const { t, language, setLanguage, dir } = useI18n();
-  const { familyDisplayName, familyPhoto, selectionColor } = useFamily();
+  const { familyDisplayName, selectionColor } = useFamily();
+  const { canEdit, isConnected } = useAuth();
+  const location = useLocation();
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   React.useEffect(() => {
     document.documentElement.style.setProperty('--selection-color', selectionColor || '#10b981');
   }, [selectionColor]);
-  const { canEdit } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const goToSettings = () => navigate('/settings#family-profile');
 
   const titlePart = familyDisplayName.trim()
     ? `${t('app_name')} | ${familyDisplayName}`
@@ -43,12 +43,12 @@ export const Layout: React.FC = () => {
           <div className="flex items-center gap-2 min-w-0">
             <button
               type="button"
-              onClick={goToSettings}
+              onClick={() => setProfileModalOpen(true)}
               className="flex-shrink-0 rounded-full p-0.5 cursor-pointer hover:ring-2 hover:ring-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              aria-label={t('settings')}
+              aria-label={t('auth_profile')}
             >
-              {familyPhoto ? (
-                <img src={familyPhoto} alt="" className="w-8 h-8 rounded-full object-cover" />
+              {isConnected ? (
+                <UserAvatar size="md" className="w-8 h-8" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
                   <Settings className="w-4 h-4 text-emerald-600" />
@@ -94,12 +94,12 @@ export const Layout: React.FC = () => {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
             type="button"
-            onClick={goToSettings}
+            onClick={() => setProfileModalOpen(true)}
             className="flex-shrink-0 rounded-full p-0.5 cursor-pointer hover:ring-2 hover:ring-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 active:opacity-80"
-            aria-label={t('settings')}
+            aria-label={t('auth_profile')}
           >
-            {familyPhoto ? (
-              <img src={familyPhoto} alt="" className="w-7 h-7 rounded-full object-cover" />
+            {isConnected ? (
+              <UserAvatar size="sm" className="w-7 h-7" />
             ) : (
               <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
                 <Settings className="w-4 h-4 text-emerald-600" />
@@ -120,6 +120,8 @@ export const Layout: React.FC = () => {
       <main className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 pb-24 md:pb-8">
         <Outlet />
       </main>
+
+      <ProfileModal isOpen={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
 
       {/* Footer */}
       <footer className="py-4 pb-20 md:pb-4 text-center">

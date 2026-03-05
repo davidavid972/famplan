@@ -11,6 +11,7 @@ import {
   driveEnsureFamPlanStructure,
   driveLoadUsers,
   driveWriteUsers,
+  driveUploadProfilePhoto,
   driveCreatePermission,
   driveDeletePermission,
   driveUpdatePermission,
@@ -24,15 +25,18 @@ import {
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
 const USERS_FILE_ID_KEY = 'famplan_drive_users_file_id';
+const PROFILE_PHOTOS_FOLDER_KEY = 'famplan_drive_profile_photos_folder_id';
 
 interface UserRoleContextType {
   userRole: UserRoleType | null;
   members: UsersDataMember[];
+  userProfilePhotoFileId: string | null;
   isLoading: boolean;
   refreshMembers: () => Promise<void>;
   addMember: (email: string, role: 'viewer' | 'editor') => Promise<void>;
   removeMember: (email: string) => Promise<void>;
   updateMemberRole: (email: string, role: 'viewer' | 'editor') => Promise<void>;
+  updateProfilePhoto: (file: File | null) => Promise<void>;
 }
 
 const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined);
@@ -44,6 +48,7 @@ function roleToDriveRole(role: 'viewer' | 'editor'): DrivePermissionRole {
 export const UserRoleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [userRole, setUserRole] = useState<UserRoleType | null>(null);
   const [members, setMembers] = useState<UsersDataMember[]>([]);
+  const [userProfilePhotoFileId, setUserProfilePhotoFileId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshMembers = useCallback(async () => {
@@ -51,6 +56,7 @@ export const UserRoleProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!email || !googleAuth.isConnected()) {
       setUserRole(null);
       setMembers([]);
+      setUserProfilePhotoFileId(null);
       setIsLoading(false);
       return;
     }
@@ -85,10 +91,12 @@ export const UserRoleProvider: React.FC<{ children: ReactNode }> = ({ children }
       const me = usersData.members.find((m) => m.email.toLowerCase() === email.toLowerCase());
       setUserRole(me?.role ?? 'admin');
       setMembers(usersData.members);
+      setUserProfilePhotoFileId(me?.profilePhotoFileId ?? null);
     } catch (e) {
       console.warn('UserRole load failed:', e);
       setUserRole('admin');
       setMembers([]);
+      setUserProfilePhotoFileId(null);
     } finally {
       setIsLoading(false);
     }
@@ -98,11 +106,62 @@ export const UserRoleProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!googleAuth.isConnected()) {
       setUserRole(null);
       setMembers([]);
+      setUserProfilePhotoFileId(null);
       setIsLoading(false);
       return;
     }
     refreshMembers();
   }, [refreshMembers]);
+
+  const updateProfilePhoto = useCallback(
+    async (file: File | null) => {
+      const email = googleAuth.getStoredEmail();
+      if (!email || !googleAuth.isConnected()) return;
+      let dataFolderId = localStorage.getItem(DATA_FOLDER_KEY);
+      let usersFileId = localStorage.getItem(USERS_FILE_ID_KEY);
+      let profilePhotosFolderId = localStorage.getItem(PROFILE_PHOTOS_FOLDER_KEY);
+      if (!dataFolderId || !usersFileId || !profilePhotosFolderId) {
+        const cachedRoot = localStorage.getItem(ROOT_FOLDER_KEY);
+        const s = await driveEnsureFamPlanStructure(cachedRoot);
+        localStorage.setItem(ROOT_FOLDER_KEY, s.rootFolderId);
+        localStorage.setItem(DATA_FOLDER_KEY, s.dataFolderId);
+        localStorage.setItem(PROFILE_PHOTOS_FOLDER_KEY, s.profilePhotosFolderId);
+        dataFolderId = s.dataFolderId;
+        usersFileId = localStorage.getItem(USERS_FILE_ID_KEY);
+        profilePhotosFolderId = s.profilePhotosFolderId;
+      }
+      if (!usersFileId) {
+        const { fileId } = await driveLoadUsers(dataFolderId!, null);
+        localStorage.setItem(USERS_FILE_ID_KEY, fileId);
+        usersFileId = fileId;
+      }
+      const { data, fileId } = await driveLoadUsers(dataFolderId!, usersFileId);
+      const normalized = email.toLowerCase();
+      if (!file) {
+        const updated: UsersData = {
+          ...data,
+          updatedAt: new Date().toISOString(),
+          members: data.members.map((m) =>
+            m.email.toLowerCase() === normalized ? { ...m, profilePhotoFileId: null } : m
+          ),
+        };
+        await driveWriteUsers(fileId, updated);
+        await refreshMembers();
+        return;
+      }
+      const photoFileId = await driveUploadProfilePhoto(file, email, profilePhotosFolderId!);
+      const updated: UsersData = {
+        ...data,
+        updatedAt: new Date().toISOString(),
+        members: data.members.map((m) =>
+          m.email.toLowerCase() === normalized ? { ...m, profilePhotoFileId: photoFileId } : m
+        ),
+      };
+      await driveWriteUsers(fileId, updated);
+      await refreshMembers();
+    },
+    [refreshMembers]
+  );
 
   useEffect(() => {
     const handler = () => refreshMembers();
@@ -204,7 +263,7 @@ export const UserRoleProvider: React.FC<{ children: ReactNode }> = ({ children }
   );
 
   return (
-    <UserRoleContext.Provider value={{ userRole, members, isLoading, refreshMembers, addMember, removeMember, updateMemberRole }}>
+    <UserRoleContext.Provider value={{ userRole, members, userProfilePhotoFileId, isLoading, refreshMembers, addMember, removeMember, updateMemberRole, updateProfilePhoto }}>
       {children}
     </UserRoleContext.Provider>
   );
