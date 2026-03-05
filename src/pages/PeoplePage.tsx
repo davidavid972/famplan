@@ -5,7 +5,9 @@ import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastProvider';
 import { PersonAvatar } from '../components/PersonAvatar';
 import { driveUploadPersonPhoto } from '../lib/drive';
-import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Users, Loader2 } from 'lucide-react';
+
+const normalizeName = (s: string) => s.trim().toLowerCase();
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Person } from '../types/models';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +34,7 @@ export const PeoplePage: React.FC = () => {
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
   const [personToDelete, setPersonToDelete] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleOpenModal = (person?: Person) => {
     if (!person && people.length >= 3) {
@@ -58,56 +61,69 @@ export const PeoplePage: React.FC = () => {
     setName('');
     setPendingPhotoFile(null);
     setRemovePhoto(false);
+    setIsSaving(false);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
+    if (isSaving) return;
     if (!name.trim()) return;
 
-    if (editingPerson) {
-      let photoFileId: string | null | undefined = removePhoto ? null : editingPerson.photoFileId;
-      if (pendingPhotoFile && isConnected && canEdit) {
-        const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
-        if (!folderId) {
-          window.dispatchEvent(new CustomEvent('famplan-drive-sync-request'));
-          showToast(t('person_photo_sync_required'), 'error');
-          return;
-        }
-        try {
-          photoFileId = await driveUploadPersonPhoto(pendingPhotoFile, editingPerson.id, folderId);
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          showToast(`${t('person_photo_upload_error')}: ${msg}`, 'error');
-          return;
-        }
-      }
-      updatePerson(editingPerson.id, { name, color, photoFileId: photoFileId ?? undefined });
-      showToast(t('person_updated'), 'success');
-    } else {
-      if (pendingPhotoFile && isConnected && canEdit) {
-        const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
-        if (!folderId) {
-          window.dispatchEvent(new CustomEvent('famplan-drive-sync-request'));
-          showToast(t('person_photo_sync_required'), 'error');
-          return;
-        }
-      }
-      const added = addPerson({ name, color });
-      if (pendingPhotoFile && isConnected && canEdit) {
-        const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
-        if (folderId) {
-          try {
-            const photoFileId = await driveUploadPersonPhoto(pendingPhotoFile, added.id, folderId);
-            updatePerson(added.id, { photoFileId });
-          } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            showToast(`${t('person_photo_upload_error')}: ${msg}`, 'error');
-            return;
-          }
-        }
-      }
-      showToast(t('person_added'), 'success');
+    const normalized = normalizeName(name);
+    const isDuplicate = people.some(
+      (p) => p.id !== editingPerson?.id && normalizeName(p.name) === normalized
+    );
+    if (isDuplicate) {
+      showToast(t('person_already_exists'), 'error');
+      return;
     }
-    handleCloseModal();
+
+    const needsPhotoUpload = pendingPhotoFile && isConnected && canEdit;
+    if (needsPhotoUpload) {
+      const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY);
+      if (!folderId) {
+        window.dispatchEvent(new CustomEvent('famplan-drive-sync-request'));
+        showToast(t('person_photo_sync_required'), 'error');
+        return;
+      }
+    }
+
+    setIsSaving(true);
+
+    if (editingPerson) {
+      const prevPhotoFileId = editingPerson.photoFileId;
+      const photoFileId = removePhoto ? null : prevPhotoFileId;
+      updatePerson(editingPerson.id, { name, color, photoFileId: photoFileId ?? undefined });
+      handleCloseModal();
+      showToast(t('saved'), 'success');
+
+      if (needsPhotoUpload) {
+        const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY)!;
+        driveUploadPersonPhoto(pendingPhotoFile!, editingPerson.id, folderId)
+          .then((newPhotoFileId) => {
+            updatePerson(editingPerson.id, { photoFileId: newPhotoFileId });
+          })
+          .catch(() => {
+            showToast(t('save_failed'), 'error');
+            updatePerson(editingPerson.id, { photoFileId: prevPhotoFileId ?? undefined });
+          });
+      }
+    } else {
+      const added = addPerson({ name, color });
+      handleCloseModal();
+      showToast(t('saved'), 'success');
+
+      if (needsPhotoUpload) {
+        const folderId = localStorage.getItem(PEOPLE_PHOTOS_FOLDER_KEY)!;
+        driveUploadPersonPhoto(pendingPhotoFile!, added.id, folderId)
+          .then((photoFileId) => {
+            updatePerson(added.id, { photoFileId });
+          })
+          .catch(() => {
+            showToast(t('save_failed'), 'error');
+            deletePerson(added.id);
+          });
+      }
+    }
   };
 
   const handleDelete = () => {
@@ -289,10 +305,17 @@ export const PeoplePage: React.FC = () => {
               </button>
               <button
                 onClick={handleSave}
-                disabled={!name.trim()}
-                className="px-6 py-3 font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!name.trim() || isSaving}
+                className="flex items-center justify-center gap-2 px-6 py-3 font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
-                {t('save')}
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>{t('save')}</span>
+                  </>
+                ) : (
+                  t('save')
+                )}
               </button>
             </div>
           </div>
