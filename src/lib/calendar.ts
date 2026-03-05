@@ -138,6 +138,18 @@ function extractErrorReason(bodyText: string): string {
   return bodyText.slice(0, 200);
 }
 
+/** Build request body with ONLY summary/start/end/description/location - never reminders */
+function toEventBody(p: EventPayload): string {
+  const body: Record<string, unknown> = {
+    summary: p.summary,
+    start: p.start,
+    end: p.end,
+  };
+  if (p.description) body.description = p.description;
+  if (p.location) body.location = p.location;
+  return JSON.stringify(body);
+}
+
 /**
  * POST calendars/{calendarId}/events
  */
@@ -146,7 +158,9 @@ export async function createEvent(
   eventPayload: EventPayload
 ): Promise<{ id: string }> {
   const payload = validateEventPayload(eventPayload);
-  console.log('EVENT PAYLOAD', JSON.stringify(payload));
+  const body = toEventBody(payload);
+  console.log('[CAL] FINAL PAYLOAD (no reminders expected):', body);
+  console.log('[CAL] reminders present?', body.includes('reminders'));
 
   const url = withApiKey(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`);
   const headers = getCalendarHeaders();
@@ -154,7 +168,7 @@ export async function createEvent(
   const res = await fetch(url, {
     method: 'POST',
     headers,
-    body: JSON.stringify(payload),
+    body,
   });
 
   if (!res.ok) {
@@ -188,10 +202,15 @@ export async function updateEvent(
     end: { dateTime: string; timeZone?: string };
   }>
 ): Promise<void> {
-  const sanitized: Record<string, unknown> = { ...payload };
-  delete sanitized.reminders;
-
-  console.log('EVENT PAYLOAD', JSON.stringify(sanitized));
+  const bodyObj: Record<string, unknown> = {};
+  if (payload.summary !== undefined) bodyObj.summary = payload.summary;
+  if (payload.description !== undefined) bodyObj.description = payload.description;
+  if (payload.location !== undefined) bodyObj.location = payload.location;
+  if (payload.start !== undefined) bodyObj.start = payload.start;
+  if (payload.end !== undefined) bodyObj.end = payload.end;
+  const body = JSON.stringify(bodyObj);
+  console.log('[CAL] FINAL PAYLOAD (no reminders expected):', body);
+  console.log('[CAL] reminders present?', body.includes('reminders'));
 
   const url = withApiKey(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`);
   const headers = getCalendarHeaders();
@@ -199,7 +218,7 @@ export async function updateEvent(
   const res = await fetch(url, {
     method: 'PATCH',
     headers,
-    body: JSON.stringify(sanitized),
+    body,
   });
   if (!res.ok) {
     const bodyText = await res.text();
