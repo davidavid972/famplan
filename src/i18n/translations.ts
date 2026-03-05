@@ -113,6 +113,7 @@ export const translations = {
     auth_connected: 'מחובר',
     auth_not_connected: 'לא מחובר',
     auth_profile: 'פרופיל מחובר',
+    auth_connect_google: 'התחבר עם Google',
     auth_disconnect: 'התנתק',
   },
   en: {
@@ -229,6 +230,7 @@ export const translations = {
     auth_connected: 'Connected',
     auth_not_connected: 'Not connected',
     auth_profile: 'Connected profile',
+    auth_connect_google: 'Connect with Google',
     auth_disconnect: 'Disconnect',
   }
 };

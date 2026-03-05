@@ -1,12 +1,11 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { I18nProvider } from './i18n/I18nProvider';
-import { AuthProvider, useAuth } from './context/AuthProvider';
+import { AuthProvider } from './context/AuthProvider';
 import { DataProvider } from './context/DataProvider';
 import { ToastProvider } from './context/ToastProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
-import { LoginScreen } from './components/LoginScreen';
 import { CalendarPage } from './pages/CalendarPage';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { PeoplePage } from './pages/PeoplePage';
@@ -14,12 +13,6 @@ import { PersonDashboardPage } from './pages/PersonDashboardPage';
 import { SettingsPage } from './pages/SettingsPage';
 
 function AppContent() {
-  const { isConnected } = useAuth();
-
-  if (!isConnected) {
-    return <LoginScreen />;
-  }
-
   return (
     <ToastProvider>
       <DataProvider>
