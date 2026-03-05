@@ -101,27 +101,10 @@ type EventPayload = {
   location?: string;
   start: { dateTime: string; timeZone?: string };
   end: { dateTime: string; timeZone?: string };
-  reminders?: { useDefault: false; overrides: { method: string; minutes: number }[] };
 };
 
 /**
- * Single source of truth for event reminders.
- * Returns undefined (omit) or { useDefault: false, overrides }.
- * NEVER useDefault: true with overrides.
- */
-function buildEventReminders(overridesMinutes: number[]): { useDefault: false; overrides: { method: string; minutes: number }[] } | undefined {
-  const minutes = Array.from(new Set(overridesMinutes))
-    .filter((m) => Number.isInteger(m) && m >= 0)
-    .sort((a, b) => a - b);
-  if (minutes.length === 0) return undefined;
-  return {
-    useDefault: false,
-    overrides: minutes.map((m) => ({ method: 'popup', minutes: m })),
-  };
-}
-
-/**
- * Validate and sanitize event payload. Uses buildEventReminders only.
+ * Validate event payload. HOTFIX: no reminders - only summary, start, end, description, location.
  */
 function validateEventPayload(payload: EventPayload): EventPayload {
   const tz = payload.start?.timeZone ?? payload.end?.timeZone ?? DEFAULT_TZ;
@@ -132,9 +115,6 @@ function validateEventPayload(payload: EventPayload): EventPayload {
   if (isNaN(endDt.getTime())) endDt = new Date(startDt.getTime() + 60 * 60 * 1000);
   if (endDt <= startDt) endDt = new Date(startDt.getTime() + 60 * 60 * 1000);
 
-  const minutes = (payload.reminders?.overrides ?? []).map((o) => Math.floor(Number(o.minutes) || 0));
-  const reminders = buildEventReminders(minutes);
-
   const result: EventPayload = {
     summary: payload.summary,
     description: payload.description,
@@ -142,7 +122,6 @@ function validateEventPayload(payload: EventPayload): EventPayload {
     start: { dateTime: startDt.toISOString(), timeZone: tz },
     end: { dateTime: endDt.toISOString(), timeZone: tz },
   };
-  if (reminders) result.reminders = reminders;
   if (!result.description) delete result.description;
   if (!result.location) delete result.location;
   return result;
@@ -207,14 +186,10 @@ export async function updateEvent(
     location: string;
     start: { dateTime: string; timeZone?: string };
     end: { dateTime: string; timeZone?: string };
-    reminders: { overrides: { method: string; minutes: number }[] };
   }>
 ): Promise<void> {
-  const minutes = (payload.reminders?.overrides ?? []).map((o) => Math.floor(Number(o.minutes) || 0));
-  const reminders = buildEventReminders(minutes);
   const sanitized: Record<string, unknown> = { ...payload };
-  if (reminders) sanitized.reminders = reminders;
-  else delete sanitized.reminders;
+  delete sanitized.reminders;
 
   console.log('EVENT PAYLOAD', JSON.stringify(sanitized));
 
@@ -247,8 +222,7 @@ export async function deleteEvent(calendarId: string, eventId: string): Promise<
 }
 
 /**
- * Build event payload from plan. Uses buildEventReminders only.
- * Never preset useDefault, never merge from template.
+ * Build event payload from plan. HOTFIX: no reminders - only summary, start, end, description, location.
  */
 export function planToEventPayload(plan: {
   title: string;
@@ -261,16 +235,12 @@ export function planToEventPayload(plan: {
   const tz = DEFAULT_TZ;
   const startDate = new Date(plan.start);
   const endDate = new Date(plan.end);
-  const overridesMinutes = (plan.reminders ?? []).map((r) => Math.floor(r.minutesBeforeStart ?? 0));
-  const reminders = buildEventReminders(overridesMinutes);
 
-  const result: EventPayload = {
+  return {
     summary: plan.title,
     description: plan.notes || undefined,
     location: plan.location || undefined,
     start: { dateTime: startDate.toISOString(), timeZone: tz },
     end: { dateTime: endDate.toISOString(), timeZone: tz },
   };
-  if (reminders) result.reminders = reminders;
-  return result;
 }
