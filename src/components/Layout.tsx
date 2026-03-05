@@ -36,7 +36,7 @@ export const Layout: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-stone-50 text-stone-900 font-sans" dir={dir}>
+    <div className="flex flex-col min-h-screen bg-stone-50 text-stone-900 font-sans overflow-x-hidden" dir={dir}>
       {/* Top Navigation (Desktop) */}
       <header className="hidden md:flex items-center justify-between px-8 py-4 bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-8">
@@ -110,7 +110,7 @@ export const Layout: React.FC = () => {
         </div>
         <button
           onClick={toggleLanguage}
-          className="p-2 rounded-full text-stone-600 hover:bg-stone-100 transition-colors border border-stone-200"
+          className="p-2 rounded-full text-stone-600 hover:bg-stone-100 transition-colors border border-stone-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
         >
           <Globe className="w-5 h-5" />
         </button>

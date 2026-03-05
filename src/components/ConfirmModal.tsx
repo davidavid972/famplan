@@ -30,7 +30,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center p-4 border-b border-stone-100">
           <h2 className="text-lg font-semibold text-stone-900">{title}</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-stone-100 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-stone-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
             <X className="w-5 h-5 text-stone-500" />
           </button>
         </div>
@@ -40,7 +40,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         <div className="flex justify-end gap-3 p-4 bg-stone-50 border-t border-stone-100">
           <button
             onClick={onClose}
-            className="px-4 py-2 font-medium text-stone-700 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
+            className="px-4 py-3 min-h-[44px] font-medium text-stone-700 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
           >
             {cancelText || t('cancel')}
           </button>
@@ -49,7 +49,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
               onConfirm();
               onClose();
             }}
-            className="px-4 py-2 font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors"
+            className="px-4 py-3 min-h-[44px] font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors"
           >
             {confirmText || t('delete')}
           </button>

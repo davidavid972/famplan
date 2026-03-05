@@ -114,7 +114,7 @@ export const AppointmentsPage: React.FC = () => {
   return (
     <div className={`space-y-6 animate-in fade-in duration-300 ${selectedIds.size > 0 ? 'pb-24 sm:pb-6 sm:pt-24' : ''}`}>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('appointments')}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">{t('appointments')}</h1>
       </div>
 
       <PlansFilterBar people={people} />
@@ -180,7 +180,7 @@ export const AppointmentsPage: React.FC = () => {
                 style={isSelected ? { borderColor: selectionColor } : undefined}
               >
                 <div
-                  className="absolute top-0 bottom-0 w-2 left-0"
+                  className="absolute top-0 bottom-0 w-2 left-0 rtl:left-auto rtl:right-0"
                   style={{ backgroundColor: person.color }}
                 />
                 {canEdit && (
@@ -200,7 +200,7 @@ export const AppointmentsPage: React.FC = () => {
                     )}
                   </button>
                 )}
-                <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ml-2">
+                <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ms-2">
 
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">

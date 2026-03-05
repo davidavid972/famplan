@@ -42,7 +42,7 @@ export const PlansFilterBar: React.FC<PlansFilterBarProps> = ({ people }) => {
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
         <button
           onClick={handleAll}
-          className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`flex-shrink-0 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
             isAll ? 'text-white' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
           }`}
           style={{ backgroundColor: isAll ? selectionColor : undefined }}
@@ -51,7 +51,7 @@ export const PlansFilterBar: React.FC<PlansFilterBarProps> = ({ people }) => {
         </button>
         <button
           onClick={() => setExpanded((e) => !e)}
-          className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
             expanded ? 'text-white' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
           }`}
           style={{ backgroundColor: expanded ? selectionColor : undefined }}

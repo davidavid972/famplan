@@ -122,7 +122,7 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300 w-full max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('settings_title')}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">{t('settings_title')}</h1>
       </div>
 
       <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">

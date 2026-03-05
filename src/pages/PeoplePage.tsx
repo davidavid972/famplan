@@ -137,7 +137,7 @@ export const PeoplePage: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('people')}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">{t('people')}</h1>
         <button
           onClick={() => handleOpenModal()}
           disabled={!canEdit}
@@ -209,8 +209,8 @@ export const PeoplePage: React.FC = () => {
 
       {/* Add/Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto overscroll-contain">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 my-8">
             <div className="p-6 border-b border-stone-100">
               <h2 className="text-xl font-bold text-stone-900">
                 {editingPerson ? t('edit_person') : t('add_person')}

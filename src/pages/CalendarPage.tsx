@@ -131,20 +131,20 @@ export const CalendarPage: React.FC = () => {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('calendar')}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">{t('calendar')}</h1>
           <div className="flex items-center bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
             <button
               onClick={dir === 'rtl' ? nextMonth : prevMonth}
-              className="p-2 hover:bg-stone-50 transition-colors border-r border-stone-200"
+              className="p-3 min-h-[44px] min-w-[44px] hover:bg-stone-50 transition-colors border-r border-stone-200 flex items-center justify-center"
             >
               <ChevronLeft className="w-5 h-5 text-stone-600" />
             </button>
-            <span className="px-4 py-2 font-medium text-stone-900 min-w-[140px] text-center">
+            <span className="px-4 py-2 font-medium text-stone-900 min-w-[120px] sm:min-w-[140px] text-center text-sm sm:text-base">
               {format(currentDate, dateFormat, { locale: dateLocale })}
             </span>
             <button
               onClick={dir === 'rtl' ? prevMonth : nextMonth}
-              className="p-2 hover:bg-stone-50 transition-colors border-l border-stone-200"
+              className="p-3 min-h-[44px] min-w-[44px] hover:bg-stone-50 transition-colors border-l border-stone-200 flex items-center justify-center"
             >
               <ChevronRight className="w-5 h-5 text-stone-600" />
             </button>
@@ -163,7 +163,7 @@ export const CalendarPage: React.FC = () => {
       <PlansFilterBar people={people} />
 
       {/* Calendar Grid */}
-      <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden overflow-x-auto">
         <div className="grid grid-cols-7 border-b border-stone-200 bg-stone-50">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => {
             const date = new Date();
@@ -185,7 +185,7 @@ export const CalendarPage: React.FC = () => {
               <div
                 key={day.toString()}
                 onClick={() => canEdit && handleOpenAddModal(day)}
-                className={`min-h-[100px] p-2 border-b border-r border-stone-100 transition-colors relative ${
+                className={`min-h-[80px] sm:min-h-[100px] p-1.5 sm:p-2 border-b border-r border-stone-100 transition-colors relative ${
                   canEdit ? 'cursor-pointer hover:bg-stone-50' : 'cursor-default'
                 } ${!isCurrentMonth ? 'bg-stone-50/50 text-stone-400' : 'text-stone-900'} ${dayIdx % 7 === 6 ? 'border-r-0' : ''}`}
               >

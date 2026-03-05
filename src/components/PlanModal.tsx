@@ -187,8 +187,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto overscroll-contain">
+      <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 my-8">
         <div className="p-6 border-b border-stone-100 flex justify-between items-center sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold text-stone-900">
             {mode === 'edit' ? t('edit_appointment') : t('add_appointment')}
@@ -207,7 +207,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
           </div>
         ) : (
           <>
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
               {saveError && (
                 <p className="text-sm text-red-600 bg-red-50 p-3 rounded-xl">{saveError}</p>
               )}
@@ -314,7 +314,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                         type="button"
                         onClick={() => canEdit && togglePreset(mins)}
                         disabled={!canEdit}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 ${selected ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
+                        className={`px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-colors disabled:opacity-60 ${selected ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
                       >
                         {mins === 1440 ? t('rem_preset_1d') : mins === 180 ? t('rem_preset_3h') : mins === 60 ? t('rem_preset_1h') : t('rem_preset_15m')}
                       </button>
@@ -344,7 +344,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                         <option value="days">{t('rem_unit_days')}</option>
                       </select>
                       <span className="text-sm text-stone-500">{t('rem_before')}</span>
-                      <button type="button" onClick={() => canEdit && removeReminder(idx)} disabled={!canEdit} className="px-2 py-1 text-red-600 hover:bg-red-50 rounded-lg text-sm disabled:opacity-60">
+                      <button type="button" onClick={() => canEdit && removeReminder(idx)} disabled={!canEdit} className="px-3 py-2 min-h-[44px] text-red-600 hover:bg-red-50 rounded-lg text-sm disabled:opacity-60">
                         {t('rem_delete')}
                       </button>
                     </div>
@@ -378,15 +378,15 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                     <p className="text-sm text-amber-600">{t('docs_limit_reached')}</p>
                   ) : canEdit && (
                     <div className="flex gap-2 flex-wrap">
-                      <label className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
+                      <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
                         <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onAddPendingDoc(f); e.target.value = ''; }} />
                         {t('docs_camera')}
                       </label>
-                      <label className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
+                      <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
                         <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onAddPendingDoc(f); e.target.value = ''; }} />
                         {t('docs_gallery')}
                       </label>
-                      <label className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
+                      <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
                         <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={(e) => onAddPendingDocsMulti?.(e.target.files)} />
                         {t('docs_multi')}
                       </label>
