@@ -45,9 +45,7 @@ export const CalendarPage: React.FC = () => {
     return filteredAppointments.filter((app) => isSameDay(new Date(app.start), day));
   };
 
-  const MAX_DOCS = 20;
   const totalDocs = attachments.length + pendingDocs.length;
-  const remainingSlots = Math.max(0, MAX_DOCS - attachments.length);
 
   const handleOpenAddModal = (date: Date) => {
     if (!canEdit) return;
@@ -67,14 +65,11 @@ export const CalendarPage: React.FC = () => {
   };
 
   const addPendingDoc = (file: File) => {
-    if (totalDocs >= MAX_DOCS) return;
     setPendingDocs((prev) => [...prev, { name: file.name, type: file.type || 'application/octet-stream', size: file.size }]);
   };
   const addPendingDocsMulti = (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const canAdd = Math.min(files.length, remainingSlots - pendingDocs.length);
-    if (canAdd <= 0) return;
-    const arr = Array.from(files).slice(0, canAdd);
+    const arr = Array.from(files);
     setPendingDocs((prev) => [...prev, ...arr.map((f) => ({ name: f.name, type: f.type || 'application/octet-stream', size: f.size }))]);
   };
   const removePendingDoc = (idx: number) => setPendingDocs((prev) => prev.filter((_, i) => i !== idx));
@@ -239,8 +234,8 @@ export const CalendarPage: React.FC = () => {
         onAddPendingDocsMulti={addPendingDocsMulti}
         onRemovePendingDoc={removePendingDoc}
         totalDocs={totalDocs}
-        maxDocs={MAX_DOCS}
-        remainingSlots={remainingSlots}
+        maxDocs={9999}
+        remainingSlots={9999}
         canEdit={canEdit}
       />
     </div>

@@ -143,11 +143,6 @@ export const PersonDashboardPage: React.FC = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    if (attachments.length + files.length > 20) {
-      showToast(t('documents_limit_reached'), 'error');
-      return;
-    }
-
     const targetAppointmentId = personAppointments.length > 0 ? personAppointments[0].id : 'dummy-id';
 
     Array.from(files).forEach((file: File) => {
@@ -334,9 +329,7 @@ export const PersonDashboardPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-stone-500">{t('docs_counter').replace('{used}', String(attachments.length))}</span>
-                {canEdit && personAttachments.length >= 20 ? (
-                  <span className="text-sm text-amber-600">{t('documents_limit_reached')}</span>
-                ) : canEdit ? (
+                {canEdit ? (
                   <div className="relative">
                     <input ref={fileInputRef} type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} />
                     <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />

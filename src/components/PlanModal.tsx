@@ -376,9 +376,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                       ))}
                     </div>
                   )}
-                  {totalDocs >= maxDocs ? (
-                    <p className="text-sm text-amber-600">{t('docs_limit_reached')}</p>
-                  ) : canEdit && (
+                  {canEdit && (
                     <div className="flex gap-2 flex-wrap">
                       <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
                         <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onAddPendingDoc(f); e.target.value = ''; }} />

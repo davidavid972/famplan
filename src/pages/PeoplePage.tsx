@@ -37,10 +37,6 @@ export const PeoplePage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const handleOpenModal = (person?: Person) => {
-    if (!person && people.length >= 3) {
-      showToast(t('limit_reached'), 'error');
-      return;
-    }
     if (person) {
       setEditingPerson(person);
       setName(person.name);
