@@ -129,7 +129,9 @@ export const AppointmentsPage: React.FC = () => {
   }, [selectedIds.size, sortedAppointments]);
 
   return (
-    <div className={`space-y-6 animate-in fade-in duration-300 ${selectedIds.size > 0 ? 'pb-24 sm:pb-6 sm:pt-24' : ''}`}>
+    <div
+      className={`space-y-6 animate-in fade-in duration-300 ${selectedIds.size > 0 ? 'plans-page-with-selection sm:pt-24' : ''}`}
+    >
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">{t('appointments')}</h1>
       </div>
@@ -138,11 +140,14 @@ export const AppointmentsPage: React.FC = () => {
 
       {selectedIds.size > 0 && (
         <div
-          className="fixed left-0 right-0 z-40 flex items-center justify-between gap-4 p-4 rounded-2xl border shadow-lg sm:rounded-b-none sm:top-0 sm:bottom-auto bottom-0 sm:rounded-t-2xl border-t border-x"
-          style={{ backgroundColor: `${selectionColor}18`, borderColor: `${selectionColor}40` }}
+          className="plans-selection-bar fixed left-0 right-0 z-40 flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl border shadow-lg sm:rounded-b-none sm:rounded-t-2xl border-t border-x max-h-[calc(100vh-4rem-env(safe-area-inset-bottom)-24px)] overflow-y-auto sm:max-h-none sm:overflow-visible"
+          style={{
+            backgroundColor: `${selectionColor}18`,
+            borderColor: `${selectionColor}40`,
+          }}
         >
-          <span className="font-semibold text-stone-900">{t('plans_selected_count').replace('{count}', String(selectedIds.size))}</span>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+          <span className="font-semibold text-stone-900 shrink-0">{t('plans_selected_count').replace('{count}', String(selectedIds.size))}</span>
+          <div className="flex flex-wrap gap-2 justify-end sm:justify-end">
             <button
               onClick={handleSelectAll}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 transition-colors min-h-[44px]"
