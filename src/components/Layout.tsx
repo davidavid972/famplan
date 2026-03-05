@@ -12,7 +12,7 @@ import { cn } from '../utils/cn';
 export const Layout: React.FC = () => {
   const { t, language, setLanguage, dir } = useI18n();
   const { familyDisplayName, selectionColor } = useFamily();
-  const { canEdit, isConnected } = useAuth();
+  const { canEdit, isConnected, isOnline } = useAuth();
   const location = useLocation();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
@@ -87,7 +87,7 @@ export const Layout: React.FC = () => {
         </button>
       </header>
 
-      <OfflineBanner visible={!canEdit} />
+      <OfflineBanner isOnline={isOnline} isConnected={isConnected} />
 
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between gap-2 px-4 py-4 bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">

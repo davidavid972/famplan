@@ -1,22 +1,30 @@
 import React from 'react';
 import { useI18n } from '../i18n/I18nProvider';
-import { WifiOff } from 'lucide-react';
+import { WifiOff, CloudOff } from 'lucide-react';
 
 interface OfflineBannerProps {
-  visible: boolean;
+  /** Internet connectivity (navigator.onLine only - never from API failures) */
+  isOnline: boolean;
+  /** Google account connected (token/session) */
+  isConnected: boolean;
 }
 
-export function OfflineBanner({ visible }: OfflineBannerProps) {
+export function OfflineBanner({ isOnline, isConnected }: OfflineBannerProps) {
   const { t } = useI18n();
+  const visible = !isOnline || !isConnected;
   if (!visible) return null;
+
+  const isOffline = !isOnline;
+  const message = isOffline ? t('offline_banner') : t('google_not_connected_banner');
+  const Icon = isOffline ? WifiOff : CloudOff;
 
   return (
     <div
       className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-900 border-b border-amber-200 text-sm font-medium"
       role="alert"
     >
-      <WifiOff className="w-5 h-5 flex-shrink-0" />
-      <span>{t('offline_banner')}</span>
+      <Icon className="w-5 h-5 flex-shrink-0" />
+      <span>{message}</span>
     </div>
   );
 }
