@@ -160,42 +160,38 @@ export const PeoplePage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {people.map((person) => (
             <div
               key={person.id}
               onClick={() => navigate(`/people/${person.id}`)}
-              className="group flex flex-col p-6 bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
+              className="group flex items-center gap-4 p-4 bg-white rounded-2xl border border-stone-200 shadow-sm hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
             >
               <div
-                className="absolute top-0 left-0 right-0 h-2"
+                className="absolute top-0 left-0 right-0 h-1"
                 style={{ backgroundColor: person.color }}
               />
-              <div className="flex items-start justify-between mt-2">
-                <div className="flex items-center gap-4">
-                      <PersonAvatar person={person} size="md" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-stone-900">{person.name}</h3>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+              <PersonAvatar person={person} size="md" className="mt-1 shrink-0" />
+              <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                <h3 className="text-base font-semibold text-stone-900 truncate">{person.name}</h3>
+                <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleOpenModal(person)}
                     disabled={!canEdit}
-                    className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1.5 min-h-[36px] min-w-[36px] text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setPersonToDelete(person.id)}
                     disabled={!canEdit}
-                    className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1.5 min-h-[36px] min-w-[36px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-emerald-600 font-medium text-sm self-end">
+              <div className="flex items-center text-emerald-600 font-medium text-sm shrink-0">
                 {dir === 'rtl' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </div>
             </div>
@@ -218,13 +214,19 @@ export const PeoplePage: React.FC = () => {
                   {t('person_photo_label')}
                 </label>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-stone-100">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-stone-100" style={{ border: `2px solid ${color}` }}>
                     {pendingPhotoFile ? (
                       <img src={URL.createObjectURL(pendingPhotoFile)} alt="" className="w-full h-full object-cover" />
                     ) : editingPerson && !removePhoto ? (
-                      <PersonAvatar person={editingPerson} size="lg" />
+                      <PersonAvatar person={{ ...editingPerson, color }} size="lg" />
+                    ) : !editingPerson ? (
+                      <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-white" style={{ backgroundColor: color }}>
+                        {name ? name.charAt(0).toUpperCase() : '?'}
+                      </div>
                     ) : (
-                      <span className="text-2xl font-bold text-stone-400">?</span>
+                      <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-white" style={{ backgroundColor: color }}>
+                        {(name || editingPerson.name || '?').charAt(0).toUpperCase()}
+                      </div>
                     )}
                   </div>
                   {canEdit && isConnected ? (

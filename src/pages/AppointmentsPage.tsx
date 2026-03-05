@@ -170,7 +170,7 @@ export const AppointmentsPage: React.FC = () => {
           <p className="text-stone-500 max-w-sm">{t('add_appointment')}</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {sortedAppointments.map((appointment) => {
             const person = getPerson(appointment.personId);
             if (!person) return null;
@@ -185,19 +185,19 @@ export const AppointmentsPage: React.FC = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handleCardClick(appointment)}
-                className={`group flex flex-col sm:flex-row gap-4 p-5 bg-white rounded-2xl border shadow-sm transition-all relative overflow-hidden cursor-pointer hover:border-stone-300 ${
+                className={`group flex flex-col sm:flex-row gap-3 p-4 bg-white rounded-xl border shadow-sm transition-all relative overflow-hidden cursor-pointer hover:border-stone-300 md:hover:shadow-md ${
                   isDone ? 'opacity-60' : ''
                 } ${isSelected ? 'border-2' : 'border-stone-200'}`}
                 style={isSelected ? { borderColor: selectionColor } : undefined}
               >
                 <div
-                  className="absolute top-0 bottom-0 w-2 left-0 rtl:left-auto rtl:right-0"
+                  className="absolute top-0 bottom-0 w-1 left-0 rtl:left-auto rtl:right-0"
                   style={{ backgroundColor: person.color }}
                 />
                 {canEdit && (
                   <button
                     onClick={(e) => handleCircleClick(appointment, e)}
-                    className="flex-shrink-0 min-h-[44px] min-w-[44px] rounded-full flex items-center justify-center transition-colors border-2"
+                    className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors border-2 self-center sm:self-start mt-0.5"
                     style={{
                       backgroundColor: isSelected ? selectionColor : 'transparent',
                       borderColor: isSelected ? selectionColor : 'rgb(214 211 209)',
@@ -205,47 +205,47 @@ export const AppointmentsPage: React.FC = () => {
                     }}
                   >
                     {isSelected ? (
-                      <CheckCircle2 className="w-8 h-8" />
+                      <CheckCircle2 className="w-5 h-5" />
                     ) : (
-                      <Circle className="w-8 h-8" />
+                      <Circle className="w-5 h-5" />
                     )}
                   </button>
                 )}
-                <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ms-2">
+                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:items-center min-w-0 ms-1 sm:ms-0">
 
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <PersonAvatar person={person} size="sm" />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className={`text-base font-semibold text-stone-900 ${isDone ? 'line-through' : ''}`}>
+                        {appointment.title}
+                      </h3>
                       <span
-                        className="px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                        className="px-2 py-0.5 rounded-full text-xs font-medium text-white shrink-0"
                         style={{ backgroundColor: person.color }}
                       >
                         {person.name}
                       </span>
-                      <h3 className={`text-lg font-semibold text-stone-900 ${isDone ? 'line-through' : ''}`}>
-                        {appointment.title}
-                      </h3>
                     </div>
-                    
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-stone-500">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500">
                       <div className="flex items-center gap-1">
-                        <CalendarIcon className="w-4 h-4" />
+                        <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
                         <span>
-                          {safeFormatDateTime(appointment.start)} - {safeFormatTime(appointment.end)}
+                          {safeFormatTime(appointment.start)}–{safeFormatTime(appointment.end)}
+                          <span className="ms-1 opacity-80">
+                            {new Date(appointment.start).toLocaleDateString(timeLocale, { day: 'numeric', month: 'short' })}
+                          </span>
                         </span>
                       </div>
-                      
                       {appointment.location && (
                         <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          <span>{appointment.location}</span>
+                          <MapPin className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate max-w-[180px]">{appointment.location}</span>
                         </div>
                       )}
                     </div>
 
                     {appointment.notes && (
-                      <div className="flex items-start gap-1 text-sm text-stone-600 mt-2 bg-stone-50 p-2 rounded-lg">
-                        <AlignLeft className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <div className="flex items-start gap-1 text-xs text-stone-600 mt-1.5 bg-stone-50 px-2 py-1.5 rounded-lg">
+                        <AlignLeft className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                         <p className="line-clamp-2">{appointment.notes}</p>
                       </div>
                     )}
@@ -253,13 +253,13 @@ export const AppointmentsPage: React.FC = () => {
                 </div>
 
                 {selectedIds.size === 0 && (
-                <div className="flex items-center gap-2 sm:self-start justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-1 sm:self-center justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={(e) => { e.stopPropagation(); setAppointmentToDelete(appointment.id); }}
                     disabled={!canEdit}
-                    className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1.5 min-h-[36px] min-w-[36px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
                 )}
