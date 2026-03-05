@@ -1,61 +1,54 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-const STORAGE_KEY = 'famplan_google_connected';
-const EMAIL_KEY = 'famplan_user_email';
-const MOCK_EMAIL = 'user@gmail.com';
+import * as googleAuth from '../lib/googleAuth';
 
 interface AuthContextType {
   isConnected: boolean;
   email: string;
-  connect: (email?: string) => void;
+  connect: () => Promise<void>;
   disconnect: () => void;
-  setEmail: (email: string) => void;
+  connectError: string | null;
+  clearConnectError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const loadConnected = (): boolean => {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  return saved === 'true';
-};
-
-const loadEmail = (): string => {
-  const saved = localStorage.getItem(EMAIL_KEY);
-  return saved || MOCK_EMAIL;
-};
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isConnected, setIsConnected] = useState(loadConnected);
-  const [email, setEmailState] = useState(loadEmail);
+  const [isConnected, setIsConnected] = useState(googleAuth.isConnected);
+  const [email, setEmailState] = useState(googleAuth.getStoredEmail() || '');
+  const [connectError, setConnectError] = useState<string | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, String(isConnected));
-  }, [isConnected]);
-
-  useEffect(() => {
-    if (isConnected) {
-      localStorage.setItem(EMAIL_KEY, email);
+  const connect = async () => {
+    setConnectError(null);
+    try {
+      const userEmail = await googleAuth.connectGoogle();
+      setIsConnected(true);
+      setEmailState(userEmail);
+    } catch (e) {
+      setConnectError(e instanceof Error ? e.message : 'Connection failed');
     }
-  }, [isConnected, email]);
-
-  const connect = (userEmail?: string) => {
-    setIsConnected(true);
-    setEmailState(userEmail?.trim() || MOCK_EMAIL);
   };
 
   const disconnect = () => {
+    googleAuth.clearGoogleSession();
     setIsConnected(false);
-    setEmailState(MOCK_EMAIL);
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(EMAIL_KEY);
+    setEmailState('');
+    setConnectError(null);
   };
 
-  const setEmail = (newEmail: string) => {
-    setEmailState(newEmail);
-  };
+  const clearConnectError = () => setConnectError(null);
+
+  useEffect(() => {
+    const check = () => {
+      const connected = googleAuth.isConnected();
+      const storedEmail = googleAuth.getStoredEmail();
+      setIsConnected(connected);
+      setEmailState(storedEmail || '');
+    };
+    check();
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ isConnected, email, connect, disconnect, setEmail }}>
+    <AuthContext.Provider value={{ isConnected, email, connect, disconnect, connectError, clearConnectError }}>
       {children}
     </AuthContext.Provider>
   );
