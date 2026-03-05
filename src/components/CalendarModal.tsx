@@ -13,7 +13,7 @@ import {
   driveWriteJson,
   type FamilyData,
 } from '../lib/drive';
-import { ensureFamPlanCalendarWithMeta } from '../lib/calendar';
+import { ensureFamPlanCalendarWithMeta, createTestNotificationEvent } from '../lib/calendar';
 
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
@@ -31,6 +31,7 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
   const [isEnsuring, setIsEnsuring] = useState(false);
   const [calendarId, setCalendarId] = useState<string | null>(null);
   const [multipleFound, setMultipleFound] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
 
   useEffect(() => {
     if (!open || !isConnected) return;
@@ -102,6 +103,26 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
                     {t('cal_multiple_warning').replace('<id>', calendarId)}
                   </p>
                 </div>
+              )}
+              {calendarId && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsTesting(true);
+                    try {
+                      await createTestNotificationEvent(calendarId);
+                      showToast(t('test_notification_sent'), 'success');
+                    } catch (e) {
+                      showToast(e instanceof Error ? e.message : 'Failed', 'error');
+                    } finally {
+                      setIsTesting(false);
+                    }
+                  }}
+                  disabled={isTesting}
+                  className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 disabled:opacity-60"
+                >
+                  {isTesting ? '...' : t('test_notification')}
+                </button>
               )}
             </>
           )}

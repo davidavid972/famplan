@@ -95,16 +95,19 @@ export async function ensureFamPlanCalendarWithMeta(stored?: string | null): Pro
   return { calendarId: preferred, multipleFound: true };
 }
 
+type ReminderOverride = { method: 'popup'; minutes: number };
+
 type EventPayload = {
   summary: string;
   description?: string;
   location?: string;
   start: { dateTime: string; timeZone?: string };
   end: { dateTime: string; timeZone?: string };
+  reminders?: { useDefault: false; overrides: ReminderOverride[] };
 };
 
 /**
- * Validate event payload. HOTFIX: no reminders - only summary, start, end, description, location.
+ * Validate event payload. Ensures reminders use useDefault:false + overrides only (never both useDefault:true and overrides).
  */
 function validateEventPayload(payload: EventPayload): EventPayload {
   const tz = payload.start?.timeZone ?? payload.end?.timeZone ?? DEFAULT_TZ;
@@ -124,6 +127,9 @@ function validateEventPayload(payload: EventPayload): EventPayload {
   };
   if (!result.description) delete result.description;
   if (!result.location) delete result.location;
+  if (payload.reminders?.overrides?.length) {
+    result.reminders = { useDefault: false, overrides: payload.reminders.overrides };
+  }
   return result;
 }
 
@@ -138,7 +144,7 @@ function extractErrorReason(bodyText: string): string {
   return bodyText.slice(0, 200);
 }
 
-/** Build request body with ONLY summary/start/end/description/location - never reminders */
+/** Build request body. Reminders: useDefault:false + overrides only (never useDefault:true with overrides). */
 function toEventBody(p: EventPayload): string {
   const body: Record<string, unknown> = {
     summary: p.summary,
@@ -147,6 +153,9 @@ function toEventBody(p: EventPayload): string {
   };
   if (p.description) body.description = p.description;
   if (p.location) body.location = p.location;
+  if (p.reminders?.overrides?.length) {
+    body.reminders = { useDefault: false, overrides: p.reminders.overrides };
+  }
   return JSON.stringify(body);
 }
 
@@ -159,8 +168,7 @@ export async function createEvent(
 ): Promise<{ id: string }> {
   const payload = validateEventPayload(eventPayload);
   const body = toEventBody(payload);
-  console.log('[CAL] FINAL PAYLOAD (no reminders expected):', body);
-  console.log('[CAL] reminders present?', body.includes('reminders'));
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar create payload:', body);
 
   const url = withApiKey(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`);
   const headers = getCalendarHeaders();
@@ -200,6 +208,7 @@ export async function updateEvent(
     location: string;
     start: { dateTime: string; timeZone?: string };
     end: { dateTime: string; timeZone?: string };
+    reminders: { useDefault: false; overrides: ReminderOverride[] };
   }>
 ): Promise<void> {
   const bodyObj: Record<string, unknown> = {};
@@ -208,9 +217,11 @@ export async function updateEvent(
   if (payload.location !== undefined) bodyObj.location = payload.location;
   if (payload.start !== undefined) bodyObj.start = payload.start;
   if (payload.end !== undefined) bodyObj.end = payload.end;
+  if (payload.reminders?.overrides?.length) {
+    bodyObj.reminders = { useDefault: false, overrides: payload.reminders.overrides };
+  }
   const body = JSON.stringify(bodyObj);
-  console.log('[CAL] FINAL PAYLOAD (no reminders expected):', body);
-  console.log('[CAL] reminders present?', body.includes('reminders'));
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar update payload:', body);
 
   const url = withApiKey(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`);
   const headers = getCalendarHeaders();
@@ -241,7 +252,7 @@ export async function deleteEvent(calendarId: string, eventId: string): Promise<
 }
 
 /**
- * Build event payload from plan. HOTFIX: no reminders - only summary, start, end, description, location.
+ * Build event payload from plan. Uses Asia/Jerusalem. Reminders: useDefault:false + overrides only.
  */
 export function planToEventPayload(plan: {
   title: string;
@@ -255,11 +266,39 @@ export function planToEventPayload(plan: {
   const startDate = new Date(plan.start);
   const endDate = new Date(plan.end);
 
-  return {
+  const payload: EventPayload = {
     summary: plan.title,
     description: plan.notes || undefined,
     location: plan.location || undefined,
     start: { dateTime: startDate.toISOString(), timeZone: tz },
     end: { dateTime: endDate.toISOString(), timeZone: tz },
   };
+
+  const rems = plan.reminders?.filter((r) => r.minutesBeforeStart > 0) ?? [];
+  if (rems.length > 0) {
+    payload.reminders = {
+      useDefault: false,
+      overrides: rems.map((r) => ({ method: 'popup' as const, minutes: r.minutesBeforeStart })),
+    };
+  }
+
+  return payload;
+}
+
+/**
+ * Create a test notification event: 2 minutes from now, 1-minute popup reminder.
+ * For Settings "Test notification" button.
+ */
+export async function createTestNotificationEvent(calendarId: string): Promise<string> {
+  const now = Date.now();
+  const start = now + 2 * 60 * 1000;
+  const end = start + 60 * 1000;
+  const payload = planToEventPayload({
+    title: 'FamPlan Test',
+    start,
+    end,
+    reminders: [{ minutesBeforeStart: 1 }],
+  });
+  const { id } = await createEvent(calendarId, payload);
+  return id;
 }
