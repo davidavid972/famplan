@@ -106,7 +106,8 @@ type EventPayload = {
 
 /**
  * Validate and sanitize event payload before sending.
- * Google: with overrides MUST set useDefault:false; with no overrides omit or use useDefault:true.
+ * Google: with overrides MUST set useDefault:false; NEVER send useDefault:true with overrides.
+ * Build minimal payload to avoid any accidental default+override mix.
  */
 function validateEventPayload(payload: EventPayload): EventPayload {
   const tz = payload.start?.timeZone ?? payload.end?.timeZone ?? DEFAULT_TZ;
@@ -122,7 +123,7 @@ function validateEventPayload(payload: EventPayload): EventPayload {
 
   let overrides = payload.reminders?.overrides ?? [{ method: 'popup', minutes: 15 }];
   overrides = overrides
-    .map((o) => ({ ...o, minutes: Math.max(0, Math.floor(Number(o.minutes) || 0)) }))
+    .map((o) => ({ method: 'popup' as const, minutes: Math.max(0, Math.floor(Number(o.minutes) || 0)) }))
     .filter((o) => o.minutes >= 0);
   const seen = new Set<number>();
   overrides = overrides.filter((o) => {
@@ -130,18 +131,18 @@ function validateEventPayload(payload: EventPayload): EventPayload {
     seen.add(o.minutes);
     return true;
   });
-  if (overrides.length === 0) overrides = [{ method: 'popup', minutes: 15 }];
+  if (overrides.length === 0) overrides = [{ method: 'popup' as const, minutes: 15 }];
 
   const result: EventPayload = {
-    ...payload,
+    summary: payload.summary,
+    description: payload.description,
+    location: payload.location,
     start: { dateTime: startIso, timeZone: tz },
     end: { dateTime: endIso, timeZone: tz },
+    reminders: { useDefault: false, overrides },
   };
-  if (overrides.length > 0) {
-    result.reminders = { useDefault: false, overrides };
-  } else {
-    delete result.reminders;
-  }
+  if (!result.description) delete result.description;
+  if (!result.location) delete result.location;
   return result;
 }
 
@@ -233,7 +234,7 @@ export async function deleteEvent(calendarId: string, eventId: string): Promise<
 
 /**
  * Build event payload from plan. Reminders: unique minutes >=0 -> overrides (popup). Default 15 min.
- * With overrides: useDefault:false. With empty: omit reminders.
+ * Always sends reminders: { useDefault: false, overrides } - never mix with default.
  */
 export function planToEventPayload(plan: {
   title: string;
@@ -252,15 +253,12 @@ export function planToEventPayload(plan: {
   const uniqueMinutes = [...new Set(raw)].sort((a, b) => b - a);
   const overrides = uniqueMinutes.map((m) => ({ method: 'popup' as const, minutes: m }));
 
-  const result: EventPayload = {
+  return {
     summary: plan.title,
     description: plan.notes || undefined,
     location: plan.location || undefined,
     start: { dateTime: startDate.toISOString(), timeZone: tz },
     end: { dateTime: endDate.toISOString(), timeZone: tz },
+    reminders: { useDefault: false, overrides },
   };
-  if (overrides.length > 0) {
-    result.reminders = { useDefault: false, overrides };
-  }
-  return result;
 }
