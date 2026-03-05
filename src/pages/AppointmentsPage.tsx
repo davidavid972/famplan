@@ -48,12 +48,16 @@ export const AppointmentsPage: React.FC = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedIds.size > 0) {
+    if (selectedIds.size === 0) return;
+    try {
       await deleteAppointments(Array.from(selectedIds));
-      showToast(t('appointment_deleted'), 'success');
+      showToast(t('plans_bulk_delete_success'), 'success');
       setSelectedIds(new Set());
       setIsSelectMode(false);
       setBulkDeleteConfirm(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      showToast(`${t('delete_selected')}: ${msg}`, 'error');
     }
   };
 
@@ -122,7 +126,7 @@ export const AppointmentsPage: React.FC = () => {
   const sortedAppointments = [...filteredAppointments].sort((a, b) => a.start - b.start);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className={`space-y-6 animate-in fade-in duration-300 ${selectedIds.size > 0 ? 'pb-24' : ''}`}>
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('appointments')}</h1>
         {canEdit && (
@@ -143,8 +147,8 @@ export const AppointmentsPage: React.FC = () => {
 
       {selectedIds.size > 0 && (
         <div
-          className="sticky top-20 z-30 flex items-center justify-between gap-4 p-4 rounded-2xl border shadow-lg"
-          style={{ backgroundColor: `${selectionColor}15`, borderColor: `${selectionColor}40` }}
+          className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between gap-4 p-4 rounded-t-2xl border-t border-x shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+          style={{ backgroundColor: `${selectionColor}18`, borderColor: `${selectionColor}40` }}
         >
           <span className="font-semibold text-stone-900">{t('plans_selected_count').replace('{count}', String(selectedIds.size))}</span>
           <div className="flex items-center gap-2">
@@ -160,7 +164,7 @@ export const AppointmentsPage: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 transition-colors min-h-[44px]"
             >
               <X className="w-4 h-4" />
-              {t('plans_clear_selection')}
+              {t('plans_cancel')}
             </button>
           </div>
         </div>
