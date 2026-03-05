@@ -10,8 +10,7 @@ import { PersonAvatar } from '../components/PersonAvatar';
 import { Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle, Trash2, X } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Appointment, AppointmentStatus } from '../types/models';
-import { format } from 'date-fns';
-import { he, enUS } from 'date-fns/locale';
+import { formatTime24, formatDateTime24 } from '../lib/formatTime';
 
 export const AppointmentsPage: React.FC = () => {
   const { t, language, dir } = useI18n();
@@ -25,17 +24,18 @@ export const AppointmentsPage: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
-  const dateLocale = language === 'he' ? he : enUS;
-
-  const safeFormat = (ts: number | undefined, fmt: string) => {
+  const timeLocale = language === 'he' ? 'he-IL' : 'en-GB';
+  const safeFormatDateTime = (ts: number | undefined) => {
     const val = ts ?? 0;
     const d = new Date(val);
     if (Number.isNaN(d.getTime())) return '—';
-    try {
-      return format(d, fmt, { locale: dateLocale });
-    } catch {
-      return '—';
-    }
+    return formatDateTime24(d, timeLocale);
+  };
+  const safeFormatTime = (ts: number | undefined) => {
+    const val = ts ?? 0;
+    const d = new Date(val);
+    if (Number.isNaN(d.getTime())) return '—';
+    return formatTime24(d, timeLocale);
   };
 
   const getPerson = (id: string) => people.find((p) => p && p.id === id);
@@ -231,7 +231,7 @@ export const AppointmentsPage: React.FC = () => {
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="w-4 h-4" />
                         <span>
-                          {safeFormat(appointment.start, 'PPp')} - {safeFormat(appointment.end, 'p')}
+                          {safeFormatDateTime(appointment.start)} - {safeFormatTime(appointment.end)}
                         </span>
                       </div>
                       

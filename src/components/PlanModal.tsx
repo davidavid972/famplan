@@ -59,7 +59,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   remainingSlots = 20,
   canEdit,
 }) => {
-  const { t, dir } = useI18n();
+  const { t, dir, language } = useI18n();
   const [title, setTitle] = useState('');
   const [personId, setPersonId] = useState('');
   const [start, setStart] = useState('');
@@ -189,7 +189,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto overscroll-contain">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 my-8">
-        <div className="p-6 border-b border-stone-100 flex justify-between items-center sticky top-0 bg-white z-10">
+        <div className="p-6 border-b border-stone-100 flex justify-between items-center shrink-0 bg-white z-10">
           <h2 className="text-xl font-bold text-stone-900">
             {mode === 'edit' ? t('edit_appointment') : t('add_appointment')}
           </h2>
@@ -244,7 +244,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4" lang={language === 'he' ? 'he-IL' : 'en-GB'}>
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1">{t('start_time')} *</label>
                   <input
@@ -252,6 +252,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                     value={start}
                     onChange={(e) => handleStartChange(e.target.value)}
                     disabled={!canEdit}
+                    step="300"
                     className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white disabled:opacity-60"
                   />
                 </div>
@@ -262,6 +263,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                     value={end}
                     onChange={(e) => handleEndChange(e.target.value)}
                     disabled={!canEdit}
+                    step="300"
                     className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white disabled:opacity-60"
                   />
                 </div>
@@ -401,7 +403,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                 calendarEventId: {savedCalendarEventId}
               </div>
             )}
-            <div className="flex justify-between gap-3 p-6 bg-stone-50 border-t border-stone-100 sticky bottom-0 z-10">
+            <div className="flex justify-between gap-3 p-6 bg-stone-50 border-t border-stone-100 shrink-0 z-10">
               <div>
                 {mode === 'edit' && appointment && onDelete && canEdit && (
                   <button

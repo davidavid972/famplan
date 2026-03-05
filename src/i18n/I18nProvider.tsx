@@ -19,7 +19,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     localStorage.setItem('famplan_lang', language);
     document.documentElement.dir = language === 'he' ? 'rtl' : 'ltr';
-    document.documentElement.lang = language;
+    document.documentElement.lang = language === 'he' ? 'he-IL' : 'en-GB';
   }, [language]);
 
   const setLanguage = (lang: Language) => {

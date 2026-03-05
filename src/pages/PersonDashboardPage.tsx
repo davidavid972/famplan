@@ -10,6 +10,7 @@ import { PersonAvatar } from '../components/PersonAvatar';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, FileText, Upload, Trash2, CheckCircle2, Circle, MapPin, AlignLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { he, enUS } from 'date-fns/locale';
+import { formatTime24, formatDateTime24 } from '../lib/formatTime';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Appointment, AppointmentStatus, Attachment } from '../types/models';
 
@@ -34,6 +35,7 @@ export const PersonDashboardPage: React.FC = () => {
 
   const person = people.find((p) => p.id === id);
   const dateLocale = language === 'he' ? he : enUS;
+  const timeLocale = language === 'he' ? 'he-IL' : 'en-GB';
 
   if (!person) {
     return (
@@ -235,8 +237,8 @@ export const PersonDashboardPage: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <CalendarIcon className="w-4 h-4" />
                       <span>
-                        {format(appointment.start, 'PPp', { locale: dateLocale })} -{' '}
-                        {format(appointment.end, 'p', { locale: dateLocale })}
+                        {formatDateTime24(new Date(appointment.start), timeLocale)} -{' '}
+                        {formatTime24(new Date(appointment.end), timeLocale)}
                       </span>
                     </div>
                     
