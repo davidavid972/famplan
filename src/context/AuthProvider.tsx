@@ -30,6 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const disconnect = () => {
     googleAuth.clearGoogleSession();
+    ['famplan_drive_family_file_id', 'famplan_drive_root_folder_id', 'famplan_drive_data_folder_id', 'famplan_drive_sync_status'].forEach((k) => localStorage.removeItem(k));
     setIsConnected(false);
     setEmailState('');
     setConnectError(null);

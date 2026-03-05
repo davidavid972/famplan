@@ -136,12 +136,12 @@ export async function driveWriteJson<T extends object>(
 }
 
 /**
- * Ensure FamPlan folder structure and return data folder id.
+ * Ensure FamPlan folder structure and return folder ids.
  */
-export async function driveEnsureFamPlanStructure(): Promise<string> {
-  const rootId = await driveEnsureFolder(FAMPLAN_ROOT, 'root');
-  const dataId = await driveEnsureFolder(DATA_FOLDER, rootId);
-  return dataId;
+export async function driveEnsureFamPlanStructure(): Promise<{ rootFolderId: string; dataFolderId: string }> {
+  const rootFolderId = await driveEnsureFolder(FAMPLAN_ROOT, 'root');
+  const dataFolderId = await driveEnsureFolder(DATA_FOLDER, rootFolderId);
+  return { rootFolderId, dataFolderId };
 }
 
 /**

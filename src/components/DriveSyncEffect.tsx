@@ -17,6 +17,9 @@ import {
 } from '../lib/drive';
 
 const FILE_ID_KEY = 'famplan_drive_family_file_id';
+const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
+const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
+const SYNC_STATUS_KEY = 'famplan_drive_sync_status';
 
 export function DriveSyncEffect() {
   const { isConnected } = useAuth();
@@ -38,7 +41,11 @@ export function DriveSyncEffect() {
     async function syncFromDrive() {
       try {
         isLoadingFromDriveRef.current = true;
-        const dataFolderId = await driveEnsureFamPlanStructure();
+        localStorage.setItem(SYNC_STATUS_KEY, '');
+        const { rootFolderId, dataFolderId } = await driveEnsureFamPlanStructure();
+        if (cancelled) return;
+        localStorage.setItem(ROOT_FOLDER_KEY, rootFolderId);
+        localStorage.setItem(DATA_FOLDER_KEY, dataFolderId);
         const { data, fileId } = await driveLoadFamily(dataFolderId);
         if (cancelled) return;
         fileIdRef.current = fileId;
@@ -46,8 +53,12 @@ export function DriveSyncEffect() {
         localStorage.setItem('famplan_family_id', data.familyId);
         setFamilyDisplayName(data.familyDisplayName || '');
         setFamilyPhoto(data.familyPhoto ?? null);
+        localStorage.setItem(SYNC_STATUS_KEY, 'Success');
+        window.dispatchEvent(new CustomEvent('famplan-drive-sync-done'));
       } catch (e) {
         console.warn('Drive sync load failed:', e);
+        localStorage.setItem(SYNC_STATUS_KEY, `Error: ${e instanceof Error ? e.message : String(e)}`);
+        window.dispatchEvent(new CustomEvent('famplan-drive-sync-done'));
       } finally {
         isLoadingFromDriveRef.current = false;
         initialLoadDoneRef.current = true;

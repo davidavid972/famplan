@@ -9,7 +9,7 @@ const SCOPES = [
   'openid',
   'email',
   'profile',
-  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/drive',
   'https://www.googleapis.com/auth/calendar.events',
 ].join(' ');
 
@@ -83,6 +83,8 @@ export function connectGoogle(): Promise<string> {
         const client = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
+          prompt: 'consent',
+          include_granted_scopes: false,
           callback: async (response) => {
             if (response.error) {
               reject(new Error(response.error));

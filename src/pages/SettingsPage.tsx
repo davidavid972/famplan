@@ -1,14 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon } from 'lucide-react';
+
+const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
+const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
+const FILE_ID_KEY = 'famplan_drive_family_file_id';
+const SYNC_STATUS_KEY = 'famplan_drive_sync_status';
 
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
   const { isConnected, email, connect, disconnect, connectError, clearConnectError } = useAuth();
   const { familyDisplayName, familyPhoto, setFamilyDisplayName, setFamilyPhoto } = useFamily();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [driveDebug, setDriveDebug] = useState({ rootFolderId: '', dataFolderId: '', familyFileId: '', syncStatus: '' });
+
+  const refreshDriveDebug = () => {
+    setDriveDebug({
+      rootFolderId: localStorage.getItem(ROOT_FOLDER_KEY) || '',
+      dataFolderId: localStorage.getItem(DATA_FOLDER_KEY) || '',
+      familyFileId: localStorage.getItem(FILE_ID_KEY) || '',
+      syncStatus: localStorage.getItem(SYNC_STATUS_KEY) || '',
+    });
+  };
+
+  useEffect(() => {
+    if (!isConnected) return;
+    refreshDriveDebug();
+    const handler = () => refreshDriveDebug();
+    window.addEventListener('famplan-drive-sync-done', handler);
+    return () => window.removeEventListener('famplan-drive-sync-done', handler);
+  }, [isConnected]);
 
   const handleConnect = async () => {
     setIsConnecting(true);
@@ -163,6 +186,19 @@ export const SettingsPage: React.FC = () => {
               </p>
             </div>
           </div>
+
+          {/* DEBUG: Drive sync status (temporary) */}
+          {isConnected && (
+            <div className="w-full pt-4 border-t border-stone-200">
+              <h3 className="text-xs font-medium text-stone-500 mb-2">Drive (debug)</h3>
+              <div className="p-3 bg-stone-100 rounded-xl text-xs font-mono text-stone-600 space-y-1 break-all">
+                <div>rootFolderId: {driveDebug.rootFolderId || '—'}</div>
+                <div>dataFolderId: {driveDebug.dataFolderId || '—'}</div>
+                <div>familyFileId: {driveDebug.familyFileId || '—'}</div>
+                <div>syncStatus: {driveDebug.syncStatus || '—'}</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
