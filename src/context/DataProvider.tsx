@@ -177,7 +177,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addAppointment = async (appointment: Omit<Appointment, 'id' | 'createdAt'>): Promise<Appointment> => {
     if (!canEdit) return { ...appointment, id: '', createdAt: 0 } as Appointment;
-    const reminders = appointment.reminders?.length
+    const reminders = appointment.reminders !== undefined
       ? appointment.reminders
       : [{ minutesBeforeStart: 15 }];
     const newAppointment: Appointment = {

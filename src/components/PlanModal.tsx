@@ -4,13 +4,7 @@ import { Calendar as CalendarIcon, MapPin, AlignLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Appointment, Person, Reminder } from '../types/models';
 
-type ReminderUnit = 'minutes' | 'hours' | 'days';
-interface ReminderEntry { value: number; unit: ReminderUnit; }
-function toMinutes(entry: ReminderEntry): number {
-  if (entry.unit === 'minutes') return entry.value;
-  if (entry.unit === 'hours') return entry.value * 60;
-  return entry.value * 1440;
-}
+const REMINDER_OPTIONS = [5, 10, 15, 30, 60, 180, 1440] as const;
 
 interface PlanModalProps {
   isOpen: boolean;
@@ -66,7 +60,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   const [end, setEnd] = useState('');
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
-  const [reminders, setReminders] = useState<ReminderEntry[]>([{ value: 15, unit: 'minutes' }]);
+  const [reminderMinutes, setReminderMinutes] = useState<number | null>(15);
   const endManuallyEditedRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedCalendarEventId, setSavedCalendarEventId] = useState<string | null>(null);
@@ -81,15 +75,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       setEnd(format(appointment.end, "yyyy-MM-dd'T'HH:mm"));
       setLocation(appointment.location || '');
       setNotes(appointment.notes || '');
-      const rems = appointment.reminders?.length
-        ? appointment.reminders.map((r) => {
-            const m = r.minutesBeforeStart;
-            if (m >= 1440) return { value: m / 1440, unit: 'days' as ReminderUnit };
-            if (m >= 60) return { value: m / 60, unit: 'hours' as ReminderUnit };
-            return { value: m, unit: 'minutes' as ReminderUnit };
-          })
-        : [{ value: 15, unit: 'minutes' as ReminderUnit }];
-      setReminders(rems);
+      const first = appointment.reminders?.[0]?.minutesBeforeStart;
+      setReminderMinutes(first != null && first > 0 ? first : null);
     } else {
       const date = initialDate || new Date();
       const startStr = format(date, "yyyy-MM-dd'T'09:00");
@@ -102,7 +89,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       setEnd(endStr);
       setLocation('');
       setNotes('');
-      setReminders([{ value: 15, unit: 'minutes' }]);
+      setReminderMinutes(15);
     }
     setSaveError(null);
   }, [isOpen, mode, appointment, initialDate, people, selectedPersonId]);
@@ -121,26 +108,6 @@ export const PlanModal: React.FC<PlanModalProps> = ({
     setEnd(val);
   };
 
-  const addReminder = () => setReminders((prev) => [...prev, { value: 15, unit: 'minutes' }]);
-  const removeReminder = (idx: number) => setReminders((prev) => prev.filter((_, i) => i !== idx));
-  const updateReminder = (idx: number, patch: Partial<ReminderEntry>) =>
-    setReminders((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
-  const togglePreset = (minutes: number) => {
-    setReminders((prev) => {
-      const already = prev.some((r) => toMinutes(r) === minutes);
-      if (already) {
-        const next = prev.filter((r) => toMinutes(r) !== minutes);
-        return next.length > 0 ? next : [{ value: 15, unit: 'minutes' }];
-      }
-      const entry: ReminderEntry = minutes >= 1440 ? { value: minutes / 1440, unit: 'days' }
-        : minutes >= 60 ? { value: minutes / 60, unit: 'hours' }
-        : { value: minutes, unit: 'minutes' };
-      const next = [...prev, entry];
-      next.sort((a, b) => toMinutes(b) - toMinutes(a));
-      return next;
-    });
-  };
-
   const handleSubmit = async () => {
     setSaveError(null);
     setSavedCalendarEventId(null);
@@ -154,11 +121,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       setSaveError(t('end_time_error'));
       return;
     }
-    const minutesList = reminders.map(toMinutes).filter((m) => m > 0);
-    const unique = [...new Set(minutesList)].sort((a, b) => b - a);
-    const remindersPayload: Reminder[] = unique.length > 0
-      ? unique.map((m) => ({ minutesBeforeStart: m }))
-      : [{ minutesBeforeStart: 15 }];
+    const remindersPayload: Reminder[] =
+      reminderMinutes != null ? [{ minutesBeforeStart: reminderMinutes }] : [];
     const result = await onSave({
       title: title.trim(),
       personId,
@@ -306,55 +270,28 @@ export const PlanModal: React.FC<PlanModalProps> = ({
 
               {/* Reminders */}
               <div className="pt-4 border-t border-stone-200">
-                <label className="block text-sm font-medium text-stone-700 mb-2">{t('rem_section')}</label>
-                <div className="flex gap-2 flex-wrap mb-2">
-                  {([1440, 180, 60, 15] as const).map((mins) => {
-                    const selected = reminders.some((r) => toMinutes(r) === mins);
-                    return (
-                      <button
-                        key={mins}
-                        type="button"
-                        onClick={() => canEdit && togglePreset(mins)}
-                        disabled={!canEdit}
-                        className={`px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-colors disabled:opacity-60 ${selected ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
-                      >
-                        {mins === 1440 ? t('rem_preset_1d') : mins === 180 ? t('rem_preset_3h') : mins === 60 ? t('rem_preset_1h') : t('rem_preset_15m')}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-xs text-stone-500 mb-1">{t('rem_custom')}</p>
-                <div className="space-y-2">
-                  {reminders.map((r, idx) => (
-                    <div key={idx} className="flex items-center gap-2 flex-wrap">
-                      <input
-                        type="number"
-                        min={1}
-                        value={r.value || ''}
-                        onChange={(e) => updateReminder(idx, { value: Number(e.target.value) || 0 })}
-                        disabled={!canEdit}
-                        className="w-16 px-2 py-1.5 rounded-lg border border-stone-200 text-sm disabled:opacity-60"
-                      />
-                      <select
-                        value={r.unit}
-                        onChange={(e) => updateReminder(idx, { unit: e.target.value as ReminderUnit })}
-                        disabled={!canEdit}
-                        className="px-2 py-1.5 rounded-lg border border-stone-200 text-sm disabled:opacity-60"
-                      >
-                        <option value="minutes">{t('rem_unit_minutes')}</option>
-                        <option value="hours">{t('rem_unit_hours')}</option>
-                        <option value="days">{t('rem_unit_days')}</option>
-                      </select>
-                      <span className="text-sm text-stone-500">{t('rem_before')}</span>
-                      <button type="button" onClick={() => canEdit && removeReminder(idx)} disabled={!canEdit} className="px-3 py-2 min-h-[44px] text-red-600 hover:bg-red-50 rounded-lg text-sm disabled:opacity-60">
-                        {t('rem_delete')}
-                      </button>
-                    </div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">{t('rem_alert')}</label>
+                <select
+                  value={reminderMinutes ?? 'none'}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setReminderMinutes(v === 'none' ? null : Number(v));
+                  }}
+                  disabled={!canEdit}
+                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white disabled:opacity-60"
+                >
+                  <option value="none">{t('rem_no_reminder')}</option>
+                  {REMINDER_OPTIONS.map((mins) => (
+                    <option key={mins} value={mins}>
+                      {mins === 5 ? t('rem_5m') : mins === 10 ? t('rem_10m') : mins === 15 ? t('rem_preset_15m') : mins === 30 ? t('rem_30m') : mins === 60 ? t('rem_preset_1h') : mins === 180 ? t('rem_preset_3h') : t('rem_preset_1d')}
+                    </option>
                   ))}
-                  <button type="button" onClick={() => canEdit && addReminder()} disabled={!canEdit} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium disabled:opacity-60">
-                    {t('rem_add')}
-                  </button>
-                </div>
+                  {reminderMinutes != null && !REMINDER_OPTIONS.includes(reminderMinutes) && (
+                    <option value={reminderMinutes}>
+                      {reminderMinutes < 60 ? `${reminderMinutes} ${t('rem_unit_minutes')}` : reminderMinutes < 1440 ? `${Math.round(reminderMinutes / 60)} ${t('rem_unit_hours')}` : `${Math.round(reminderMinutes / 1440)} ${t('rem_unit_days')}`} {t('rem_before')}
+                    </option>
+                  )}
+                </select>
               </div>
 
               {/* Documents - only in add mode */}

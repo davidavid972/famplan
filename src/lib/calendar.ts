@@ -153,8 +153,8 @@ function toEventBody(p: EventPayload): string {
   };
   if (p.description) body.description = p.description;
   if (p.location) body.location = p.location;
-  if (p.reminders?.overrides?.length) {
-    body.reminders = { useDefault: false, overrides: p.reminders.overrides };
+  if (p.reminders !== undefined) {
+    body.reminders = { useDefault: false, overrides: p.reminders.overrides ?? [] };
   }
   return JSON.stringify(body);
 }
@@ -275,12 +275,10 @@ export function planToEventPayload(plan: {
   };
 
   const rems = plan.reminders?.filter((r) => r.minutesBeforeStart > 0) ?? [];
-  if (rems.length > 0) {
-    payload.reminders = {
-      useDefault: false,
-      overrides: rems.map((r) => ({ method: 'popup' as const, minutes: r.minutesBeforeStart })),
-    };
-  }
+  payload.reminders = {
+    useDefault: false,
+    overrides: rems.map((r) => ({ method: 'popup' as const, minutes: r.minutesBeforeStart })),
+  };
 
   return payload;
 }
