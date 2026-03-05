@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
-import { Calendar as CalendarIcon, MapPin, AlignLeft } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, AlignLeft, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Appointment, Person, Reminder } from '../types/models';
 import { generateRecurrenceStarts } from '../lib/recurrence';
@@ -23,16 +23,23 @@ interface PlanModalProps {
   initialDate?: Date;
   people: Person[];
   selectedPersonId: string | null;
-  onSave: (data: {
-    title: string;
-    personId: string;
-    start: number;
-    end: number;
-    location: string;
-    notes: string;
-    reminders: Reminder[];
-    recurrence?: RecurrenceParams;
-  }) => void | Promise<void | { calendarEventId?: string }>;
+  onSave: (
+    data: {
+      title: string;
+      personId: string;
+      start: number;
+      end: number;
+      location: string;
+      notes: string;
+      reminders: Reminder[];
+      recurrence?: RecurrenceParams;
+    },
+    options?: {
+      onProgress?: (current: number, total: number) => void;
+      onRecurringProgress?: (current: number, total: number) => void;
+      isCancelled?: () => boolean;
+    }
+  ) => void | Promise<void | { calendarEventId?: string }>;
   onDelete?: (id: string) => void;
   onDeleteSeries?: (recurrenceGroupId: string) => void;
   pendingDocs?: Array<{ name: string; type: string; size: number }>;
@@ -82,6 +89,11 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedCalendarEventId, setSavedCalendarEventId] = useState<string | null>(null);
   const [showDeleteChoice, setShowDeleteChoice] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [recurringProgress, setRecurringProgress] = useState<{ current: number; total: number } | null>(null);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -119,6 +131,11 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       setEndCount(4);
     }
     setSaveError(null);
+    setIsSaving(false);
+    setIsProcessingFiles(false);
+    setUploadProgress(null);
+    setRecurringProgress(null);
+    cancelledRef.current = false;
   }, [isOpen, mode, appointment, initialDate, people, selectedPersonId]);
 
   const handleStartChange = (val: string) => {
@@ -166,23 +183,48 @@ export const PlanModal: React.FC<PlanModalProps> = ({
         count: endCondition === 'count' ? endCount : undefined,
       };
     }
-    const result = await onSave({
-      title: title.trim(),
-      personId,
-      start: startMs,
-      end: endMs,
-      location,
-      notes,
-      reminders: remindersPayload,
-      recurrence,
-    });
-    const res = result as { calendarEventId?: string } | undefined;
-    if (res?.calendarEventId) {
-      setSavedCalendarEventId(res.calendarEventId);
-      setTimeout(() => onClose(), 800);
-    } else {
-      onClose();
+    setIsSaving(true);
+    cancelledRef.current = false;
+    setUploadProgress(pendingDocs.length > 0 ? { current: 0, total: pendingDocs.length } : null);
+    const recTotal = recurrence ? generateRecurrenceStarts(startMs, recurrence).length : 0;
+    setRecurringProgress(recurrence && recTotal > 0 ? { current: 0, total: recTotal } : null);
+    try {
+      const saveOptions: { onProgress?: (c: number, t: number) => void; onRecurringProgress?: (c: number, t: number) => void; isCancelled?: () => boolean } = {};
+      if (pendingDocs.length > 0) saveOptions.onProgress = (c, t) => setUploadProgress({ current: c, total: t });
+      if (recurrence) {
+        saveOptions.onRecurringProgress = (c, t) => setRecurringProgress({ current: c, total: t });
+        saveOptions.isCancelled = () => cancelledRef.current;
+      }
+      const result = await onSave(
+        {
+          title: title.trim(),
+          personId,
+          start: startMs,
+          end: endMs,
+          location,
+          notes,
+          reminders: remindersPayload,
+          recurrence,
+        },
+        Object.keys(saveOptions).length > 0 ? saveOptions : undefined
+      );
+      const res = result as { calendarEventId?: string } | undefined;
+      if (res?.calendarEventId) {
+        setSavedCalendarEventId(res.calendarEventId);
+        setTimeout(() => onClose(), 800);
+      } else {
+        onClose();
+      }
+    } catch {
+      setSaveError(t('docs_upload_failed'));
+      setIsSaving(false);
+      setUploadProgress(null);
+      setRecurringProgress(null);
     }
+  };
+
+  const handleRecurringCancel = () => {
+    cancelledRef.current = true;
   };
 
   const handleDelete = () => {
@@ -213,6 +255,23 @@ export const PlanModal: React.FC<PlanModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto overscroll-contain">
+      {recurringProgress && (
+        <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-3xl">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4 flex flex-col items-center gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
+            <p className="text-stone-700 font-medium">
+              {t('rec_progress').replace('{current}', String(recurringProgress.current)).replace('{total}', String(recurringProgress.total))}
+            </p>
+            <button
+              type="button"
+              onClick={handleRecurringCancel}
+              className="px-4 py-2 text-sm font-medium text-stone-600 bg-stone-100 rounded-xl hover:bg-stone-200 transition-colors"
+            >
+              {t('rec_cancel')}
+            </button>
+          </div>
+        </div>
+      )}
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 my-8">
         <div className="p-6 border-b border-stone-100 flex justify-between items-center shrink-0 bg-white z-10">
           <h2 className="text-xl font-bold text-stone-900">
@@ -475,18 +534,33 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                       ))}
                     </div>
                   )}
-                  {canEdit && (
+                  {(isProcessingFiles || uploadProgress) && (
+                    <div className="flex items-center gap-2 py-2 text-sm text-stone-600">
+                      {uploadProgress ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                          <span>{t('docs_uploading').replace('{current}', String(uploadProgress.current)).replace('{total}', String(uploadProgress.total))}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                          <span>{t('docs_processing')}</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {canEdit && !isSaving && (
                     <div className="flex gap-2 flex-wrap">
                       <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
-                        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onAddPendingDoc(f); e.target.value = ''; }} />
+                        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setIsProcessingFiles(true); setTimeout(0, () => { onAddPendingDoc(f); setIsProcessingFiles(false); }); } e.target.value = ''; }} />
                         {t('docs_camera')}
                       </label>
                       <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
-                        <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onAddPendingDoc(f); e.target.value = ''; }} />
+                        <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setIsProcessingFiles(true); setTimeout(0, () => { onAddPendingDoc(f); setIsProcessingFiles(false); }); } e.target.value = ''; }} />
                         {t('docs_gallery')}
                       </label>
                       <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
-                        <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={(e) => onAddPendingDocsMulti?.(e.target.files)} />
+                        <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={(e) => { const files = e.target.files; if (files?.length) { setIsProcessingFiles(true); setTimeout(0, () => { onAddPendingDocsMulti?.(files); setIsProcessingFiles(false); }); } e.target.value = ''; }} />
                         {t('docs_multi')}
                       </label>
                     </div>
@@ -539,9 +613,10 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={!canEdit}
-                  className="px-6 py-3 font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!canEdit || isSaving}
+                  className="px-6 py-3 font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {t('save')}
                 </button>
               </div>

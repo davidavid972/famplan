@@ -76,16 +76,21 @@ export const CalendarPage: React.FC = () => {
   };
   const removePendingDoc = (idx: number) => setPendingDocs((prev) => prev.filter((_, i) => i !== idx));
 
-  const handleSave = async (data: {
-    title: string;
-    personId: string;
-    start: number;
-    end: number;
-    location: string;
-    notes: string;
-    reminders: { minutesBeforeStart: number }[];
-    recurrence?: { intervalWeeks: number; endCondition: 'date' | 'count'; endDate?: number; count?: number };
-  }) => {
+  const BATCH_SIZE = 10;
+
+  const handleSave = async (
+    data: {
+      title: string;
+      personId: string;
+      start: number;
+      end: number;
+      location: string;
+      notes: string;
+      reminders: { minutesBeforeStart: number }[];
+      recurrence?: { intervalWeeks: number; endCondition: 'date' | 'count'; endDate?: number; count?: number };
+    },
+    options?: { onProgress?: (c: number, t: number) => void; onRecurringProgress?: (c: number, t: number) => void; isCancelled?: () => boolean }
+  ) => {
     if (modalMode === 'edit' && editingAppointment) {
       await updateAppointment(editingAppointment.id, {
         title: data.title,
@@ -99,25 +104,37 @@ export const CalendarPage: React.FC = () => {
       showToast(t('saved_to_google_calendar'), 'success');
     } else if (data.recurrence) {
       const starts = generateRecurrenceStarts(data.start, data.recurrence);
+      const total = starts.length;
       const durationMs = data.end - data.start;
       const groupId = uuidv4();
       const added: { id: string; calendarEventId?: string }[] = [];
-      for (const startMs of starts) {
-        const app = await addAppointment({
-          title: data.title,
-          personId: data.personId,
-          start: startMs,
-          end: startMs + durationMs,
-          location: data.location,
-          notes: data.notes,
-          status: 'PLANNED',
-          reminders: data.reminders,
-          recurrenceGroupId: groupId,
-        });
-        added.push(app);
+
+      const yieldToUI = () => new Promise<void>((r) => setTimeout(r, 0));
+
+      for (let i = 0; i < starts.length; i += BATCH_SIZE) {
+        if (options?.isCancelled?.()) break;
+        const batch = starts.slice(i, i + BATCH_SIZE);
+        for (const startMs of batch) {
+          const app = await addAppointment({
+            title: data.title,
+            personId: data.personId,
+            start: startMs,
+            end: startMs + durationMs,
+            location: data.location,
+            notes: data.notes,
+            status: 'PLANNED',
+            reminders: data.reminders,
+            recurrenceGroupId: groupId,
+          });
+          added.push(app);
+        }
+        options?.onRecurringProgress?.(Math.min(i + batch.length, total), total);
+        await yieldToUI();
       }
+
       if (pendingDocs.length > 0 && added[0]) {
-        pendingDocs.forEach((doc) => {
+        for (let i = 0; i < pendingDocs.length; i++) {
+          const doc = pendingDocs[i];
           addAttachment({
             appointmentId: added[0].id,
             name: doc.name,
@@ -125,9 +142,10 @@ export const CalendarPage: React.FC = () => {
             size: doc.size,
             uploaderId: 'local',
           });
-        });
+          options?.onProgress?.(i + 1, pendingDocs.length);
+        }
       }
-      showToast(t('saved_to_google_calendar'), 'success');
+      showToast(t('rec_created_count').replace('{count}', String(added.length)), 'success');
       return { calendarEventId: added[0]?.calendarEventId };
     } else {
       const newAppointment = await addAppointment({
@@ -140,7 +158,8 @@ export const CalendarPage: React.FC = () => {
         status: 'PLANNED',
         reminders: data.reminders,
       });
-      pendingDocs.forEach((doc) => {
+      for (let i = 0; i < pendingDocs.length; i++) {
+        const doc = pendingDocs[i];
         addAttachment({
           appointmentId: newAppointment.id,
           name: doc.name,
@@ -148,8 +167,13 @@ export const CalendarPage: React.FC = () => {
           size: doc.size,
           uploaderId: 'local',
         });
-      });
-      showToast(t('saved_to_google_calendar'), 'success');
+        options?.onProgress?.(i + 1, pendingDocs.length);
+      }
+      if (pendingDocs.length > 0) {
+        showToast(t('docs_saved'), 'success');
+      } else {
+        showToast(t('saved_to_google_calendar'), 'success');
+      }
       return { calendarEventId: newAppointment.calendarEventId };
     }
   };
@@ -168,6 +192,7 @@ export const CalendarPage: React.FC = () => {
     setIsModalOpen(false);
     setEditingAppointment(null);
     setModalMode('add');
+    setPendingDocs([]);
   };
 
   return (
