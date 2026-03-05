@@ -8,6 +8,7 @@ import { DataProvider } from './context/DataProvider';
 import { ToastProvider } from './context/ToastProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
+import { CalendarErrorListener } from './components/CalendarErrorListener';
 import { DriveSyncEffect } from './components/DriveSyncEffect';
 import { DriveDataSyncEffect } from './components/DriveDataSyncEffect';
 import { CalendarPage } from './pages/CalendarPage';
@@ -19,6 +20,7 @@ import { SettingsPage } from './pages/SettingsPage';
 function AppContent() {
   return (
     <ToastProvider>
+      <CalendarErrorListener />
       <FamilyProvider>
         <DataProvider>
         <BrowserRouter>

@@ -1,17 +1,29 @@
 /**
  * Google Calendar API - direct fetch calls.
  * All requests visible in DevTools Network (filter "calendar").
+ * Every request MUST include Authorization: Bearer <token> from GSI.
  */
 
 import { getStoredAccessToken } from './googleAuth';
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
 const FAMPLAN_SUMMARY = 'FamPlan';
+const DEFAULT_TZ = 'Asia/Jerusalem';
 
-function getAuthHeader(): Record<string, string> {
+function getCalendarHeaders(): Record<string, string> {
   const token = getStoredAccessToken();
-  if (!token) throw new Error('Not authenticated');
-  return { Authorization: `Bearer ${token}` };
+  if (!token) {
+    if (import.meta.env.DEV) console.warn('[FamPlan] Calendar API: Missing Google access token - reconnect required');
+    window.dispatchEvent(new CustomEvent('famplan-auth-token-missing'));
+    throw new Error('Missing Google access token');
+  }
+  if (import.meta.env.DEV) {
+    console.log('[FamPlan] Calendar API: token exists, prefix:', token.slice(0, 8) + '...');
+  }
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
 }
 
 /**
@@ -19,9 +31,10 @@ function getAuthHeader(): Record<string, string> {
  */
 export async function listCalendars(): Promise<{ items: Array<{ id: string; summary?: string }> }> {
   const params = new URLSearchParams({ maxResults: '250' });
-  const res = await fetch(`${CALENDAR_API}/users/me/calendarList?${params}`, {
-    headers: getAuthHeader(),
-  });
+  const url = `${CALENDAR_API}/users/me/calendarList?${params}`;
+  const headers = getCalendarHeaders();
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`Calendar list failed: ${res.status}`);
   return res.json();
 }
@@ -35,9 +48,12 @@ export async function ensureFamPlanCalendar(): Promise<string> {
   const famPlanList = (data.items ?? []).filter((c) => (c.summary ?? '').trim() === FAMPLAN_SUMMARY);
   if (famPlanList.length > 0) return famPlanList[0].id;
 
-  const res = await fetch(`${CALENDAR_API}/calendars`, {
+  const url = `${CALENDAR_API}/calendars`;
+  const headers = getCalendarHeaders();
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ summary: FAMPLAN_SUMMARY }),
   });
   if (!res.ok) throw new Error(`Calendar create failed: ${res.status}`);
@@ -60,26 +76,88 @@ export async function ensureFamPlanCalendarWithMeta(stored?: string | null): Pro
   return { calendarId: preferred, multipleFound: true };
 }
 
+type EventPayload = {
+  summary: string;
+  description?: string;
+  location?: string;
+  start: { dateTime: string; timeZone?: string };
+  end: { dateTime: string; timeZone?: string };
+  reminders?: { overrides: { method: string; minutes: number }[] };
+};
+
+/**
+ * Validate and sanitize event payload before sending.
+ */
+function validateEventPayload(payload: EventPayload): EventPayload {
+  const tz = payload.start?.timeZone ?? payload.end?.timeZone ?? DEFAULT_TZ;
+  let startDt = payload.start?.dateTime ? new Date(payload.start.dateTime) : new Date();
+  let endDt = payload.end?.dateTime ? new Date(payload.end.dateTime) : new Date(startDt.getTime() + 60 * 60 * 1000);
+
+  if (isNaN(startDt.getTime())) startDt = new Date();
+  if (isNaN(endDt.getTime())) endDt = new Date(startDt.getTime() + 60 * 60 * 1000);
+  if (endDt <= startDt) endDt = new Date(startDt.getTime() + 60 * 60 * 1000);
+
+  const startIso = startDt.toISOString();
+  const endIso = endDt.toISOString();
+
+  let overrides = payload.reminders?.overrides ?? [{ method: 'popup', minutes: 15 }];
+  overrides = overrides
+    .map((o) => ({ ...o, minutes: Math.max(0, Math.floor(Number(o.minutes) || 0)) }))
+    .filter((o) => o.minutes >= 0);
+  const seen = new Set<number>();
+  overrides = overrides.filter((o) => {
+    if (seen.has(o.minutes)) return false;
+    seen.add(o.minutes);
+    return true;
+  });
+  if (overrides.length === 0) overrides = [{ method: 'popup', minutes: 15 }];
+
+  return {
+    ...payload,
+    start: { dateTime: startIso, timeZone: tz },
+    end: { dateTime: endIso, timeZone: tz },
+    reminders: { overrides },
+  };
+}
+
+function extractErrorReason(bodyText: string): string {
+  try {
+    const j = JSON.parse(bodyText);
+    const msg = j?.error?.message ?? j?.error?.errors?.[0]?.message ?? j?.message;
+    if (typeof msg === 'string') return msg;
+  } catch {
+    /* ignore */
+  }
+  return bodyText.slice(0, 200);
+}
+
 /**
  * POST calendars/{calendarId}/events
  */
 export async function createEvent(
   calendarId: string,
-  eventPayload: {
-    summary: string;
-    description?: string;
-    location?: string;
-    start: { dateTime: string; timeZone?: string };
-    end: { dateTime: string; timeZone?: string };
-    reminders?: { overrides: { method: string; minutes: number }[] };
-  }
+  eventPayload: EventPayload
 ): Promise<{ id: string }> {
-  const res = await fetch(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`, {
+  const payload = validateEventPayload(eventPayload);
+  console.log('[FamPlan] Calendar event insert payload:', JSON.stringify(payload));
+
+  const url = `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`;
+  const headers = getCalendarHeaders();
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-    body: JSON.stringify(eventPayload),
+    headers,
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error(`Event create failed: ${res.status}`);
+
+  if (!res.ok) {
+    const bodyText = await res.text();
+    const reason = extractErrorReason(bodyText);
+    console.error(`[FamPlan] Calendar event insert failed: ${res.status}`, bodyText);
+    window.dispatchEvent(new CustomEvent('famplan-calendar-error', { detail: { status: res.status, reason, body: bodyText } }));
+    throw new Error(`Event create failed: ${res.status} - ${reason}`);
+  }
+
   const data = await res.json();
   if (import.meta.env.DEV) console.log('[FamPlan] Calendar event insert response', data);
   return { id: data.id };
@@ -100,14 +178,14 @@ export async function updateEvent(
     reminders: { overrides: { method: string; minutes: number }[] };
   }>
 ): Promise<void> {
-  const res = await fetch(
-    `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
-    {
-      method: 'PATCH',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }
-  );
+  const url = `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
+  const headers = getCalendarHeaders();
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify(payload),
+  });
   if (!res.ok) throw new Error(`Event update failed: ${res.status}`);
   const data = await res.json();
   if (import.meta.env.DEV) console.log('[FamPlan] Calendar event update response', data);
@@ -117,15 +195,16 @@ export async function updateEvent(
  * DELETE calendars/{calendarId}/events/{eventId}
  */
 export async function deleteEvent(calendarId: string, eventId: string): Promise<void> {
-  const res = await fetch(
-    `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
-    { method: 'DELETE', headers: getAuthHeader() }
-  );
+  const url = `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
+  const headers = getCalendarHeaders();
+  if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url, 'headers:', Object.keys(headers));
+  const res = await fetch(url, { method: 'DELETE', headers });
   if (!res.ok && res.status !== 204) throw new Error(`Event delete failed: ${res.status}`);
 }
 
 /**
  * Build event payload from plan. Reminders: plan minutes -> overrides (popup). Default 15 min.
+ * Uses Asia/Jerusalem; validation in createEvent ensures valid ISO + end > start.
  */
 export function planToEventPayload(plan: {
   title: string;
@@ -134,25 +213,20 @@ export function planToEventPayload(plan: {
   location?: string;
   notes?: string;
   reminders?: { minutesBeforeStart: number }[];
-}): {
-  summary: string;
-  description?: string;
-  location?: string;
-  start: { dateTime: string; timeZone: string };
-  end: { dateTime: string; timeZone: string };
-  reminders: { overrides: { method: string; minutes: number }[] };
-} {
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}): EventPayload {
+  const tz = DEFAULT_TZ;
+  const startDate = new Date(plan.start);
+  const endDate = new Date(plan.end);
   const overrides = (plan.reminders?.length ? plan.reminders : [{ minutesBeforeStart: 15 }]).map((r) => ({
     method: 'popup' as const,
-    minutes: r.minutesBeforeStart,
+    minutes: Math.max(0, Math.floor(r.minutesBeforeStart ?? 15)),
   }));
   return {
     summary: plan.title,
     description: plan.notes || undefined,
     location: plan.location || undefined,
-    start: { dateTime: new Date(plan.start).toISOString(), timeZone: tz },
-    end: { dateTime: new Date(plan.end).toISOString(), timeZone: tz },
+    start: { dateTime: startDate.toISOString(), timeZone: tz },
+    end: { dateTime: endDate.toISOString(), timeZone: tz },
     reminders: { overrides },
   };
 }
