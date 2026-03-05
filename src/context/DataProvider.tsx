@@ -1,6 +1,25 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { Person, Appointment, Attachment } from '../types/models';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from './AuthProvider';
+import {
+  driveEnsureFamPlanStructure,
+  driveLoadPeople,
+  driveLoadAppointments,
+  driveLoadAttachmentsIndex,
+  driveWriteJson,
+  type PeopleData,
+  type AppointmentsData,
+  type AttachmentsIndexData,
+} from '../lib/drive';
+
+const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
+const APPOINTMENTS_FILE_ID_KEY = 'famplan_drive_appointments_file_id';
+const ATTACHMENTS_INDEX_FILE_ID_KEY = 'famplan_drive_attachments_index_file_id';
+const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
+const SYNC_PEOPLE_KEY = 'famplan_drive_sync_people';
+const SYNC_APPOINTMENTS_KEY = 'famplan_drive_sync_appointments';
+const SYNC_INDEX_KEY = 'famplan_drive_sync_index';
 
 interface DataContextType {
   people: Person[];
@@ -15,6 +34,7 @@ interface DataContextType {
   addAttachment: (attachment: Omit<Attachment, 'id' | 'createdAt'>) => void;
   deleteAttachment: (id: string) => void;
   deleteAttachments: (ids: string[]) => void;
+  syncFromDrive: (data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string }) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -37,9 +57,43 @@ const saveData = (key: string, data: any) => {
 };
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { isConnected } = useAuth();
   const [people, setPeople] = useState<Person[]>(() => loadData('famplan_people', []));
   const [appointments, setAppointments] = useState<Appointment[]>(() => loadData('famplan_appointments', []));
   const [attachments, setAttachments] = useState<Attachment[]>(() => loadData('famplan_attachments', []));
+  const peopleFileIdRef = useRef<string | null>(null);
+  const appointmentsFileIdRef = useRef<string | null>(null);
+  const indexFileIdRef = useRef<string | null>(null);
+  const dataFolderIdRef = useRef<string | null>(null);
+  const initialDriveLoadDoneRef = useRef(false);
+
+  useEffect(() => {
+    if (!isConnected) {
+      initialDriveLoadDoneRef.current = false;
+      return;
+    }
+    peopleFileIdRef.current = localStorage.getItem(PEOPLE_FILE_ID_KEY);
+    appointmentsFileIdRef.current = localStorage.getItem(APPOINTMENTS_FILE_ID_KEY);
+    indexFileIdRef.current = localStorage.getItem(ATTACHMENTS_INDEX_FILE_ID_KEY);
+    dataFolderIdRef.current = localStorage.getItem(DATA_FOLDER_KEY);
+  }, [isConnected]);
+
+  const syncFromDrive = useCallback((data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string }) => {
+    setPeople(data.people);
+    setAppointments(data.appointments);
+    setAttachments(data.attachments);
+    if (fileIds) {
+      peopleFileIdRef.current = fileIds.people;
+      appointmentsFileIdRef.current = fileIds.appointments;
+      indexFileIdRef.current = fileIds.index;
+      dataFolderIdRef.current = fileIds.dataFolderId;
+      initialDriveLoadDoneRef.current = true;
+      localStorage.setItem(PEOPLE_FILE_ID_KEY, fileIds.people);
+      localStorage.setItem(APPOINTMENTS_FILE_ID_KEY, fileIds.appointments);
+      localStorage.setItem(ATTACHMENTS_INDEX_FILE_ID_KEY, fileIds.index);
+      localStorage.setItem(DATA_FOLDER_KEY, fileIds.dataFolderId);
+    }
+  }, []);
 
   useEffect(() => {
     saveData('famplan_people', people);
@@ -52,6 +106,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     saveData('famplan_attachments', attachments);
   }, [attachments]);
+
+  // Write to Drive when connected (debounced)
+  useEffect(() => {
+    if (!isConnected || !dataFolderIdRef.current || !initialDriveLoadDoneRef.current) return;
+    const pid = peopleFileIdRef.current;
+    const aid = appointmentsFileIdRef.current;
+    const iid = indexFileIdRef.current;
+    if (!pid || !aid || !iid) return;
+
+    const t = setTimeout(() => {
+      const now = new Date().toISOString();
+      const peoplePayload: PeopleData = { version: 1, updatedAt: now, people };
+      const appointmentsPayload: AppointmentsData = { version: 1, updatedAt: now, appointments };
+      const indexPayload: AttachmentsIndexData = { version: 1, updatedAt: now, items: attachments, freeLimit: 20 };
+      driveWriteJson(pid, peoplePayload).then(() => {
+        localStorage.setItem(SYNC_PEOPLE_KEY, now);
+        window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
+      }).catch((e) => console.warn('Drive people write failed:', e));
+      driveWriteJson(aid, appointmentsPayload).then(() => {
+        localStorage.setItem(SYNC_APPOINTMENTS_KEY, now);
+        window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
+      }).catch((e) => console.warn('Drive appointments write failed:', e));
+      driveWriteJson(iid, indexPayload).then(() => {
+        localStorage.setItem(SYNC_INDEX_KEY, now);
+        window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
+      }).catch((e) => console.warn('Drive index write failed:', e));
+    }, 500);
+    return () => clearTimeout(t);
+  }, [isConnected, people, appointments, attachments]);
 
   const addPerson = (person: Omit<Person, 'id' | 'createdAt'>) => {
     const newPerson: Person = {
@@ -129,6 +212,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addAttachment,
         deleteAttachment,
         deleteAttachments,
+        syncFromDrive,
       }}
     >
       {children}

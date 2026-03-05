@@ -8,6 +8,7 @@ import { ToastProvider } from './context/ToastProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { DriveSyncEffect } from './components/DriveSyncEffect';
+import { DriveDataSyncEffect } from './components/DriveDataSyncEffect';
 import { CalendarPage } from './pages/CalendarPage';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { PeoplePage } from './pages/PeoplePage';
@@ -21,6 +22,7 @@ function AppContent() {
         <DataProvider>
         <BrowserRouter>
           <DriveSyncEffect />
+          <DriveDataSyncEffect />
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Navigate to="/settings" replace />} />

@@ -13,7 +13,11 @@ const JSON_MIME = 'application/json';
 
 const FAMPLAN_ROOT = 'FamPlan';
 const DATA_FOLDER = 'data';
+const ATTACHMENTS_FOLDER = 'attachments';
 const FAMILY_FILE = 'family.json';
+const PEOPLE_FILE = 'people.json';
+const APPOINTMENTS_FILE = 'appointments.json';
+const ATTACHMENTS_INDEX_FILE = 'attachments_index.json';
 
 export interface FamilyData {
   familyId: string;
@@ -98,12 +102,14 @@ export async function driveReadJson<T>(fileId: string): Promise<T> {
  * @param fileId Existing file id, or null to create new
  * @param json Data to write
  * @param parentId Parent folder (required when creating)
+ * @param fileName File name when creating (default: family.json)
  * @returns File id
  */
 export async function driveWriteJson<T extends object>(
   fileId: string | null,
   json: T,
-  parentId?: string
+  parentId?: string,
+  fileName: string = FAMILY_FILE
 ): Promise<string> {
   const body = JSON.stringify(json);
   const blob = new Blob([body], { type: JSON_MIME });
@@ -119,7 +125,7 @@ export async function driveWriteJson<T extends object>(
   }
 
   if (!parentId) throw new Error('parentId required when creating file');
-  const metadata = { name: FAMILY_FILE, mimeType: JSON_MIME, parents: [parentId] };
+  const metadata = { name: fileName, mimeType: JSON_MIME, parents: [parentId] };
   const form = new FormData();
   form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
   form.append('file', blob);
@@ -135,13 +141,103 @@ export async function driveWriteJson<T extends object>(
   return data.id;
 }
 
+/** People.json schema */
+export interface PeopleData {
+  version: number;
+  updatedAt: string;
+  people: Array<{ id: string; name: string; color: string; createdAt: number }>;
+}
+
+/** Appointments.json schema */
+export interface AppointmentsData {
+  version: number;
+  updatedAt: string;
+  appointments: Array<{
+    id: string;
+    personId: string;
+    title: string;
+    start: number;
+    end: number;
+    location?: string;
+    notes?: string;
+    status: string;
+    reminders?: { minutesBeforeStart: number }[];
+    createdAt: number;
+  }>;
+}
+
+/** Attachments index schema */
+export interface AttachmentsIndexData {
+  version: number;
+  updatedAt: string;
+  items: Array<{
+    id: string;
+    appointmentId: string;
+    name: string;
+    type: string;
+    size: number;
+    createdAt: number;
+    uploaderId: string;
+  }>;
+  freeLimit: number;
+}
+
+function createEmptyPeopleData(): PeopleData {
+  return { version: 1, updatedAt: new Date().toISOString(), people: [] };
+}
+
+function createEmptyAppointmentsData(): AppointmentsData {
+  return { version: 1, updatedAt: new Date().toISOString(), appointments: [] };
+}
+
+function createEmptyAttachmentsIndexData(): AttachmentsIndexData {
+  return { version: 1, updatedAt: new Date().toISOString(), items: [], freeLimit: 20 };
+}
+
+/**
+ * Load or create a data file. Does NOT overwrite existing content.
+ */
+export async function driveLoadOrCreateDataFile<T extends object>(
+  dataFolderId: string,
+  fileName: string,
+  createDefault: () => T,
+  cachedFileId?: string | null
+): Promise<{ data: T; fileId: string }> {
+  let fileId = cachedFileId || (await driveFindFile(fileName, dataFolderId));
+  if (fileId) {
+    try {
+      const data = await driveReadJson<T>(fileId);
+      return { data, fileId };
+    } catch {
+      fileId = await driveFindFile(fileName, dataFolderId);
+    }
+  }
+  const defaultData = createDefault();
+  const newFileId = await driveWriteJson(null, defaultData, dataFolderId, fileName);
+  return { data: defaultData, fileId: newFileId };
+}
+
+export async function driveLoadPeople(dataFolderId: string, cachedFileId?: string | null): Promise<{ data: PeopleData; fileId: string }> {
+  return driveLoadOrCreateDataFile(dataFolderId, PEOPLE_FILE, createEmptyPeopleData, cachedFileId);
+}
+
+export async function driveLoadAppointments(dataFolderId: string, cachedFileId?: string | null): Promise<{ data: AppointmentsData; fileId: string }> {
+  return driveLoadOrCreateDataFile(dataFolderId, APPOINTMENTS_FILE, createEmptyAppointmentsData, cachedFileId);
+}
+
+export async function driveLoadAttachmentsIndex(dataFolderId: string, cachedFileId?: string | null): Promise<{ data: AttachmentsIndexData; fileId: string }> {
+  return driveLoadOrCreateDataFile(dataFolderId, ATTACHMENTS_INDEX_FILE, createEmptyAttachmentsIndexData, cachedFileId);
+}
+
+
 /**
  * Ensure FamPlan folder structure and return folder ids.
  */
-export async function driveEnsureFamPlanStructure(): Promise<{ rootFolderId: string; dataFolderId: string }> {
+export async function driveEnsureFamPlanStructure(): Promise<{ rootFolderId: string; dataFolderId: string; attachmentsFolderId: string }> {
   const rootFolderId = await driveEnsureFolder(FAMPLAN_ROOT, 'root');
   const dataFolderId = await driveEnsureFolder(DATA_FOLDER, rootFolderId);
-  return { rootFolderId, dataFolderId };
+  const attachmentsFolderId = await driveEnsureFolder(ATTACHMENTS_FOLDER, rootFolderId);
+  return { rootFolderId, dataFolderId, attachmentsFolderId };
 }
 
 /**

@@ -8,6 +8,9 @@ const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
 const FILE_ID_KEY = 'famplan_drive_family_file_id';
 const SYNC_STATUS_KEY = 'famplan_drive_sync_status';
+const SYNC_PEOPLE_KEY = 'famplan_drive_sync_people';
+const SYNC_APPOINTMENTS_KEY = 'famplan_drive_sync_appointments';
+const SYNC_INDEX_KEY = 'famplan_drive_sync_index';
 
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
@@ -15,6 +18,7 @@ export const SettingsPage: React.FC = () => {
   const { familyDisplayName, familyPhoto, setFamilyDisplayName, setFamilyPhoto } = useFamily();
   const [isConnecting, setIsConnecting] = useState(false);
   const [driveDebug, setDriveDebug] = useState({ rootFolderId: '', dataFolderId: '', familyFileId: '', syncStatus: '' });
+  const [dataSyncTimes, setDataSyncTimes] = useState({ people: '', appointments: '', index: '' });
   const [isFamilyEditMode, setIsFamilyEditMode] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
@@ -26,6 +30,11 @@ export const SettingsPage: React.FC = () => {
       familyFileId: localStorage.getItem(FILE_ID_KEY) || '',
       syncStatus: localStorage.getItem(SYNC_STATUS_KEY) || '',
     });
+    setDataSyncTimes({
+      people: localStorage.getItem(SYNC_PEOPLE_KEY) || '',
+      appointments: localStorage.getItem(SYNC_APPOINTMENTS_KEY) || '',
+      index: localStorage.getItem(SYNC_INDEX_KEY) || '',
+    });
   };
 
   useEffect(() => {
@@ -33,7 +42,11 @@ export const SettingsPage: React.FC = () => {
     refreshDriveDebug();
     const handler = () => refreshDriveDebug();
     window.addEventListener('famplan-drive-sync-done', handler);
-    return () => window.removeEventListener('famplan-drive-sync-done', handler);
+    window.addEventListener('famplan-drive-data-sync-done', handler);
+    return () => {
+      window.removeEventListener('famplan-drive-sync-done', handler);
+      window.removeEventListener('famplan-drive-data-sync-done', handler);
+    };
   }, [isConnected]);
 
   useEffect(() => {
@@ -267,15 +280,32 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* DEBUG: Drive sync status (temporary) */}
+          {/* Sync status (temporary) */}
           {isConnected && (
             <div className="w-full pt-4 border-t border-stone-200">
-              <h3 className="text-xs font-medium text-stone-500 mb-2">Drive (debug)</h3>
-              <div className="p-3 bg-stone-100 rounded-xl text-xs font-mono text-stone-600 space-y-1 break-all">
-                <div>rootFolderId: {driveDebug.rootFolderId || '—'}</div>
-                <div>dataFolderId: {driveDebug.dataFolderId || '—'}</div>
-                <div>familyFileId: {driveDebug.familyFileId || '—'}</div>
-                <div>syncStatus: {driveDebug.syncStatus || '—'}</div>
+              <h3 className="text-xs font-medium text-stone-500 mb-2">{t('sync_status_title')}</h3>
+              <div className="p-3 bg-stone-100 rounded-xl text-sm text-stone-600 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span>{t('sync_people')}</span>
+                  <span className="flex items-center gap-1.5">
+                    {dataSyncTimes.people ? <span className="text-emerald-600">✓</span> : '—'}
+                    {dataSyncTimes.people && <span className="text-xs text-stone-500">{new Date(dataSyncTimes.people).toLocaleString()}</span>}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span>{t('sync_appointments')}</span>
+                  <span className="flex items-center gap-1.5">
+                    {dataSyncTimes.appointments ? <span className="text-emerald-600">✓</span> : '—'}
+                    {dataSyncTimes.appointments && <span className="text-xs text-stone-500">{new Date(dataSyncTimes.appointments).toLocaleString()}</span>}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span>{t('sync_index')}</span>
+                  <span className="flex items-center gap-1.5">
+                    {dataSyncTimes.index ? <span className="text-emerald-600">✓</span> : '—'}
+                    {dataSyncTimes.index && <span className="text-xs text-stone-500">{new Date(dataSyncTimes.index).toLocaleString()}</span>}
+                  </span>
+                </div>
               </div>
             </div>
           )}

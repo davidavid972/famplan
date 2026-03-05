@@ -126,6 +126,10 @@ export const translations = {
     family_edit: 'עריכה',
     family_connect_to_edit: 'כדי לערוך ולסנכרן בין מכשירים, התחבר עם Google',
     family_profile_title: 'פרופיל משפחה',
+    sync_status_title: 'סטטוס סנכרון',
+    sync_people: 'אנשים',
+    sync_appointments: 'תכניות',
+    sync_index: 'מסמכים',
   },
   en: {
     app_name: 'FamPlan',
@@ -254,6 +258,10 @@ export const translations = {
     family_edit: 'Edit',
     family_connect_to_edit: 'To edit and sync across devices, connect with Google',
     family_profile_title: 'Family profile',
+    sync_status_title: 'Sync status',
+    sync_people: 'People',
+    sync_appointments: 'Plans',
+    sync_index: 'Documents',
   }
 };
 
