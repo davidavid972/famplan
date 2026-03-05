@@ -13,7 +13,7 @@ import {
   driveWriteJson,
   type FamilyData,
 } from '../lib/drive';
-import { ensureFamPlanCalendar } from '../lib/googleCalendar';
+import { ensureFamPlanCalendarWithMeta } from '../lib/calendar';
 
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
@@ -46,7 +46,7 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
         if (cancelled) return;
         const { data, fileId } = await driveLoadFamily(dataFolderId);
         if (cancelled) return;
-        const { calendarId: resolvedId, multipleFound: multi } = await ensureFamPlanCalendar(data.calendarId ?? null);
+        const { calendarId: resolvedId, multipleFound: multi } = await ensureFamPlanCalendarWithMeta(data.calendarId ?? null);
         if (cancelled) return;
         setCalendarId(resolvedId);
         setMultipleFound(multi);

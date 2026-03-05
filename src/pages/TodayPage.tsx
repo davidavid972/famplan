@@ -29,7 +29,7 @@ import {
   MAX_FAMILY_ATTACHMENTS_LOCAL,
   type LocalAttachmentRecord,
 } from "../lib/attachmentsLocal";
-import { deleteEvent } from "../lib/googleCalendar";
+import { deleteEvent } from "../lib/calendar";
 import ConfirmDeleteAppointmentModal from "../components/ConfirmDeleteAppointmentModal";
 import { useCanEdit } from "../lib/role";
 import { useFamilyBound } from "../lib/familyDiscovery";

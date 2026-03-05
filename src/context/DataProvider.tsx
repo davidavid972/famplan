@@ -13,10 +13,12 @@ import {
   type AttachmentsIndexData,
 } from '../lib/drive';
 import {
-  getOrEnsureCalendarId,
-  syncAppointmentToCalendar,
+  ensureFamPlanCalendar,
+  createEvent,
+  updateEvent,
   deleteEvent,
-} from '../lib/googleCalendar';
+  planToEventPayload,
+} from '../lib/calendar';
 import { cacheGet, cacheSet, CACHE_KEYS } from '../lib/cache';
 
 const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
@@ -167,13 +169,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       createdAt: Date.now(),
     };
     try {
-      const calendarId = await getOrEnsureCalendarId(null);
-      if (calendarId) {
-        const eventId = await syncAppointmentToCalendar(calendarId, newAppointment, null);
-        newAppointment.calendarEventId = eventId;
-      }
+      const calendarId = await ensureFamPlanCalendar();
+      const payload = planToEventPayload(newAppointment);
+      const { id: eventId } = await createEvent(calendarId, payload);
+      newAppointment.calendarEventId = eventId;
     } catch (e) {
-      console.warn('Calendar sync on add failed:', e);
+      console.warn('[FamPlan] Calendar sync on add failed:', e);
     }
     setAppointments((prev) => [...prev, newAppointment]);
     return newAppointment;
@@ -186,13 +187,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const merged = { ...prev, ...data };
     let calendarEventId = merged.calendarEventId ?? prev.calendarEventId;
     try {
-      const calId = await getOrEnsureCalendarId(null);
-      if (calId) {
-        const eventId = await syncAppointmentToCalendar(calId, merged, calendarEventId);
-        if (!calendarEventId) calendarEventId = eventId;
+      const calendarId = await ensureFamPlanCalendar();
+      const payload = planToEventPayload(merged);
+      if (calendarEventId) {
+        await updateEvent(calendarId, calendarEventId, payload);
+      } else {
+        const { id: eventId } = await createEvent(calendarId, payload);
+        calendarEventId = eventId;
       }
     } catch (e) {
-      console.warn('Calendar sync on update failed:', e);
+      console.warn('[FamPlan] Calendar sync on update failed:', e);
     }
     const finalData = calendarEventId ? { ...data, calendarEventId } : data;
     setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, ...finalData } : a)));
@@ -203,10 +207,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const prev = appointments.find((a) => a.id === id);
     if (prev?.calendarEventId) {
       try {
-        const calendarId = await getOrEnsureCalendarId(null);
-        if (calendarId) await deleteEvent(calendarId, prev.calendarEventId);
+        const calendarId = await ensureFamPlanCalendar();
+        await deleteEvent(calendarId, prev.calendarEventId);
       } catch (e) {
-        console.warn('Calendar sync on delete failed:', e);
+        console.warn('[FamPlan] Calendar sync on delete failed:', e);
       }
     }
     setAppointments((prev) => prev.filter((a) => a.id !== id));
