@@ -63,7 +63,8 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
         }
       } catch (e) {
         console.warn('Calendar ensure failed:', e);
-        showToast(`${e instanceof Error ? e.message : String(e)}`, 'error');
+        const msg = e instanceof Error ? e.message : String(e);
+        showToast(msg === 'CALENDAR_403' ? t('cal_permission_error') : msg, 'error');
       } finally {
         if (!cancelled) setIsEnsuring(false);
       }
@@ -94,7 +95,7 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
             <p className="text-stone-600 text-sm">...</p>
           ) : (
             <>
-              <p className="text-stone-700">{t('cal_ready')} ✓</p>
+              <p className="text-stone-700">{t('cal_detected_created')} ✓</p>
               {multipleFound && calendarId && (
                 <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
                   <p className="text-sm text-amber-800">

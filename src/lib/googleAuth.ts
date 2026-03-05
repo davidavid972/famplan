@@ -10,8 +10,9 @@ const SCOPES = [
   'email',
   'profile',
   'https://www.googleapis.com/auth/drive',
-  'https://www.googleapis.com/auth/calendar',
+  'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/calendar.app.created',
 ].join(' ');
 
 const TOKEN_KEY = 'famplan_google_access_token';

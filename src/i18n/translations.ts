@@ -169,6 +169,8 @@ export const translations = {
     invite_copied_toast: 'הועתק ללוח',
     cal_multiple_warning: 'נמצאו מספר יומני FamPlan. משתמשים ב־<id>. אנא הסתר/מחק כפילויות ידנית.',
     cal_ready: 'יומן FamPlan מוכן',
+    cal_detected_created: 'יומן FamPlan זוהה/נוצר',
+    cal_permission_error: 'אין הרשאה ליומן Google. התנתק/התחבר מחדש ואשר הרשאות ליומן.',
   },
   en: {
     app_name: 'FamPlan',
@@ -340,6 +342,8 @@ export const translations = {
     invite_copied_toast: 'Copied to clipboard',
     cal_multiple_warning: 'Found multiple FamPlan calendars. Using <id>. Please hide/delete duplicates manually.',
     cal_ready: 'FamPlan calendar ready',
+    cal_detected_created: 'FamPlan calendar detected/created',
+    cal_permission_error: 'No Google Calendar permission. Disconnect and reconnect, then approve Calendar access.',
   }
 };
 

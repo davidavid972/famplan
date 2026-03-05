@@ -31,7 +31,10 @@ export async function listFamPlanCalendars(): Promise<CalendarListEntry[]> {
     const res = await fetch(`${CALENDAR_API}/users/me/calendarList?${params}`, {
       headers: getAuthHeader(),
     });
-    if (!res.ok) throw new Error(`Calendar list failed: ${res.status}`);
+    if (!res.ok) {
+      const err = res.status === 403 ? new Error('CALENDAR_403') : new Error(`Calendar list failed: ${res.status}`);
+      throw err;
+    }
     const data = await res.json();
     const famPlan = (data.items ?? []).filter(
       (c: { summary?: string }) => (c.summary ?? '').trim() === FAMPLAN_CALENDAR_SUMMARY
@@ -51,7 +54,10 @@ async function createFamPlanCalendar(): Promise<string> {
     headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ summary: FAMPLAN_CALENDAR_SUMMARY }),
   });
-  if (!res.ok) throw new Error(`Calendar create failed: ${res.status}`);
+  if (!res.ok) {
+    const err = res.status === 403 ? new Error('CALENDAR_403') : new Error(`Calendar create failed: ${res.status}`);
+    throw err;
+  }
   const data = await res.json();
   return data.id;
 }
