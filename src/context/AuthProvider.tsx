@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const disconnect = () => {
     googleAuth.clearGoogleSession();
-    ['famplan_drive_family_file_id', 'famplan_drive_root_folder_id', 'famplan_drive_data_folder_id', 'famplan_drive_sync_status', 'famplan_drive_people_file_id', 'famplan_drive_appointments_file_id', 'famplan_drive_attachments_index_file_id', 'famplan_drive_users_file_id', 'famplan_drive_sync_people', 'famplan_drive_sync_appointments', 'famplan_drive_sync_index'].forEach((k) => localStorage.removeItem(k));
+    ['famplan_drive_family_file_id', 'famplan_drive_root_folder_id', 'famplan_drive_data_folder_id', 'famplan_drive_sync_status', 'famplan_drive_people_file_id', 'famplan_drive_appointments_file_id', 'famplan_drive_attachments_index_file_id', 'famplan_drive_users_file_id', 'famplan_drive_sync_people', 'famplan_drive_sync_appointments', 'famplan_drive_sync_index', 'famplan_calendar_id'].forEach((k) => localStorage.removeItem(k));
     setIsConnected(false);
     setEmailState('');
     setConnectError(null);

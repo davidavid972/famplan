@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastProvider';
 import { cacheClear } from '../lib/cache';
 import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X } from 'lucide-react';
 import { FamilySharingModal } from '../components/FamilySharingModal';
+import { CalendarModal } from '../components/CalendarModal';
 
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
@@ -30,6 +31,7 @@ export const SettingsPage: React.FC = () => {
   const [comingSoonModalOpen, setComingSoonModalOpen] = useState(false);
   const [sharingModalOpen, setSharingModalOpen] = useState(false);
   const [sharingModalMode, setSharingModalMode] = useState<'sharing' | 'roles'>('sharing');
+  const [calendarModalOpen, setCalendarModalOpen] = useState(false);
   const authSectionRef = useRef<HTMLDivElement>(null);
 
   const refreshDriveDebug = () => {
@@ -301,7 +303,7 @@ export const SettingsPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setComingSoonModalOpen(true)}
+              onClick={() => setCalendarModalOpen(true)}
               className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px] w-full text-left cursor-pointer hover:bg-stone-100 hover:border-stone-200 transition-colors active:bg-stone-100"
             >
               <CalendarIcon className="w-8 h-8 text-purple-600 mb-3" />
@@ -435,6 +437,9 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Calendar modal */}
+      <CalendarModal open={calendarModalOpen} onClose={() => setCalendarModalOpen(false)} />
 
       {/* Family Sharing / Roles & Permissions modal */}
       <FamilySharingModal

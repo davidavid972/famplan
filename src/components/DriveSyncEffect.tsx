@@ -27,6 +27,7 @@ export function DriveSyncEffect() {
   const { familyDisplayName, familyPhoto, setFamilyDisplayName, setFamilyPhoto } = useFamily();
   const location = useLocation();
   const fileIdRef = useRef<string | null>(null);
+  const familyDataRef = useRef<FamilyData | null>(null);
   const isLoadingFromDriveRef = useRef(false);
   const initialLoadDoneRef = useRef(false);
   const [syncTrigger, setSyncTrigger] = useState(0);
@@ -58,8 +59,10 @@ export function DriveSyncEffect() {
         const { data, fileId } = await driveLoadFamily(dataFolderId);
         if (cancelled) return;
         fileIdRef.current = fileId;
+        familyDataRef.current = data;
         localStorage.setItem(FILE_ID_KEY, fileId);
         localStorage.setItem('famplan_family_id', data.familyId);
+        if (data.calendarId) localStorage.setItem('famplan_calendar_id', data.calendarId);
         setFamilyDisplayName(data.familyDisplayName || '');
         setFamilyPhoto(data.familyPhoto ?? null);
         cacheSet(CACHE_KEYS.family, { familyDisplayName: data.familyDisplayName || '', familyPhoto: data.familyPhoto ?? null });
@@ -88,13 +91,15 @@ export function DriveSyncEffect() {
     if (!isConnected || !fileIdRef.current || !initialLoadDoneRef.current) return;
 
     const fileId = fileIdRef.current;
+    const prev = familyDataRef.current;
     const familyId = localStorage.getItem('famplan_family_id') || crypto.randomUUID();
     localStorage.setItem('famplan_family_id', familyId);
     const payload: FamilyData = {
       familyId,
       familyDisplayName,
       familyPhoto: familyPhoto || undefined,
-      createdAt: new Date().toISOString(),
+      createdAt: prev?.createdAt ?? new Date().toISOString(),
+      calendarId: prev?.calendarId ?? undefined,
     };
 
     const t = setTimeout(() => {

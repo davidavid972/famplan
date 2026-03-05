@@ -25,6 +25,8 @@ export interface FamilyData {
   familyDisplayName: string;
   familyPhoto?: string | null;
   createdAt: string;
+  /** Chosen FamPlan calendar ID when multiple exist */
+  calendarId?: string | null;
 }
 
 function getAuthHeader(): Record<string, string> {

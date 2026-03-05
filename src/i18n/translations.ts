@@ -167,6 +167,8 @@ export const translations = {
     invite_whatsapp_btn: 'שלח ב־WhatsApp',
     invite_share_btn: 'שתף',
     invite_copied_toast: 'הועתק ללוח',
+    cal_multiple_warning: 'נמצאו מספר יומני FamPlan. משתמשים ב־<id>. אנא הסתר/מחק כפילויות ידנית.',
+    cal_ready: 'יומן FamPlan מוכן',
   },
   en: {
     app_name: 'FamPlan',
@@ -336,6 +338,8 @@ export const translations = {
     invite_whatsapp_btn: 'Send via WhatsApp',
     invite_share_btn: 'Share',
     invite_copied_toast: 'Copied to clipboard',
+    cal_multiple_warning: 'Found multiple FamPlan calendars. Using <id>. Please hide/delete duplicates manually.',
+    cal_ready: 'FamPlan calendar ready',
   }
 };
 
