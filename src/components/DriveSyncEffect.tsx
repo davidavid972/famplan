@@ -24,7 +24,7 @@ const SYNC_STATUS_KEY = 'famplan_drive_sync_status';
 
 export function DriveSyncEffect() {
   const { isConnected } = useAuth();
-  const { familyDisplayName, familyPhoto, setFamilyDisplayName, setFamilyPhoto } = useFamily();
+  const { familyDisplayName, familyPhoto, selectionColor, setFamilyDisplayName, setFamilyPhoto, setSelectionColor } = useFamily();
   const location = useLocation();
   const fileIdRef = useRef<string | null>(null);
   const familyDataRef = useRef<FamilyData | null>(null);
@@ -65,7 +65,8 @@ export function DriveSyncEffect() {
         if (data.calendarId) localStorage.setItem('famplan_calendar_id', data.calendarId);
         setFamilyDisplayName(data.familyDisplayName || '');
         setFamilyPhoto(data.familyPhoto ?? null);
-        cacheSet(CACHE_KEYS.family, { familyDisplayName: data.familyDisplayName || '', familyPhoto: data.familyPhoto ?? null });
+        setSelectionColor(data.ui?.selectionColor || '#10b981');
+        cacheSet(CACHE_KEYS.family, { familyDisplayName: data.familyDisplayName || '', familyPhoto: data.familyPhoto ?? null, selectionColor: data.ui?.selectionColor || '#10b981' });
         localStorage.setItem(SYNC_STATUS_KEY, 'Success');
         window.dispatchEvent(new CustomEvent('famplan-drive-sync-done'));
       } catch (e) {
@@ -85,7 +86,7 @@ export function DriveSyncEffect() {
     return () => {
       cancelled = true;
     };
-  }, [isConnected, location.pathname, setFamilyDisplayName, setFamilyPhoto, syncTrigger]);
+  }, [isConnected, location.pathname, setFamilyDisplayName, setFamilyPhoto, setSelectionColor, syncTrigger]);
 
   useEffect(() => {
     if (!isConnected || !fileIdRef.current || !initialLoadDoneRef.current) return;
@@ -100,13 +101,14 @@ export function DriveSyncEffect() {
       familyPhoto: familyPhoto || undefined,
       createdAt: prev?.createdAt ?? new Date().toISOString(),
       calendarId: prev?.calendarId ?? undefined,
+      ui: { selectionColor: selectionColor || undefined },
     };
 
     const t = setTimeout(() => {
       driveWriteJson(fileId, payload).catch((e) => console.warn('Drive write failed:', e));
     }, 500);
     return () => clearTimeout(t);
-  }, [isConnected, familyDisplayName, familyPhoto]);
+  }, [isConnected, familyDisplayName, familyPhoto, selectionColor]);
 
   return null;
 }

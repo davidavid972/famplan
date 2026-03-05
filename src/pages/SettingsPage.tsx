@@ -22,7 +22,7 @@ export const SettingsPage: React.FC = () => {
   const location = useLocation();
   const { isConnected, canEdit, email, connect, disconnect, connectError, clearConnectError } = useAuth();
   const { showToast } = useToast();
-  const { familyDisplayName, familyPhoto, setFamilyDisplayName, setFamilyPhoto } = useFamily();
+  const { familyDisplayName, familyPhoto, selectionColor, setFamilyDisplayName, setFamilyPhoto, setSelectionColor } = useFamily();
   const [isConnecting, setIsConnecting] = useState(false);
   const [driveDebug, setDriveDebug] = useState({ rootFolderId: '', dataFolderId: '', familyFileId: '', syncStatus: '' });
   const [dataSyncTimes, setDataSyncTimes] = useState({ people: '', appointments: '', index: '' });
@@ -279,6 +279,29 @@ export const SettingsPage: React.FC = () => {
                   )}
                 </>
               )}
+            </div>
+          </div>
+
+          {/* Selection color */}
+          <div className="w-full pt-4">
+            <h3 className="text-sm font-medium text-stone-700 mb-3">{t('settings_selection_color')}</h3>
+            <p className="text-xs text-stone-500 mb-3">{t('settings_selection_color_subtitle')}</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444',
+                '#06b6d4', '#84cc16', '#6366f1', '#14b8a6',
+              ].map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setSelectionColor(color)}
+                  className={`w-10 h-10 rounded-full border-2 transition-all min-h-[44px] min-w-[44px] ${
+                    selectionColor === color ? 'border-stone-900 ring-2 ring-offset-2 ring-stone-400' : 'border-stone-200 hover:border-stone-300'
+                  }`}
+                  style={{ backgroundColor: color }}
+                  aria-label={t('settings_selection_color')}
+                />
+              ))}
             </div>
           </div>
 

@@ -9,7 +9,11 @@ import { cn } from '../utils/cn';
 
 export const Layout: React.FC = () => {
   const { t, language, setLanguage, dir } = useI18n();
-  const { familyDisplayName, familyPhoto } = useFamily();
+  const { familyDisplayName, familyPhoto, selectionColor } = useFamily();
+
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--selection-color', selectionColor || '#10b981');
+  }, [selectionColor]);
   const { canEdit } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -62,10 +66,11 @@ export const Layout: React.FC = () => {
                   cn(
                     "flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200",
                     isActive
-                      ? "bg-emerald-50 text-emerald-700"
+                      ? "text-stone-900"
                       : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
                   )
                 }
+                style={({ isActive }) => (isActive ? { backgroundColor: `${selectionColor}20`, color: selectionColor } : {})}
               >
                 <item.icon className="w-5 h-5" />
                 <span>{item.label}</span>
@@ -132,10 +137,11 @@ export const Layout: React.FC = () => {
                 to={item.path}
                 className={cn(
                   "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
-                  isActive ? "text-emerald-600" : "text-stone-500 hover:text-stone-900"
+                  isActive ? "" : "text-stone-500 hover:text-stone-900"
                 )}
+                style={isActive ? { color: selectionColor } : {}}
               >
-                <item.icon className={cn("w-6 h-6", isActive && "fill-emerald-50")} />
+                <item.icon className={cn("w-6 h-6", isActive && "opacity-80")} style={isActive ? { color: selectionColor } : {}} />
                 <span className="text-[10px] font-medium">{item.label}</span>
               </NavLink>
             );

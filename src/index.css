@@ -1,1 +1,5 @@
 @import "tailwindcss";
+
+@theme inline {
+  --selection-color: #10b981;
+}

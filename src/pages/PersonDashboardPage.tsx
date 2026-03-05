@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
+import { useFamily } from '../context/FamilyProvider';
 import { PlanModal } from '../components/PlanModal';
 import { useToast } from '../context/ToastProvider';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, FileText, Upload, Trash2, CheckCircle2, Circle, MapPin, AlignLeft } from 'lucide-react';
@@ -18,6 +19,7 @@ export const PersonDashboardPage: React.FC = () => {
   const { canEdit } = useAuth();
   const { people, appointments, attachments, updateAppointment, deleteAppointment, addAttachment, deleteAttachment, deleteAttachments } = useData();
   const { showToast } = useToast();
+  const { selectionColor } = useFamily();
 
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past' | 'documents'>('upcoming');
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
@@ -327,7 +329,7 @@ export const PersonDashboardPage: React.FC = () => {
                   <span className="text-sm text-amber-600">{t('documents_limit_reached')}</span>
                 ) : canEdit ? (
                   <>
-                    <label className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium cursor-pointer">
+                    <label className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm font-medium cursor-pointer" style={{ backgroundColor: selectionColor }}>
                       <Upload className="w-5 h-5" />
                       <span>{t('upload_files')}</span>
                       <input type="file" multiple className="hidden" onChange={handleFileUpload} />
@@ -377,13 +379,16 @@ export const PersonDashboardPage: React.FC = () => {
                     key={doc.id}
                     className={`flex items-start gap-3 p-4 bg-white rounded-2xl border transition-all ${
                       canEdit ? 'cursor-pointer' : 'cursor-default'
-                    } ${selectedDocuments.has(doc.id) ? 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50/30' : 'border-stone-200 hover:border-stone-300'}`}
+                    } ${selectedDocuments.has(doc.id) ? 'ring-1' : 'border-stone-200 hover:border-stone-300'}`}
+                    style={selectedDocuments.has(doc.id) ? { borderColor: selectionColor, boxShadow: `0 0 0 1px ${selectionColor}`, backgroundColor: `${selectionColor}15` } : {}}
                     onClick={() => canEdit && toggleDocumentSelection(doc.id)}
                   >
                     <div className="flex-shrink-0 pt-1">
                       <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                        selectedDocuments.has(doc.id) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-stone-300 bg-white'
-                      }`}>
+                        selectedDocuments.has(doc.id) ? 'text-white' : 'border-stone-300 bg-white'
+                      }`}
+                        style={selectedDocuments.has(doc.id) ? { backgroundColor: selectionColor, borderColor: selectionColor } : {}}
+                      >
                         {selectedDocuments.has(doc.id) && <CheckCircle2 className="w-4 h-4" />}
                       </div>
                     </div>

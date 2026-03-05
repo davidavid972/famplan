@@ -27,6 +27,10 @@ export interface FamilyData {
   createdAt: string;
   /** Chosen FamPlan calendar ID when multiple exist */
   calendarId?: string | null;
+  /** UI preferences */
+  ui?: {
+    selectionColor?: string | null;
+  };
 }
 
 function getAuthHeader(): Record<string, string> {
