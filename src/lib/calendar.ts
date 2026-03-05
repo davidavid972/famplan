@@ -82,11 +82,12 @@ type EventPayload = {
   location?: string;
   start: { dateTime: string; timeZone?: string };
   end: { dateTime: string; timeZone?: string };
-  reminders?: { overrides: { method: string; minutes: number }[] };
+  reminders?: { useDefault?: boolean; overrides?: { method: string; minutes: number }[] };
 };
 
 /**
  * Validate and sanitize event payload before sending.
+ * Google: with overrides MUST set useDefault:false; with no overrides omit or use useDefault:true.
  */
 function validateEventPayload(payload: EventPayload): EventPayload {
   const tz = payload.start?.timeZone ?? payload.end?.timeZone ?? DEFAULT_TZ;
@@ -112,12 +113,17 @@ function validateEventPayload(payload: EventPayload): EventPayload {
   });
   if (overrides.length === 0) overrides = [{ method: 'popup', minutes: 15 }];
 
-  return {
+  const result: EventPayload = {
     ...payload,
     start: { dateTime: startIso, timeZone: tz },
     end: { dateTime: endIso, timeZone: tz },
-    reminders: { overrides },
   };
+  if (overrides.length > 0) {
+    result.reminders = { useDefault: false, overrides };
+  } else {
+    delete result.reminders;
+  }
+  return result;
 }
 
 function extractErrorReason(bodyText: string): string {
@@ -203,8 +209,8 @@ export async function deleteEvent(calendarId: string, eventId: string): Promise<
 }
 
 /**
- * Build event payload from plan. Reminders: plan minutes -> overrides (popup). Default 15 min.
- * Uses Asia/Jerusalem; validation in createEvent ensures valid ISO + end > start.
+ * Build event payload from plan. Reminders: unique minutes >=0 -> overrides (popup). Default 15 min.
+ * With overrides: useDefault:false. With empty: omit reminders.
  */
 export function planToEventPayload(plan: {
   title: string;
@@ -217,16 +223,21 @@ export function planToEventPayload(plan: {
   const tz = DEFAULT_TZ;
   const startDate = new Date(plan.start);
   const endDate = new Date(plan.end);
-  const overrides = (plan.reminders?.length ? plan.reminders : [{ minutesBeforeStart: 15 }]).map((r) => ({
-    method: 'popup' as const,
-    minutes: Math.max(0, Math.floor(r.minutesBeforeStart ?? 15)),
-  }));
-  return {
+  const raw = (plan.reminders?.length ? plan.reminders : [{ minutesBeforeStart: 15 }]).map((r) =>
+    Math.max(0, Math.floor(r.minutesBeforeStart ?? 15))
+  );
+  const uniqueMinutes = [...new Set(raw)].sort((a, b) => b - a);
+  const overrides = uniqueMinutes.map((m) => ({ method: 'popup' as const, minutes: m }));
+
+  const result: EventPayload = {
     summary: plan.title,
     description: plan.notes || undefined,
     location: plan.location || undefined,
     start: { dateTime: startDate.toISOString(), timeZone: tz },
     end: { dateTime: endDate.toISOString(), timeZone: tz },
-    reminders: { overrides },
   };
+  if (overrides.length > 0) {
+    result.reminders = { useDefault: false, overrides };
+  }
+  return result;
 }
