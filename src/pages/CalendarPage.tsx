@@ -10,12 +10,14 @@ import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucid
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { he, enUS } from 'date-fns/locale';
 import type { Appointment } from '../types/models';
+import { generateRecurrenceStarts } from '../lib/recurrence';
+import { v4 as uuidv4 } from 'uuid';
 
 export const CalendarPage: React.FC = () => {
   const { t, language, dir } = useI18n();
   const { canEdit } = useAuth();
   const { planFilterPersonIds } = useFamily();
-  const { appointments, people, addAppointment, updateAppointment, deleteAppointment, attachments, addAttachment } = useData();
+  const { appointments, people, addAppointment, updateAppointment, deleteAppointment, deleteAppointmentsByRecurrenceGroupId, attachments, addAttachment } = useData();
   const { showToast } = useToast();
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -74,7 +76,16 @@ export const CalendarPage: React.FC = () => {
   };
   const removePendingDoc = (idx: number) => setPendingDocs((prev) => prev.filter((_, i) => i !== idx));
 
-  const handleSave = async (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
+  const handleSave = async (data: {
+    title: string;
+    personId: string;
+    start: number;
+    end: number;
+    location: string;
+    notes: string;
+    reminders: { minutesBeforeStart: number }[];
+    recurrence?: { intervalWeeks: number; endCondition: 'date' | 'count'; endDate?: number; count?: number };
+  }) => {
     if (modalMode === 'edit' && editingAppointment) {
       await updateAppointment(editingAppointment.id, {
         title: data.title,
@@ -86,6 +97,38 @@ export const CalendarPage: React.FC = () => {
         reminders: data.reminders,
       });
       showToast(t('saved_to_google_calendar'), 'success');
+    } else if (data.recurrence) {
+      const starts = generateRecurrenceStarts(data.start, data.recurrence);
+      const durationMs = data.end - data.start;
+      const groupId = uuidv4();
+      const added: { id: string; calendarEventId?: string }[] = [];
+      for (const startMs of starts) {
+        const app = await addAppointment({
+          title: data.title,
+          personId: data.personId,
+          start: startMs,
+          end: startMs + durationMs,
+          location: data.location,
+          notes: data.notes,
+          status: 'PLANNED',
+          reminders: data.reminders,
+          recurrenceGroupId: groupId,
+        });
+        added.push(app);
+      }
+      if (pendingDocs.length > 0 && added[0]) {
+        pendingDocs.forEach((doc) => {
+          addAttachment({
+            appointmentId: added[0].id,
+            name: doc.name,
+            type: doc.type,
+            size: doc.size,
+            uploaderId: 'local',
+          });
+        });
+      }
+      showToast(t('saved_to_google_calendar'), 'success');
+      return { calendarEventId: added[0]?.calendarEventId };
     } else {
       const newAppointment = await addAppointment({
         title: data.title,
@@ -113,6 +156,11 @@ export const CalendarPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     await deleteAppointment(id);
+    showToast(t('appointment_deleted'), 'success');
+  };
+
+  const handleDeleteSeries = async (recurrenceGroupId: string) => {
+    await deleteAppointmentsByRecurrenceGroupId(recurrenceGroupId);
     showToast(t('appointment_deleted'), 'success');
   };
 
@@ -229,6 +277,7 @@ export const CalendarPage: React.FC = () => {
         selectedPersonId={planFilterPersonIds?.[0] ?? null}
         onSave={handleSave}
         onDelete={handleDelete}
+        onDeleteSeries={handleDeleteSeries}
         pendingDocs={pendingDocs}
         onAddPendingDoc={addPendingDoc}
         onAddPendingDocsMulti={addPendingDocsMulti}

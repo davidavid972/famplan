@@ -259,6 +259,7 @@ export interface AppointmentsData {
     reminders?: { minutesBeforeStart: number }[];
     createdAt: number;
     calendarEventId?: string;
+    recurrenceGroupId?: string | null;
   }>;
 }
 

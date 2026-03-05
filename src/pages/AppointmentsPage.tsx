@@ -16,7 +16,7 @@ export const AppointmentsPage: React.FC = () => {
   const { t, language, dir } = useI18n();
   const { canEdit } = useAuth();
   const { planFilterPersonIds, selectionColor } = useFamily();
-  const { appointments, people, updateAppointment, deleteAppointment, deleteAppointments } = useData();
+  const { appointments, people, updateAppointment, deleteAppointment, deleteAppointments, deleteAppointmentsByRecurrenceGroupId } = useData();
   const { showToast } = useToast();
 
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
@@ -104,6 +104,12 @@ export const AppointmentsPage: React.FC = () => {
 
   const handleDeleteFromModal = async (id: string) => {
     await deleteAppointment(id);
+    showToast(t('appointment_deleted'), 'success');
+    setEditingAppointment(null);
+  };
+
+  const handleDeleteSeriesFromModal = async (recurrenceGroupId: string) => {
+    await deleteAppointmentsByRecurrenceGroupId(recurrenceGroupId);
     showToast(t('appointment_deleted'), 'success');
     setEditingAppointment(null);
   };
@@ -278,6 +284,7 @@ export const AppointmentsPage: React.FC = () => {
         selectedPersonId={null}
         onSave={handleSaveFromModal}
         onDelete={handleDeleteFromModal}
+        onDeleteSeries={handleDeleteSeriesFromModal}
         canEdit={canEdit}
       />
 

@@ -40,10 +40,11 @@ interface DataContextType {
   addPerson: (person: Omit<Person, 'id' | 'createdAt'>) => Person;
   updatePerson: (id: string, person: Partial<Person>) => void;
   deletePerson: (id: string) => void;
-  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => Promise<Appointment>;
+  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'> & { recurrenceGroupId?: string | null }) => Promise<Appointment>;
   updateAppointment: (id: string, appointment: Partial<Appointment>) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
   deleteAppointments: (ids: string[]) => Promise<void>;
+  deleteAppointmentsByRecurrenceGroupId: (groupId: string) => Promise<void>;
   addAttachment: (attachment: Omit<Attachment, 'id' | 'createdAt'>) => void;
   deleteAttachment: (id: string) => void;
   deleteAttachments: (ids: string[]) => void;
@@ -294,6 +295,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAttachments((prev) => prev.filter((a) => a.appointmentId !== id));
   };
 
+  const deleteAppointmentsByRecurrenceGroupId = async (groupId: string) => {
+    if (!canEdit) return;
+    const toDelete = appointments.filter((a) => a.recurrenceGroupId === groupId);
+    await deleteAppointments(toDelete.map((a) => a.id));
+  };
+
   const deleteAppointments = async (ids: string[]) => {
     if (!canEdit || ids.length === 0) return;
     const idSet = new Set(ids);
@@ -345,6 +352,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateAppointment,
         deleteAppointment,
         deleteAppointments,
+        deleteAppointmentsByRecurrenceGroupId,
         addAttachment,
         deleteAttachment,
         deleteAttachments,

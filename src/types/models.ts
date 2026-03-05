@@ -25,6 +25,8 @@ export interface Appointment {
   reminders?: Reminder[];
   createdAt: number;
   calendarEventId?: string;
+  /** Links instances of a recurring series */
+  recurrenceGroupId?: string | null;
 }
 
 export interface Attachment {

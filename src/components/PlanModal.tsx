@@ -3,8 +3,17 @@ import { useI18n } from '../i18n/I18nProvider';
 import { Calendar as CalendarIcon, MapPin, AlignLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Appointment, Person, Reminder } from '../types/models';
+import { generateRecurrenceStarts } from '../lib/recurrence';
 
 const REMINDER_OPTIONS = [5, 10, 15, 30, 60, 180, 1440] as const;
+const REC_INTERVAL_OPTIONS = [1, 2, 3, 4] as const;
+
+export interface RecurrenceParams {
+  intervalWeeks: number;
+  endCondition: 'date' | 'count';
+  endDate?: number;
+  count?: number;
+}
 
 interface PlanModalProps {
   isOpen: boolean;
@@ -22,8 +31,10 @@ interface PlanModalProps {
     location: string;
     notes: string;
     reminders: Reminder[];
+    recurrence?: RecurrenceParams;
   }) => void | Promise<void | { calendarEventId?: string }>;
   onDelete?: (id: string) => void;
+  onDeleteSeries?: (recurrenceGroupId: string) => void;
   pendingDocs?: Array<{ name: string; type: string; size: number }>;
   onAddPendingDoc?: (file: File) => void;
   onAddPendingDocsMulti?: (files: FileList | null) => void;
@@ -44,6 +55,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   selectedPersonId,
   onSave,
   onDelete,
+  onDeleteSeries,
   pendingDocs = [],
   onAddPendingDoc,
   onAddPendingDocsMulti,
@@ -61,12 +73,19 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
   const [reminderMinutes, setReminderMinutes] = useState<number | null>(15);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [intervalWeeks, setIntervalWeeks] = useState(1);
+  const [endCondition, setEndCondition] = useState<'date' | 'count'>('date');
+  const [endDateStr, setEndDateStr] = useState('');
+  const [endCount, setEndCount] = useState(4);
   const endManuallyEditedRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedCalendarEventId, setSavedCalendarEventId] = useState<string | null>(null);
+  const [showDeleteChoice, setShowDeleteChoice] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
+    setShowDeleteChoice(false);
     endManuallyEditedRef.current = false;
     if (mode === 'edit' && appointment) {
       setTitle(appointment.title);
@@ -77,6 +96,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       setNotes(appointment.notes || '');
       const first = appointment.reminders?.[0]?.minutesBeforeStart;
       setReminderMinutes(first != null && first > 0 ? first : null);
+      setIsRecurring(false);
     } else {
       const date = initialDate || new Date();
       const startStr = format(date, "yyyy-MM-dd'T'09:00");
@@ -90,6 +110,13 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       setLocation('');
       setNotes('');
       setReminderMinutes(15);
+      setIsRecurring(false);
+      setIntervalWeeks(1);
+      setEndCondition('date');
+      const defaultEnd = new Date(date);
+      defaultEnd.setMonth(defaultEnd.getMonth() + 3);
+      setEndDateStr(format(defaultEnd, 'yyyy-MM-dd'));
+      setEndCount(4);
     }
     setSaveError(null);
   }, [isOpen, mode, appointment, initialDate, people, selectedPersonId]);
@@ -123,6 +150,22 @@ export const PlanModal: React.FC<PlanModalProps> = ({
     }
     const remindersPayload: Reminder[] =
       reminderMinutes != null ? [{ minutesBeforeStart: reminderMinutes }] : [];
+    let recurrence: RecurrenceParams | undefined;
+    if (mode === 'add' && isRecurring) {
+      if (endCondition === 'date' && !endDateStr) {
+        setSaveError(t('required_field'));
+        return;
+      }
+      const endDateMs = endCondition === 'date' && endDateStr
+        ? new Date(endDateStr + 'T23:59:59').getTime()
+        : undefined;
+      recurrence = {
+        intervalWeeks,
+        endCondition,
+        endDate: endDateMs,
+        count: endCondition === 'count' ? endCount : undefined,
+      };
+    }
     const result = await onSave({
       title: title.trim(),
       personId,
@@ -131,6 +174,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       location,
       notes,
       reminders: remindersPayload,
+      recurrence,
     });
     const res = result as { calendarEventId?: string } | undefined;
     if (res?.calendarEventId) {
@@ -142,6 +186,23 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   };
 
   const handleDelete = () => {
+    if (mode !== 'edit' || !appointment || !onDelete) return;
+    if (appointment.recurrenceGroupId && onDeleteSeries && !showDeleteChoice) {
+      setShowDeleteChoice(true);
+      return;
+    }
+    onDelete(appointment.id);
+    onClose();
+  };
+
+  const handleDeleteSeries = () => {
+    if (mode === 'edit' && appointment?.recurrenceGroupId && onDeleteSeries) {
+      onDeleteSeries(appointment.recurrenceGroupId);
+      onClose();
+    }
+  };
+
+  const handleDeleteThisOnly = () => {
     if (mode === 'edit' && appointment && onDelete) {
       onDelete(appointment.id);
       onClose();
@@ -294,6 +355,107 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                 </select>
               </div>
 
+              {/* Recurrence - add mode only */}
+              {mode === 'add' && (
+                <div className="pt-4 border-t border-stone-200">
+                  <label className="block text-sm font-medium text-stone-700 mb-2">{t('rec_section')}</label>
+                  <div className="flex items-center gap-3 mb-3">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isRecurring}
+                      onClick={() => canEdit && setIsRecurring((v) => !v)}
+                      disabled={!canEdit}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 transition-colors disabled:opacity-60 ${
+                        isRecurring ? 'bg-emerald-600 border-emerald-600' : 'bg-stone-200 border-stone-200'
+                      }`}
+                    >
+                      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${isRecurring ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </button>
+                    <span className="text-sm font-medium text-stone-700">{t('rec_repeating')}</span>
+                  </div>
+                  {isRecurring && (
+                    <div className="space-y-3 pl-0">
+                      <div>
+                        <label className="block text-xs text-stone-500 mb-1">{t('rec_weekly')}</label>
+                        <select
+                          value={intervalWeeks}
+                          onChange={(e) => setIntervalWeeks(Number(e.target.value))}
+                          disabled={!canEdit}
+                          className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-stone-50 disabled:opacity-60"
+                        >
+                          <option value={1}>{t('rec_weekly')}</option>
+                          <option value={2}>{t('rec_every_2_weeks')}</option>
+                          {REC_INTERVAL_OPTIONS.filter((x) => x > 2).map((w) => (
+                            <option key={w} value={w}>{t('rec_every_x_weeks').replace('X', String(w))}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="endCondition"
+                            checked={endCondition === 'date'}
+                            onChange={() => setEndCondition('date')}
+                            disabled={!canEdit}
+                            className="rounded-full"
+                          />
+                          <span className="text-sm">{t('rec_until_date')}</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="endCondition"
+                            checked={endCondition === 'count'}
+                            onChange={() => setEndCondition('count')}
+                            disabled={!canEdit}
+                            className="rounded-full"
+                          />
+                          <span className="text-sm">{t('rec_times_count')}</span>
+                        </label>
+                      </div>
+                      {endCondition === 'date' && (
+                        <input
+                          type="date"
+                          value={endDateStr}
+                          onChange={(e) => setEndDateStr(e.target.value)}
+                          disabled={!canEdit}
+                          className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-stone-50 disabled:opacity-60"
+                          lang={language === 'he' ? 'he-IL' : 'en-GB'}
+                        />
+                      )}
+                      {endCondition === 'count' && (
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={endCount}
+                          onChange={(e) => setEndCount(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+                          disabled={!canEdit}
+                          className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-stone-50 disabled:opacity-60"
+                        />
+                      )}
+                      {isRecurring && start && (
+                        <p className="text-xs text-stone-500">
+                          {t('rec_summary').replace(
+                            '{count}',
+                            String(
+                              generateRecurrenceStarts(new Date(start).getTime(), {
+                                intervalWeeks,
+                                endCondition,
+                                endDate: endCondition === 'date' && endDateStr ? new Date(endDateStr + 'T23:59:59').getTime() : undefined,
+                                count: endCondition === 'count' ? endCount : undefined,
+                              }).length
+                            )
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Documents - only in add mode */}
               {mode === 'add' && onAddPendingDoc && (
                 <div className="pt-4 border-t border-stone-200">
@@ -339,14 +501,36 @@ export const PlanModal: React.FC<PlanModalProps> = ({
               </div>
             )}
             <div className="flex justify-between gap-3 p-6 bg-stone-50 border-t border-stone-100 shrink-0 z-10">
-              <div>
-                {mode === 'edit' && appointment && onDelete && canEdit && (
+              <div className="flex items-center gap-2">
+                {mode === 'edit' && appointment && onDelete && canEdit && !showDeleteChoice && (
                   <button
                     onClick={handleDelete}
                     className="px-6 py-3 font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
                   >
                     {t('delete')}
                   </button>
+                )}
+                {mode === 'edit' && appointment && onDelete && canEdit && showDeleteChoice && (
+                  <>
+                    <button
+                      onClick={handleDeleteThisOnly}
+                      className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
+                    >
+                      {t('rec_delete_this_only')}
+                    </button>
+                    <button
+                      onClick={handleDeleteSeries}
+                      className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
+                    >
+                      {t('rec_delete_whole_series')}
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteChoice(false)}
+                      className="px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 rounded-xl transition-colors"
+                    >
+                      {t('cancel')}
+                    </button>
+                  </>
                 )}
               </div>
               <div className="flex gap-3 ms-auto">

@@ -19,7 +19,7 @@ export const PersonDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, language, dir } = useI18n();
   const { canEdit } = useAuth();
-  const { people, appointments, attachments, updateAppointment, deleteAppointment, addAttachment, deleteAttachment, deleteAttachments } = useData();
+  const { people, appointments, attachments, updateAppointment, deleteAppointment, deleteAppointmentsByRecurrenceGroupId, addAttachment, deleteAttachment, deleteAttachments } = useData();
   const { showToast } = useToast();
   const { selectionColor } = useFamily();
 
@@ -84,6 +84,12 @@ export const PersonDashboardPage: React.FC = () => {
 
   const handleDeleteFromModal = async (id: string) => {
     await deleteAppointment(id);
+    showToast(t('appointment_deleted'), 'success');
+    setEditingAppointment(null);
+  };
+
+  const handleDeleteSeriesFromModal = async (recurrenceGroupId: string) => {
+    await deleteAppointmentsByRecurrenceGroupId(recurrenceGroupId);
     showToast(t('appointment_deleted'), 'success');
     setEditingAppointment(null);
   };
@@ -457,6 +463,7 @@ export const PersonDashboardPage: React.FC = () => {
         selectedPersonId={null}
         onSave={handleSaveFromModal}
         onDelete={handleDeleteFromModal}
+        onDeleteSeries={handleDeleteSeriesFromModal}
         canEdit={canEdit}
       />
 
