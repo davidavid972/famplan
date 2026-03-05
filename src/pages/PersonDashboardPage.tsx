@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
@@ -28,6 +28,9 @@ export const PersonDashboardPage: React.FC = () => {
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [addDocsMenuOpen, setAddDocsMenuOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const person = people.find((p) => p.id === id);
   const dateLocale = language === 'he' ? he : enUS;
@@ -143,7 +146,6 @@ export const PersonDashboardPage: React.FC = () => {
       return;
     }
 
-    // For demo, we just add the first appointment we find, or a dummy one if none exists
     const targetAppointmentId = personAppointments.length > 0 ? personAppointments[0].id : 'dummy-id';
 
     Array.from(files).forEach((file: File) => {
@@ -152,14 +154,23 @@ export const PersonDashboardPage: React.FC = () => {
         name: file.name,
         type: file.type || 'application/octet-stream',
         size: file.size,
-        uploaderId: 'current-user', // placeholder
+        uploaderId: 'current-user',
       });
     });
 
     showToast(t('document_added'), 'success');
-    if (e.target) {
-      e.target.value = '';
-    }
+    setAddDocsMenuOpen(false);
+    if (e.target) e.target.value = '';
+  };
+
+  const triggerFileSelect = () => {
+    setAddDocsMenuOpen(false);
+    fileInputRef.current?.click();
+  };
+
+  const triggerCameraCapture = () => {
+    setAddDocsMenuOpen(false);
+    cameraInputRef.current?.click();
   };
 
   const formatFileSize = (bytes: number) => {
@@ -324,18 +335,42 @@ export const PersonDashboardPage: React.FC = () => {
                 {canEdit && personAttachments.length >= 20 ? (
                   <span className="text-sm text-amber-600">{t('documents_limit_reached')}</span>
                 ) : canEdit ? (
-                  <>
-                    <label className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm font-medium cursor-pointer" style={{ backgroundColor: selectionColor }}>
+                  <div className="relative">
+                    <input ref={fileInputRef} type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} />
+                    <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
+                    <button
+                      type="button"
+                      onClick={() => setAddDocsMenuOpen((o) => !o)}
+                      className="flex items-center justify-center gap-2 px-6 py-3 min-h-[44px] text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm font-medium"
+                      style={{ backgroundColor: selectionColor }}
+                    >
                       <Upload className="w-5 h-5" />
-                      <span>{t('upload_files')}</span>
-                      <input type="file" multiple className="hidden" onChange={handleFileUpload} />
-                    </label>
-                    <label className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white text-stone-700 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors shadow-sm font-medium cursor-pointer">
-                      <FileText className="w-5 h-5" />
-                      <span>{t('camera_capture')}</span>
-                      <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
-                    </label>
-                  </>
+                      <span>{t('docs_add_documents')}</span>
+                    </button>
+                    {addDocsMenuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setAddDocsMenuOpen(false)} aria-hidden="true" />
+                        <div className={`absolute top-full mt-2 z-50 min-w-[200px] py-2 bg-white rounded-xl border border-stone-200 shadow-lg ${dir === 'rtl' ? 'right-0 left-auto' : 'left-0'}`}>
+                          <button
+                            type="button"
+                            onClick={triggerFileSelect}
+                            className="w-full px-4 py-3 min-h-[44px] text-left text-stone-700 hover:bg-stone-50 transition-colors font-medium flex items-center gap-2"
+                          >
+                            <FileText className="w-5 h-5" />
+                            {t('docs_select_from_device')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={triggerCameraCapture}
+                            className="w-full px-4 py-3 min-h-[44px] text-left text-stone-700 hover:bg-stone-50 transition-colors font-medium flex items-center gap-2"
+                          >
+                            <Upload className="w-5 h-5" />
+                            {t('docs_capture_now')}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 ) : null}
               </div>
 
