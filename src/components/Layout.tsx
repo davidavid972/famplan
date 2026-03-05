@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { useAuth } from '../context/AuthProvider';
@@ -12,6 +12,9 @@ export const Layout: React.FC = () => {
   const { familyDisplayName, familyPhoto } = useFamily();
   const { canEdit } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const goToSettings = () => navigate('/settings#family-profile');
 
   const titlePart = familyDisplayName.trim()
     ? `${t('app_name')} | ${familyDisplayName}`
@@ -34,9 +37,20 @@ export const Layout: React.FC = () => {
       <header className="hidden md:flex items-center justify-between px-8 py-4 bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2 min-w-0">
-            {familyPhoto && (
-              <img src={familyPhoto} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-            )}
+            <button
+              type="button"
+              onClick={goToSettings}
+              className="flex-shrink-0 rounded-full p-0.5 cursor-pointer hover:ring-2 hover:ring-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              aria-label={t('settings')}
+            >
+              {familyPhoto ? (
+                <img src={familyPhoto} alt="" className="w-8 h-8 rounded-full object-cover" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <Settings className="w-4 h-4 text-emerald-600" />
+                </div>
+              )}
+            </button>
             <h1 className="text-2xl font-bold text-emerald-700 tracking-tight truncate">{titlePart}</h1>
           </div>
           <nav className="flex gap-1">
@@ -73,9 +87,20 @@ export const Layout: React.FC = () => {
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between gap-2 px-4 py-4 bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          {familyPhoto && (
-            <img src={familyPhoto} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-          )}
+          <button
+            type="button"
+            onClick={goToSettings}
+            className="flex-shrink-0 rounded-full p-0.5 cursor-pointer hover:ring-2 hover:ring-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 active:opacity-80"
+            aria-label={t('settings')}
+          >
+            {familyPhoto ? (
+              <img src={familyPhoto} alt="" className="w-7 h-7 rounded-full object-cover" />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Settings className="w-4 h-4 text-emerald-600" />
+              </div>
+            )}
+          </button>
           <h1 className="text-lg font-bold text-emerald-700 tracking-tight truncate">{titlePart}</h1>
         </div>
         <button

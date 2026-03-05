@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useFamily } from '../context/FamilyProvider';
@@ -18,6 +19,7 @@ const SYNC_INDEX_KEY = 'famplan_drive_sync_index';
 
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
+  const location = useLocation();
   const { isConnected, canEdit, email, connect, disconnect, connectError, clearConnectError } = useAuth();
   const { showToast } = useToast();
   const { familyDisplayName, familyPhoto, setFamilyDisplayName, setFamilyPhoto } = useFamily();
@@ -65,6 +67,12 @@ export const SettingsPage: React.FC = () => {
       setIsFamilyEditMode(false);
     }
   }, [canEdit, isFamilyEditMode]);
+
+  useEffect(() => {
+    if (location.hash === '#family-profile') {
+      document.getElementById('family-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [location.hash]);
 
   const handleConnect = async () => {
     setIsConnecting(true);
@@ -174,7 +182,7 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           {/* Family profile - locked or edit mode */}
-          <div className="w-full pt-4">
+          <div id="family-profile" className="w-full pt-4 scroll-mt-24">
             <h3 className="text-sm font-medium text-stone-700 mb-3">{t('family_profile_title')}</h3>
             <div className="w-full p-4 sm:p-5 bg-stone-100 rounded-2xl border border-stone-200 space-y-4">
               {isFamilyEditMode && canEdit ? (
