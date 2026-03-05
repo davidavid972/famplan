@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { I18nProvider } from './i18n/I18nProvider';
 import { AuthProvider } from './context/AuthProvider';
 import { DataProvider } from './context/DataProvider';
@@ -19,7 +19,8 @@ function AppContent() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
-              <Route index element={<CalendarPage />} />
+              <Route index element={<Navigate to="/settings" replace />} />
+              <Route path="calendar" element={<CalendarPage />} />
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="people" element={<PeoplePage />} />
               <Route path="people/:id" element={<PersonDashboardPage />} />

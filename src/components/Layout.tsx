@@ -9,7 +9,7 @@ export const Layout: React.FC = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', icon: Calendar, label: t('calendar') },
+    { path: '/calendar', icon: Calendar, label: t('calendar') },
     { path: '/appointments', icon: List, label: t('appointments') },
     { path: '/people', icon: Users, label: t('people') },
     { path: '/settings', icon: Settings, label: t('settings') },
