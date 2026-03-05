@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { useToast } from '../context/ToastProvider';
 import { cacheClear } from '../lib/cache';
-import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil } from 'lucide-react';
+import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X } from 'lucide-react';
 
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
@@ -25,6 +25,9 @@ export const SettingsPage: React.FC = () => {
   const [isFamilyEditMode, setIsFamilyEditMode] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
+  const [driveSyncModalOpen, setDriveSyncModalOpen] = useState(false);
+  const [comingSoonModalOpen, setComingSoonModalOpen] = useState(false);
+  const authSectionRef = useRef<HTMLDivElement>(null);
 
   const refreshDriveDebug = () => {
     setDriveDebug({
@@ -86,6 +89,21 @@ export const SettingsPage: React.FC = () => {
     setIsFamilyEditMode(false);
   };
 
+  const handleDriveCardClick = () => {
+    if (isConnected) {
+      refreshDriveDebug();
+      setDriveSyncModalOpen(true);
+    } else {
+      authSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      authSectionRef.current?.focus();
+    }
+  };
+
+  const handleSyncNow = () => {
+    window.dispatchEvent(new CustomEvent('famplan-drive-sync-request'));
+    refreshDriveDebug();
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300 w-full max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
@@ -108,7 +126,7 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           {/* Connected profile - top section, mobile-first */}
-          <div className="w-full pt-4">
+          <div ref={authSectionRef} className="w-full pt-4" tabIndex={-1}>
             <h3 className="text-sm font-medium text-stone-700 mb-3">{t('auth_profile')}</h3>
             <div className="w-full p-4 sm:p-5 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
               {isConnected ? (
@@ -252,35 +270,51 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mx-auto pt-4">
-            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px]">
+            <button
+              type="button"
+              onClick={() => setComingSoonModalOpen(true)}
+              className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px] w-full text-left cursor-pointer hover:bg-stone-100 hover:border-stone-200 transition-colors active:bg-stone-100"
+            >
               <Shield className="w-8 h-8 text-blue-600 mb-3" />
               <h3 className="font-medium text-stone-900">{t('settings_cards_access_title')}</h3>
               <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_access_subtitle')}</p>
-            </div>
-            
-            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px]">
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setComingSoonModalOpen(true)}
+              className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px] w-full text-left cursor-pointer hover:bg-stone-100 hover:border-stone-200 transition-colors active:bg-stone-100"
+            >
               <Share2 className="w-8 h-8 text-emerald-600 mb-3" />
               <h3 className="font-medium text-stone-900">{t('settings_cards_sharing_title')}</h3>
               <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_sharing_subtitle')}</p>
-            </div>
-            
-            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px]">
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setComingSoonModalOpen(true)}
+              className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px] w-full text-left cursor-pointer hover:bg-stone-100 hover:border-stone-200 transition-colors active:bg-stone-100"
+            >
               <CalendarIcon className="w-8 h-8 text-purple-600 mb-3" />
               <h3 className="font-medium text-stone-900">{t('settings_cards_calendar_title')}</h3>
               <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_calendar_subtitle')}</p>
               <p className={`mt-2 text-xs font-medium ${isConnected ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {isConnected ? t('auth_connected') : t('auth_not_connected')}
               </p>
-            </div>
-            
-            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px]">
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDriveCardClick}
+              className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px] w-full text-left cursor-pointer hover:bg-stone-100 hover:border-stone-200 transition-colors active:bg-stone-100"
+            >
               <HardDrive className="w-8 h-8 text-amber-600 mb-3" />
               <h3 className="font-medium text-stone-900">{t('settings_cards_drive_title')}</h3>
               <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_drive_subtitle')}</p>
               <p className={`mt-2 text-xs font-medium ${isConnected ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {isConnected ? t('auth_connected') : t('auth_not_connected')}
               </p>
-            </div>
+            </button>
           </div>
 
           {/* Clear cache */}
@@ -328,6 +362,95 @@ export const SettingsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Drive Sync Status modal */}
+      {driveSyncModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 border-b border-stone-100">
+              <h2 className="text-lg font-semibold text-stone-900">{t('drive_sync_status_title')}</h2>
+              <button onClick={() => setDriveSyncModalOpen(false)} className="p-2 rounded-full hover:bg-stone-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <X className="w-5 h-5 text-stone-500" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="p-3 bg-stone-100 rounded-xl text-sm text-stone-600 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span>{t('family_profile_title')}</span>
+                  <span className="flex items-center gap-1.5">
+                    {driveDebug.syncStatus === 'Success' ? <span className="text-emerald-600">✓</span> : driveDebug.syncStatus ? <span className="text-amber-600">!</span> : '—'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span>{t('sync_people')}</span>
+                  <span className="flex items-center gap-1.5">
+                    {dataSyncTimes.people ? <span className="text-emerald-600">✓</span> : '—'}
+                    {dataSyncTimes.people && <span className="text-xs text-stone-500">{new Date(dataSyncTimes.people).toLocaleString()}</span>}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span>{t('sync_appointments')}</span>
+                  <span className="flex items-center gap-1.5">
+                    {dataSyncTimes.appointments ? <span className="text-emerald-600">✓</span> : '—'}
+                    {dataSyncTimes.appointments && <span className="text-xs text-stone-500">{new Date(dataSyncTimes.appointments).toLocaleString()}</span>}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span>{t('sync_index')}</span>
+                  <span className="flex items-center gap-1.5">
+                    {dataSyncTimes.index ? <span className="text-emerald-600">✓</span> : '—'}
+                    {dataSyncTimes.index && <span className="text-xs text-stone-500">{new Date(dataSyncTimes.index).toLocaleString()}</span>}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleSyncNow}
+                  className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800"
+                >
+                  {t('sync_now')}
+                </button>
+                <button
+                  onClick={() => {
+                    cacheClear();
+                    showToast(t('cache_cleared'), 'success');
+                    setDriveSyncModalOpen(false);
+                    window.location.reload();
+                  }}
+                  className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 active:bg-stone-100"
+                >
+                  {t('clear_cache')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Coming soon modal */}
+      {comingSoonModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 border-b border-stone-100">
+              <h2 className="text-lg font-semibold text-stone-900">{t('coming_soon')}</h2>
+              <button onClick={() => setComingSoonModalOpen(false)} className="p-2 rounded-full hover:bg-stone-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <X className="w-5 h-5 text-stone-500" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-stone-600">{t('coming_soon_desc')}</p>
+            </div>
+            <div className="p-4 border-t border-stone-100">
+              <button
+                onClick={() => setComingSoonModalOpen(false)}
+                className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50"
+              >
+                {t('cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

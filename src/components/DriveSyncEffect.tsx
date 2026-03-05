@@ -5,7 +5,7 @@
  * - On family name/photo change: write family.json to Drive
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthProvider';
 import { useFamily } from '../context/FamilyProvider';
@@ -29,6 +29,13 @@ export function DriveSyncEffect() {
   const fileIdRef = useRef<string | null>(null);
   const isLoadingFromDriveRef = useRef(false);
   const initialLoadDoneRef = useRef(false);
+  const [syncTrigger, setSyncTrigger] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setSyncTrigger((t) => t + 1);
+    window.addEventListener('famplan-drive-sync-request', handler);
+    return () => window.removeEventListener('famplan-drive-sync-request', handler);
+  }, []);
 
   useEffect(() => {
     if (!isConnected) {
@@ -74,7 +81,7 @@ export function DriveSyncEffect() {
     return () => {
       cancelled = true;
     };
-  }, [isConnected, location.pathname, setFamilyDisplayName, setFamilyPhoto]);
+  }, [isConnected, location.pathname, setFamilyDisplayName, setFamilyPhoto, syncTrigger]);
 
   useEffect(() => {
     if (!isConnected || !fileIdRef.current || !initialLoadDoneRef.current) return;

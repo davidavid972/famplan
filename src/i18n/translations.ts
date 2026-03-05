@@ -132,6 +132,10 @@ export const translations = {
     offline_banner: 'אין חיבור לאינטרנט. אפשר לצפות בנתונים, אבל כדי לערוך/להוסיף צריך להתחבר.',
     clear_cache: 'נקה מטמון',
     cache_cleared: 'המטמון נוקה',
+    drive_sync_status_title: 'סטטוס סנכרון Drive',
+    sync_now: 'סנכרן עכשיו',
+    coming_soon: 'בקרוב',
+    coming_soon_desc: 'תכונה זו תהיה זמינה בקרוב.',
   },
   en: {
     app_name: 'FamPlan',
@@ -266,6 +270,10 @@ export const translations = {
     offline_banner: 'No internet connection. You can view data, but editing requires being online.',
     clear_cache: 'Clear cache',
     cache_cleared: 'Cache cleared',
+    drive_sync_status_title: 'Drive Sync Status',
+    sync_now: 'Sync now',
+    coming_soon: 'Coming soon',
+    coming_soon_desc: 'This feature will be available soon.',
   }
 };
 

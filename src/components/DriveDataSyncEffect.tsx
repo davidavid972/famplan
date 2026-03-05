@@ -4,7 +4,7 @@
  * - Updates DataProvider via syncFromDrive
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
@@ -29,13 +29,23 @@ export function DriveDataSyncEffect() {
   const { syncFromDrive } = useData();
   const location = useLocation();
   const hasRunRef = useRef(false);
+  const [syncTrigger, setSyncTrigger] = useState(0);
+
+  useEffect(() => {
+    const handler = () => {
+      hasRunRef.current = false;
+      setSyncTrigger((t) => t + 1);
+    };
+    window.addEventListener('famplan-drive-sync-request', handler);
+    return () => window.removeEventListener('famplan-drive-sync-request', handler);
+  }, []);
 
   useEffect(() => {
     if (!isConnected) {
       hasRunRef.current = false;
       return;
     }
-    // Load on mount, or re-load when opening Settings (cross-device refresh)
+    // Load on mount, or re-load when opening Settings (cross-device refresh), or manual Sync now
     const shouldLoad = !hasRunRef.current || location.pathname === '/settings';
 
     if (!shouldLoad) return;
@@ -100,7 +110,7 @@ export function DriveDataSyncEffect() {
     return () => {
       cancelled = true;
     };
-  }, [isConnected, syncFromDrive, location.pathname]);
+  }, [isConnected, syncFromDrive, location.pathname, syncTrigger]);
 
   return null;
 }
