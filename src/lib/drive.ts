@@ -317,10 +317,64 @@ export async function driveListPermissions(fileId: string): Promise<Array<{ id: 
 }
 
 /**
- * Ensure FamPlan folder structure and return folder ids.
+ * Search for FamPlan folders shared with the current user.
  */
-export async function driveEnsureFamPlanStructure(): Promise<{ rootFolderId: string; dataFolderId: string; attachmentsFolderId: string }> {
-  const rootFolderId = await driveEnsureFolder(FAMPLAN_ROOT, 'root');
+async function driveFindSharedFamPlanFolders(): Promise<Array<{ id: string }>> {
+  const q = `sharedWithMe = true and name = '${FAMPLAN_ROOT.replace(/'/g, "\\'")}' and mimeType = '${FOLDER_MIME}' and trashed = false`;
+  const list = await driveRequest<{ files: { id: string }[] }>(
+    `${DRIVE_API}/files?q=${encodeURIComponent(q)}&fields=files(id)`
+  );
+  return list.files ?? [];
+}
+
+/**
+ * Check if a FamPlan root folder has the data/family.json structure.
+ */
+async function driveFolderHasFamilyJson(rootFolderId: string): Promise<boolean> {
+  const dataFolderId = await driveFindFile(DATA_FOLDER, rootFolderId);
+  if (!dataFolderId) return false;
+  const familyFileId = await driveFindFile(FAMILY_FILE, dataFolderId);
+  return !!familyFileId;
+}
+
+/**
+ * Resolve FamPlan root folder: shared first, then own, then create new.
+ * @param cachedRootFolderId Optional cached folder id - validated before use
+ */
+export async function driveResolveFamPlanFolder(cachedRootFolderId?: string | null): Promise<string> {
+  if (cachedRootFolderId) {
+    try {
+      await driveRequest<{ id: string }>(`${DRIVE_API}/files/${cachedRootFolderId}?fields=id`);
+      return cachedRootFolderId;
+    } catch {
+      // Cache invalid (404/403) - clear and resolve fresh
+    }
+  }
+
+  const shared = await driveFindSharedFamPlanFolders();
+  if (shared.length > 0) {
+    const withFamily = await Promise.all(
+      shared.map(async (f) => ({ id: f.id, hasFamily: await driveFolderHasFamilyJson(f.id) }))
+    );
+    const preferred = withFamily.find((x) => x.hasFamily) ?? withFamily[0];
+    return preferred.id;
+  }
+
+  const ownQ = `name='${FAMPLAN_ROOT.replace(/'/g, "\\'")}' and 'root' in parents and mimeType='${FOLDER_MIME}' and trashed=false`;
+  const ownList = await driveRequest<{ files: { id: string }[] }>(
+    `${DRIVE_API}/files?q=${encodeURIComponent(ownQ)}&fields=files(id)`
+  );
+  if (ownList.files?.length) return ownList.files[0].id;
+
+  return driveEnsureFolder(FAMPLAN_ROOT, 'root');
+}
+
+/**
+ * Ensure FamPlan folder structure and return folder ids.
+ * Resolves root: shared first, then own, then create. Uses cache when valid.
+ */
+export async function driveEnsureFamPlanStructure(cachedRootFolderId?: string | null): Promise<{ rootFolderId: string; dataFolderId: string; attachmentsFolderId: string }> {
+  const rootFolderId = await driveResolveFamPlanFolder(cachedRootFolderId);
   const dataFolderId = await driveEnsureFolder(DATA_FOLDER, rootFolderId);
   const attachmentsFolderId = await driveEnsureFolder(ATTACHMENTS_FOLDER, rootFolderId);
   return { rootFolderId, dataFolderId, attachmentsFolderId };

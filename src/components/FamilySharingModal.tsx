@@ -4,11 +4,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Copy, Mail, MessageCircle, Share2 } from 'lucide-react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useUserRole } from '../context/UserRoleProvider';
 import { useToast } from '../context/ToastProvider';
+import { APP_URL } from '../lib/appConfig';
 import type { UsersDataMember } from '../lib/drive';
 
 function roleLabel(role: string, t: (k: string) => string): string {
@@ -34,13 +35,19 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
   const [isInviting, setIsInviting] = useState(false);
   const [removingEmail, setRemovingEmail] = useState<string | null>(null);
   const [changingRoleEmail, setChangingRoleEmail] = useState<string | null>(null);
+  const [showInvitePanel, setShowInvitePanel] = useState(false);
 
   const isAdmin = userRole === 'admin';
+
+  const inviteSubject = t('invite_msg_subject');
+  const inviteBody = t('invite_msg_body').replace('{appUrl}', APP_URL);
+  const inviteFullText = `${inviteSubject}\n\n${inviteBody}`;
 
   useEffect(() => {
     if (open && isConnected) {
       refreshMembers();
     }
+    if (!open) setShowInvitePanel(false);
   }, [open, isConnected, refreshMembers]);
 
   const handleInvite = async () => {
@@ -51,6 +58,7 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
     try {
       await addMember(trimmed, inviteRole);
       setInviteEmail('');
+      setShowInvitePanel(true);
       showToast(t('sharing_invite_success'), 'success');
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -93,6 +101,42 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
       showToast(`${t('sharing_remove_error')}: ${e instanceof Error ? e.message : String(e)}`, 'error');
     } finally {
       setChangingRoleEmail(null);
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteFullText);
+      showToast(t('invite_copied_toast'), 'success');
+    } catch {
+      showToast(t('sharing_invite_error'), 'error');
+    }
+  };
+
+  const handleMailto = () => {
+    const mailto = `mailto:?subject=${encodeURIComponent(inviteSubject)}&body=${encodeURIComponent(inviteBody)}`;
+    window.open(mailto, '_blank', 'noopener');
+  };
+
+  const handleWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(inviteFullText)}`;
+    window.open(url, '_blank', 'noopener');
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: inviteSubject,
+          text: inviteBody,
+          url: APP_URL,
+        });
+        showToast(t('sharing_invite_success'), 'success');
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') handleCopy();
+      }
+    } else {
+      handleCopy();
     }
   };
 
@@ -143,6 +187,46 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
                       className="min-h-[44px] px-4 py-2 rounded-xl font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {t('sharing_invite_btn')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {showInvitePanel && (
+                <div className="space-y-3 p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+                  <h3 className="text-sm font-medium text-stone-700">{t('invite_msg_panel_title')}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className="min-h-[44px] px-4 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2"
+                    >
+                      <Copy className="w-4 h-4" />
+                      {t('invite_copy_btn')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleMailto}
+                      className="min-h-[44px] px-4 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {t('invite_mailto_btn')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleWhatsApp}
+                      className="min-h-[44px] px-4 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      {t('invite_whatsapp_btn')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleShare}
+                      className="min-h-[44px] px-4 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      {t('invite_share_btn')}
                     </button>
                   </div>
                 </div>

@@ -50,7 +50,8 @@ export function DriveSyncEffect() {
       try {
         isLoadingFromDriveRef.current = true;
         localStorage.setItem(SYNC_STATUS_KEY, '');
-        const { rootFolderId, dataFolderId } = await driveEnsureFamPlanStructure();
+        const cachedRoot = localStorage.getItem(ROOT_FOLDER_KEY);
+        const { rootFolderId, dataFolderId } = await driveEnsureFamPlanStructure(cachedRoot);
         if (cancelled) return;
         localStorage.setItem(ROOT_FOLDER_KEY, rootFolderId);
         localStorage.setItem(DATA_FOLDER_KEY, dataFolderId);

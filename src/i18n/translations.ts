@@ -159,6 +159,14 @@ export const translations = {
     roles_editor: 'עורך',
     roles_viewer: 'צופה',
     roles_change_role: 'שנה תפקיד',
+    invite_msg_subject: 'הזמנה למשפחת FamPlan',
+    invite_msg_body: 'אהלן! הזמנתי אותך להצטרף למשפחה שלנו באפליקציית FamPlan.\n\nכדי להיכנס:\n1) פתח/י את הלינק:\n{appUrl}\n2) התחבר/י עם Google באותו המייל שהזמנתי.\n3) אחרי ההתחברות תראה/י את התכניות והאנשים המשותפים.\n\nטיפ לנייד: אפשר לשמור קיצור דרך למסך הבית (Share → Add to Home Screen).',
+    invite_msg_panel_title: 'הודעת הזמנה',
+    invite_copy_btn: 'העתק',
+    invite_mailto_btn: 'שלח במייל',
+    invite_whatsapp_btn: 'שלח ב־WhatsApp',
+    invite_share_btn: 'שתף',
+    invite_copied_toast: 'הועתק ללוח',
   },
   en: {
     app_name: 'FamPlan',
@@ -320,6 +328,14 @@ export const translations = {
     roles_editor: 'Editor',
     roles_viewer: 'Viewer',
     roles_change_role: 'Change role',
+    invite_msg_subject: 'Invitation to FamPlan family',
+    invite_msg_body: 'Hi! I invited you to join our family on the FamPlan app.\n\nTo get started:\n1) Open this link:\n{appUrl}\n2) Sign in with Google using the same email I invited.\n3) After signing in you\'ll see the shared plans and people.\n\nMobile tip: You can save a shortcut to your home screen (Share → Add to Home Screen).',
+    invite_msg_panel_title: 'Invite message',
+    invite_copy_btn: 'Copy',
+    invite_mailto_btn: 'Send via Email',
+    invite_whatsapp_btn: 'Send via WhatsApp',
+    invite_share_btn: 'Share',
+    invite_copied_toast: 'Copied to clipboard',
   }
 };
 

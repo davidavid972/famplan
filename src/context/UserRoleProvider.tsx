@@ -56,7 +56,8 @@ export const UserRoleProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
     setIsLoading(true);
     try {
-      const { rootFolderId, dataFolderId } = await driveEnsureFamPlanStructure();
+      const cachedRoot = localStorage.getItem(ROOT_FOLDER_KEY);
+      const { rootFolderId, dataFolderId } = await driveEnsureFamPlanStructure(cachedRoot);
       localStorage.setItem(ROOT_FOLDER_KEY, rootFolderId);
       const cachedUsersId = localStorage.getItem(USERS_FILE_ID_KEY);
       const { data, fileId } = await driveLoadUsers(dataFolderId, cachedUsersId);
@@ -115,7 +116,8 @@ export const UserRoleProvider: React.FC<{ children: ReactNode }> = ({ children }
       const dataFolderId = localStorage.getItem(DATA_FOLDER_KEY);
       const usersFileId = localStorage.getItem(USERS_FILE_ID_KEY);
       if (!rootFolderId || !dataFolderId || !usersFileId) {
-        const { rootFolderId: r, dataFolderId: d } = await driveEnsureFamPlanStructure();
+        const cachedRoot = localStorage.getItem(ROOT_FOLDER_KEY);
+        const { rootFolderId: r, dataFolderId: d } = await driveEnsureFamPlanStructure(cachedRoot);
         localStorage.setItem(ROOT_FOLDER_KEY, r);
         localStorage.setItem(DATA_FOLDER_KEY, d);
         const { data, fileId } = await driveLoadUsers(d, null);
