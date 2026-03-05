@@ -97,10 +97,11 @@ export const AppointmentsPage: React.FC = () => {
     setEditingAppointment(null);
   };
 
-  // Filter by people (multi-select)
+  // Filter by people (multi-select); guard against invalid appointments
+  const safeAppointments = Array.isArray(appointments) ? appointments : [];
   const filterSet = planFilterPersonIds && planFilterPersonIds.length > 0 ? new Set(planFilterPersonIds) : null;
-  const filteredAppointments = filterSet ? appointments.filter((a) => filterSet.has(a.personId)) : appointments;
-  const sortedAppointments = [...filteredAppointments].sort((a, b) => a.start - b.start);
+  const filteredAppointments = filterSet ? safeAppointments.filter((a) => a && filterSet.has(a.personId)) : safeAppointments;
+  const sortedAppointments = [...filteredAppointments].sort((a, b) => (a.start ?? 0) - (b.start ?? 0));
 
   const handleSelectAll = useCallback(() => {
     if (selectedIds.size === sortedAppointments.length) {
@@ -170,9 +171,6 @@ export const AppointmentsPage: React.FC = () => {
               <div
                 key={appointment.id}
                 onClick={() => handleCardClick(appointment)}
-                onTouchStart={() => handleCardTouchStart(appointment)}
-                onTouchEnd={handleCardTouchEnd}
-                onTouchCancel={handleCardTouchEnd}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handleCardClick(appointment)}
@@ -222,8 +220,8 @@ export const AppointmentsPage: React.FC = () => {
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="w-4 h-4" />
                         <span>
-                          {format(appointment.start, 'PPp', { locale: dateLocale })} -{' '}
-                          {format(appointment.end, 'p', { locale: dateLocale })}
+                          {format(appointment.start ?? 0, 'PPp', { locale: dateLocale })} -{' '}
+                          {format(appointment.end ?? 0, 'p', { locale: dateLocale })}
                         </span>
                       </div>
                       

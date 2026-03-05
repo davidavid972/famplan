@@ -20,6 +20,7 @@ import {
   planToEventPayload,
 } from '../lib/calendar';
 import { cacheGet, cacheSet, CACHE_KEYS } from '../lib/cache';
+import { validateAppointments } from '../lib/validateAppointments';
 
 const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
 const APPOINTMENTS_FILE_ID_KEY = 'famplan_drive_appointments_file_id';
@@ -53,10 +54,15 @@ const loadFromCache = <T,>(cacheKey: string, defaultValue: T[]): T[] => {
   return cached ?? defaultValue;
 };
 
+const loadAppointmentsFromCache = (): Appointment[] => {
+  const cached = cacheGet<Appointment[]>(CACHE_KEYS.appointments);
+  return validateAppointments(cached ?? []);
+};
+
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { isConnected, canEdit } = useAuth();
   const [people, setPeople] = useState<Person[]>(() => loadFromCache(CACHE_KEYS.people, []));
-  const [appointments, setAppointments] = useState<Appointment[]>(() => loadFromCache(CACHE_KEYS.appointments, []));
+  const [appointments, setAppointments] = useState<Appointment[]>(() => loadAppointmentsFromCache());
   const [attachments, setAttachments] = useState<Attachment[]>(() => loadFromCache(CACHE_KEYS.attachments_index, []));
   const peopleFileIdRef = useRef<string | null>(null);
   const appointmentsFileIdRef = useRef<string | null>(null);
@@ -76,9 +82,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [isConnected]);
 
   const syncFromDrive = useCallback((data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string }) => {
-    setPeople(data.people);
-    setAppointments(data.appointments);
-    setAttachments(data.attachments);
+    setPeople(Array.isArray(data.people) ? data.people : []);
+    setAppointments(validateAppointments(data.appointments ?? []));
+    setAttachments(Array.isArray(data.attachments) ? data.attachments : []);
     if (fileIds) {
       peopleFileIdRef.current = fileIds.people;
       appointmentsFileIdRef.current = fileIds.appointments;

@@ -14,7 +14,8 @@ import {
   driveLoadAppointments,
   driveLoadAttachmentsIndex,
 } from '../lib/drive';
-import { cacheGet, cacheSet, CACHE_KEYS } from '../lib/cache';
+import { cacheGet, CACHE_KEYS } from '../lib/cache';
+import { validateAppointments } from '../lib/validateAppointments';
 import type { Person, Appointment, Attachment } from '../types/models';
 
 const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
@@ -62,9 +63,9 @@ export function DriveDataSyncEffect() {
         const cachedIndex = cacheGet<Attachment[]>(CACHE_KEYS.attachments_index);
         if (cachedPeople || cachedAppointments || cachedIndex) {
           syncFromDrive({
-            people: cachedPeople ?? [],
-            appointments: cachedAppointments ?? [],
-            attachments: cachedIndex ?? [],
+            people: Array.isArray(cachedPeople) ? cachedPeople : [],
+            appointments: validateAppointments(cachedAppointments ?? []),
+            attachments: Array.isArray(cachedIndex) ? cachedIndex : [],
           });
         }
 
@@ -89,9 +90,9 @@ export function DriveDataSyncEffect() {
 
         syncFromDrive(
           {
-            people: peopleRes.data.people,
-            appointments: appointmentsRes.data.appointments,
-            attachments: indexRes.data.items,
+            people: Array.isArray(peopleRes.data.people) ? peopleRes.data.people : [],
+            appointments: validateAppointments(appointmentsRes.data.appointments ?? []),
+            attachments: Array.isArray(indexRes.data.items) ? indexRes.data.items : [],
           },
           {
             people: peopleRes.fileId,
