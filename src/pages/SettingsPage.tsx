@@ -5,6 +5,7 @@ import { useFamily } from '../context/FamilyProvider';
 import { useToast } from '../context/ToastProvider';
 import { cacheClear } from '../lib/cache';
 import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X } from 'lucide-react';
+import { FamilySharingModal } from '../components/FamilySharingModal';
 
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
@@ -27,6 +28,8 @@ export const SettingsPage: React.FC = () => {
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
   const [driveSyncModalOpen, setDriveSyncModalOpen] = useState(false);
   const [comingSoonModalOpen, setComingSoonModalOpen] = useState(false);
+  const [sharingModalOpen, setSharingModalOpen] = useState(false);
+  const [sharingModalMode, setSharingModalMode] = useState<'sharing' | 'roles'>('sharing');
   const authSectionRef = useRef<HTMLDivElement>(null);
 
   const refreshDriveDebug = () => {
@@ -272,7 +275,10 @@ export const SettingsPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mx-auto pt-4">
             <button
               type="button"
-              onClick={() => setComingSoonModalOpen(true)}
+              onClick={() => {
+                setSharingModalMode('roles');
+                setSharingModalOpen(true);
+              }}
               className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px] w-full text-left cursor-pointer hover:bg-stone-100 hover:border-stone-200 transition-colors active:bg-stone-100"
             >
               <Shield className="w-8 h-8 text-blue-600 mb-3" />
@@ -282,7 +288,10 @@ export const SettingsPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setComingSoonModalOpen(true)}
+              onClick={() => {
+                setSharingModalMode('sharing');
+                setSharingModalOpen(true);
+              }}
               className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100 min-h-[140px] w-full text-left cursor-pointer hover:bg-stone-100 hover:border-stone-200 transition-colors active:bg-stone-100"
             >
               <Share2 className="w-8 h-8 text-emerald-600 mb-3" />
@@ -426,6 +435,13 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Family Sharing / Roles & Permissions modal */}
+      <FamilySharingModal
+        open={sharingModalOpen}
+        onClose={() => setSharingModalOpen(false)}
+        rolesMode={sharingModalMode === 'roles'}
+      />
 
       {/* Coming soon modal */}
       {comingSoonModalOpen && (

@@ -18,6 +18,7 @@ const FAMILY_FILE = 'family.json';
 const PEOPLE_FILE = 'people.json';
 const APPOINTMENTS_FILE = 'appointments.json';
 const ATTACHMENTS_INDEX_FILE = 'attachments_index.json';
+const USERS_FILE = 'users.json';
 
 export interface FamilyData {
   familyId: string;
@@ -182,6 +183,20 @@ export interface AttachmentsIndexData {
   freeLimit: number;
 }
 
+/** users.json schema - roles for family sharing */
+export type UserRoleType = 'admin' | 'editor' | 'viewer';
+export interface UsersDataMember {
+  email: string;
+  role: UserRoleType;
+  addedAt: string;
+  permissionId?: string;
+}
+export interface UsersData {
+  version: number;
+  updatedAt: string;
+  members: UsersDataMember[];
+}
+
 function createEmptyPeopleData(): PeopleData {
   return { version: 1, updatedAt: new Date().toISOString(), people: [] };
 }
@@ -192,6 +207,10 @@ function createEmptyAppointmentsData(): AppointmentsData {
 
 function createEmptyAttachmentsIndexData(): AttachmentsIndexData {
   return { version: 1, updatedAt: new Date().toISOString(), items: [], freeLimit: 20 };
+}
+
+function createEmptyUsersData(): UsersData {
+  return { version: 1, updatedAt: new Date().toISOString(), members: [] };
 }
 
 /**
@@ -229,6 +248,73 @@ export async function driveLoadAttachmentsIndex(dataFolderId: string, cachedFile
   return driveLoadOrCreateDataFile(dataFolderId, ATTACHMENTS_INDEX_FILE, createEmptyAttachmentsIndexData, cachedFileId);
 }
 
+export async function driveLoadUsers(dataFolderId: string, cachedFileId?: string | null): Promise<{ data: UsersData; fileId: string }> {
+  return driveLoadOrCreateDataFile(dataFolderId, USERS_FILE, createEmptyUsersData, cachedFileId);
+}
+
+export async function driveWriteUsers(fileId: string, data: UsersData): Promise<string> {
+  await driveWriteJson(fileId, data, undefined, USERS_FILE);
+  return fileId;
+}
+
+/** Drive role: reader = Viewer, writer = Editor. Admin is FamPlan-specific (stored in users.json only). */
+export type DrivePermissionRole = 'reader' | 'writer';
+
+/**
+ * Create a permission on a file/folder for a user by email.
+ * @returns The permission id (store for removal)
+ */
+export async function driveCreatePermission(
+  fileId: string,
+  emailAddress: string,
+  role: DrivePermissionRole
+): Promise<{ id: string }> {
+  const res = await driveRequest<{ id: string }>(`${DRIVE_API}/files/${fileId}/permissions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'user',
+      role,
+      emailAddress,
+    }),
+  });
+  return res;
+}
+
+/**
+ * Update a permission's role.
+ */
+export async function driveUpdatePermission(fileId: string, permissionId: string, role: DrivePermissionRole): Promise<void> {
+  await driveRequest(`${DRIVE_API}/files/${fileId}/permissions/${permissionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+}
+
+/**
+ * Delete a permission by id.
+ */
+export async function driveDeletePermission(fileId: string, permissionId: string): Promise<void> {
+  const res = await fetch(`${DRIVE_API}/files/${fileId}/permissions/${permissionId}`, {
+    method: 'DELETE',
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Drive delete permission: ${res.status} ${err}`);
+  }
+}
+
+/**
+ * List permissions on a file (for finding permissionId by email if needed).
+ */
+export async function driveListPermissions(fileId: string): Promise<Array<{ id: string; type: string; role: string; emailAddress?: string }>> {
+  const res = await driveRequest<{ permissions: Array<{ id: string; type: string; role: string; emailAddress?: string }> }>(
+    `${DRIVE_API}/files/${fileId}/permissions?fields=permissions(id,type,role,emailAddress)`
+  );
+  return res.permissions ?? [];
+}
 
 /**
  * Ensure FamPlan folder structure and return folder ids.

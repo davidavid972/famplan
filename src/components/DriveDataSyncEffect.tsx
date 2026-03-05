@@ -20,6 +20,7 @@ import type { Person, Appointment, Attachment } from '../types/models';
 const PEOPLE_FILE_ID_KEY = 'famplan_drive_people_file_id';
 const APPOINTMENTS_FILE_ID_KEY = 'famplan_drive_appointments_file_id';
 const ATTACHMENTS_INDEX_FILE_ID_KEY = 'famplan_drive_attachments_index_file_id';
+const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const SYNC_PEOPLE_KEY = 'famplan_drive_sync_people';
 const SYNC_APPOINTMENTS_KEY = 'famplan_drive_sync_appointments';
 const SYNC_INDEX_KEY = 'famplan_drive_sync_index';
@@ -66,8 +67,9 @@ export function DriveDataSyncEffect() {
           });
         }
 
-        const { dataFolderId } = await driveEnsureFamPlanStructure();
+        const { rootFolderId, dataFolderId } = await driveEnsureFamPlanStructure();
         if (cancelled) return;
+        localStorage.setItem(ROOT_FOLDER_KEY, rootFolderId);
 
         const cachedPeopleId = localStorage.getItem(PEOPLE_FILE_ID_KEY);
         const cachedAppointmentsId = localStorage.getItem(APPOINTMENTS_FILE_ID_KEY);

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as googleAuth from '../lib/googleAuth';
+import { useUserRole } from './UserRoleProvider';
 
 interface AuthContextType {
   isConnected: boolean;
@@ -15,6 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { userRole } = useUserRole();
   const [isConnected, setIsConnected] = useState(googleAuth.isConnected);
   const [email, setEmailState] = useState(googleAuth.getStoredEmail() || '');
   const [connectError, setConnectError] = useState<string | null>(null);
@@ -26,6 +28,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const userEmail = await googleAuth.connectGoogle();
       setIsConnected(true);
       setEmailState(userEmail);
+      window.dispatchEvent(new CustomEvent('famplan-auth-connected'));
     } catch (e) {
       setConnectError(e instanceof Error ? e.message : 'Connection failed');
     }
@@ -33,7 +36,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const disconnect = () => {
     googleAuth.clearGoogleSession();
-    ['famplan_drive_family_file_id', 'famplan_drive_root_folder_id', 'famplan_drive_data_folder_id', 'famplan_drive_sync_status', 'famplan_drive_people_file_id', 'famplan_drive_appointments_file_id', 'famplan_drive_attachments_index_file_id', 'famplan_drive_sync_people', 'famplan_drive_sync_appointments', 'famplan_drive_sync_index'].forEach((k) => localStorage.removeItem(k));
+    ['famplan_drive_family_file_id', 'famplan_drive_root_folder_id', 'famplan_drive_data_folder_id', 'famplan_drive_sync_status', 'famplan_drive_people_file_id', 'famplan_drive_appointments_file_id', 'famplan_drive_attachments_index_file_id', 'famplan_drive_users_file_id', 'famplan_drive_sync_people', 'famplan_drive_sync_appointments', 'famplan_drive_sync_index'].forEach((k) => localStorage.removeItem(k));
     setIsConnected(false);
     setEmailState('');
     setConnectError(null);
@@ -62,7 +65,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  const canEdit = isConnected && isOnline;
+  const canEdit = isConnected && isOnline && (userRole === null || userRole === 'admin' || userRole === 'editor');
 
   return (
     <AuthContext.Provider value={{ isConnected, email, connect, disconnect, connectError, clearConnectError, canEdit }}>
