@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useFamily } from '../context/FamilyProvider';
-import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon } from 'lucide-react';
+import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil } from 'lucide-react';
 
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
 const DATA_FOLDER_KEY = 'famplan_drive_data_folder_id';
@@ -15,6 +15,9 @@ export const SettingsPage: React.FC = () => {
   const { familyDisplayName, familyPhoto, setFamilyDisplayName, setFamilyPhoto } = useFamily();
   const [isConnecting, setIsConnecting] = useState(false);
   const [driveDebug, setDriveDebug] = useState({ rootFolderId: '', dataFolderId: '', familyFileId: '', syncStatus: '' });
+  const [isFamilyEditMode, setIsFamilyEditMode] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhoto, setEditPhoto] = useState<string | null>(null);
 
   const refreshDriveDebug = () => {
     setDriveDebug({
@@ -33,6 +36,12 @@ export const SettingsPage: React.FC = () => {
     return () => window.removeEventListener('famplan-drive-sync-done', handler);
   }, [isConnected]);
 
+  useEffect(() => {
+    if (!isConnected && isFamilyEditMode) {
+      setIsFamilyEditMode(false);
+    }
+  }, [isConnected, isFamilyEditMode]);
+
   const handleConnect = async () => {
     setIsConnecting(true);
     clearConnectError();
@@ -41,6 +50,24 @@ export const SettingsPage: React.FC = () => {
     } finally {
       setIsConnecting(false);
     }
+  };
+
+  const startFamilyEdit = () => {
+    setEditName(familyDisplayName);
+    setEditPhoto(familyPhoto);
+    setIsFamilyEditMode(true);
+  };
+
+  const saveFamilyEdit = () => {
+    setFamilyDisplayName(editName);
+    setFamilyPhoto(editPhoto);
+    setIsFamilyEditMode(false);
+  };
+
+  const cancelFamilyEdit = () => {
+    setEditName(familyDisplayName);
+    setEditPhoto(familyPhoto);
+    setIsFamilyEditMode(false);
   };
 
   return (
@@ -107,51 +134,104 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Family name + photo */}
+          {/* Family profile - locked or edit mode */}
           <div className="w-full pt-4">
-            <h3 className="text-sm font-medium text-stone-700 mb-3">{t('family_name_label')}</h3>
-            <div className="w-full p-4 sm:p-5 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
-              <input
-                type="text"
-                value={familyDisplayName}
-                onChange={(e) => setFamilyDisplayName(e.target.value)}
-                placeholder={t('family_name_placeholder')}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 text-sm bg-white"
-              />
-              <div>
-                <label className="block text-xs text-stone-500 mb-1">{t('family_photo_label')}</label>
-                <div className="flex items-center gap-3 w-full">
-                  {familyPhoto && (
-                    <img src={familyPhoto} alt="" className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
-                  )}
-                  <label className="flex-1 min-h-[44px] flex items-center justify-center px-4 py-2 rounded-xl border border-stone-200 bg-white text-sm text-stone-600 hover:bg-stone-50 cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) {
-                          const r = new FileReader();
-                          r.onload = () => setFamilyPhoto(r.result as string);
-                          r.readAsDataURL(f);
-                        }
-                        e.target.value = '';
-                      }}
-                    />
-                    {familyPhoto ? t('family_photo_change') : t('family_photo_upload')}
-                  </label>
-                  {familyPhoto && (
+            <h3 className="text-sm font-medium text-stone-700 mb-3">{t('family_profile_title')}</h3>
+            <div className="w-full p-4 sm:p-5 bg-stone-100 rounded-2xl border border-stone-200 space-y-4">
+              {isFamilyEditMode && isConnected ? (
+                /* Edit mode */
+                <>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder={t('family_name_placeholder')}
+                    className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-stone-200 text-sm bg-white"
+                  />
+                  <div>
+                    <label className="block text-xs text-stone-500 mb-2">{t('family_photo_label')}</label>
+                    <div className="flex items-center gap-3 w-full">
+                      {editPhoto && (
+                        <img src={editPhoto} alt="" className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
+                      )}
+                      <label className="flex-1 min-h-[44px] flex items-center justify-center px-4 py-3 rounded-xl border border-stone-200 bg-white text-sm text-stone-600 hover:bg-stone-50 cursor-pointer font-medium">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) {
+                              const r = new FileReader();
+                              r.onload = () => setEditPhoto(r.result as string);
+                              r.readAsDataURL(f);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                        {editPhoto ? t('family_photo_change') : t('family_photo_upload')}
+                      </label>
+                      {editPhoto && (
+                        <button
+                          type="button"
+                          onClick={() => setEditPhoto(null)}
+                          className="min-h-[44px] px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl font-medium"
+                        >
+                          {t('delete')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-3 pt-2">
                     <button
-                      type="button"
-                      onClick={() => setFamilyPhoto(null)}
-                      className="px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg"
+                      onClick={cancelFamilyEdit}
+                      className="flex-1 min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 active:bg-stone-100"
                     >
-                      {t('delete')}
+                      {t('cancel')}
                     </button>
+                    <button
+                      onClick={saveFamilyEdit}
+                      className="flex-1 min-h-[44px] px-4 py-3 rounded-xl font-medium text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800"
+                    >
+                      {t('save')}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* Locked view */
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="w-14 h-14 rounded-full bg-stone-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {familyPhoto ? (
+                          <img src={familyPhoto} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xl font-bold text-stone-400">
+                            {(familyDisplayName || '?').charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-medium text-stone-800 truncate">
+                          {familyDisplayName || t('family_name_placeholder')}
+                        </p>
+                      </div>
+                    </div>
+                    {isConnected && (
+                      <button
+                        onClick={startFamilyEdit}
+                        className="w-full sm:w-auto min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2 active:bg-stone-100"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        {t('family_edit')}
+                      </button>
+                    )}
+                  </div>
+                  {!isConnected && (
+                    <p className="text-sm text-stone-500">{t('family_connect_to_edit')}</p>
                   )}
-                </div>
-              </div>
+                </>
+              )}
             </div>
           </div>
 

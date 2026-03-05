@@ -123,6 +123,9 @@ export const translations = {
     family_photo_label: 'תמונת משפחה',
     family_photo_upload: 'העלה תמונה',
     family_photo_change: 'החלף',
+    family_edit: 'עריכה',
+    family_connect_to_edit: 'כדי לערוך ולסנכרן בין מכשירים, התחבר עם Google',
+    family_profile_title: 'פרופיל משפחה',
   },
   en: {
     app_name: 'FamPlan',
@@ -248,6 +251,9 @@ export const translations = {
     family_photo_label: 'Family photo',
     family_photo_upload: 'Upload photo',
     family_photo_change: 'Change',
+    family_edit: 'Edit',
+    family_connect_to_edit: 'To edit and sync across devices, connect with Google',
+    family_profile_title: 'Family profile',
   }
 };
 
