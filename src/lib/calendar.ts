@@ -101,14 +101,27 @@ type EventPayload = {
   location?: string;
   start: { dateTime: string; timeZone?: string };
   end: { dateTime: string; timeZone?: string };
-  reminders?: { useDefault?: boolean; overrides?: { method: string; minutes: number }[] };
+  reminders?: { useDefault: false; overrides: { method: string; minutes: number }[] };
 };
 
 /**
- * Validate and sanitize event payload before sending.
- * Google: NEVER send both default and overrides.
- * - With overrides: useDefault:false, overrides only.
- * - With no overrides: omit reminders (use calendar default).
+ * Single source of truth for event reminders.
+ * Returns undefined (omit) or { useDefault: false, overrides }.
+ * NEVER useDefault: true with overrides.
+ */
+function buildEventReminders(overridesMinutes: number[]): { useDefault: false; overrides: { method: string; minutes: number }[] } | undefined {
+  const minutes = Array.from(new Set(overridesMinutes))
+    .filter((m) => Number.isInteger(m) && m >= 0)
+    .sort((a, b) => a - b);
+  if (minutes.length === 0) return undefined;
+  return {
+    useDefault: false,
+    overrides: minutes.map((m) => ({ method: 'popup', minutes: m })),
+  };
+}
+
+/**
+ * Validate and sanitize event payload. Uses buildEventReminders only.
  */
 function validateEventPayload(payload: EventPayload): EventPayload {
   const tz = payload.start?.timeZone ?? payload.end?.timeZone ?? DEFAULT_TZ;
@@ -119,30 +132,17 @@ function validateEventPayload(payload: EventPayload): EventPayload {
   if (isNaN(endDt.getTime())) endDt = new Date(startDt.getTime() + 60 * 60 * 1000);
   if (endDt <= startDt) endDt = new Date(startDt.getTime() + 60 * 60 * 1000);
 
-  const startIso = startDt.toISOString();
-  const endIso = endDt.toISOString();
-
-  const rawOverrides = payload.reminders?.overrides ?? [];
-  const overrides = rawOverrides
-    .map((o) => ({ method: 'popup' as const, minutes: Math.max(0, Math.floor(Number(o.minutes) || 0)) }))
-    .filter((o) => o.minutes >= 0);
-  const seen = new Set<number>();
-  const uniqueOverrides = overrides.filter((o) => {
-    if (seen.has(o.minutes)) return false;
-    seen.add(o.minutes);
-    return true;
-  });
+  const minutes = (payload.reminders?.overrides ?? []).map((o) => Math.floor(Number(o.minutes) || 0));
+  const reminders = buildEventReminders(minutes);
 
   const result: EventPayload = {
     summary: payload.summary,
     description: payload.description,
     location: payload.location,
-    start: { dateTime: startIso, timeZone: tz },
-    end: { dateTime: endIso, timeZone: tz },
+    start: { dateTime: startDt.toISOString(), timeZone: tz },
+    end: { dateTime: endDt.toISOString(), timeZone: tz },
   };
-  if (uniqueOverrides.length > 0) {
-    result.reminders = { useDefault: false, overrides: uniqueOverrides };
-  }
+  if (reminders) result.reminders = reminders;
   if (!result.description) delete result.description;
   if (!result.location) delete result.location;
   return result;
@@ -167,7 +167,7 @@ export async function createEvent(
   eventPayload: EventPayload
 ): Promise<{ id: string }> {
   const payload = validateEventPayload(eventPayload);
-  console.log('[FamPlan] Calendar event insert payload:', JSON.stringify(payload));
+  console.log('EVENT PAYLOAD', JSON.stringify(payload));
 
   const url = withApiKey(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`);
   const headers = getCalendarHeaders();
@@ -180,8 +180,8 @@ export async function createEvent(
 
   if (!res.ok) {
     const bodyText = await res.text();
+    console.error('[FamPlan] Calendar event insert failed:', res.status, bodyText);
     const reason = extractErrorReason(bodyText);
-    console.error(`[FamPlan] Calendar event insert failed: ${res.status}`, bodyText);
     const needsApiKey = res.status === 403 && /unregistered callers/i.test(bodyText) && !getGoogleApiKey()?.trim();
     if (needsApiKey) {
       console.warn('[FamPlan] Add VITE_GOOGLE_API_KEY to .env - create API key in Google Cloud Console');
@@ -210,15 +210,27 @@ export async function updateEvent(
     reminders: { overrides: { method: string; minutes: number }[] };
   }>
 ): Promise<void> {
+  const minutes = (payload.reminders?.overrides ?? []).map((o) => Math.floor(Number(o.minutes) || 0));
+  const reminders = buildEventReminders(minutes);
+  const sanitized: Record<string, unknown> = { ...payload };
+  if (reminders) sanitized.reminders = reminders;
+  else delete sanitized.reminders;
+
+  console.log('EVENT PAYLOAD', JSON.stringify(sanitized));
+
   const url = withApiKey(`${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`);
   const headers = getCalendarHeaders();
   if (import.meta.env.DEV) console.log('[FamPlan] Calendar API request:', url.replace(/key=[^&]+/, 'key=***'), 'headers:', Object.keys(headers));
   const res = await fetch(url, {
     method: 'PATCH',
     headers,
-    body: JSON.stringify(payload),
+    body: JSON.stringify(sanitized),
   });
-  if (!res.ok) throw new Error(`Event update failed: ${res.status}`);
+  if (!res.ok) {
+    const bodyText = await res.text();
+    console.error('[FamPlan] Calendar event update failed:', res.status, bodyText);
+    throw new Error(`Event update failed: ${res.status}`);
+  }
   const data = await res.json();
   if (import.meta.env.DEV) console.log('[FamPlan] Calendar event update response', data);
 }
@@ -235,9 +247,8 @@ export async function deleteEvent(calendarId: string, eventId: string): Promise<
 }
 
 /**
- * Build event payload from plan.
- * - If plan has reminders: reminders = { useDefault: false, overrides: [...] }
- * - If plan has NO reminders: omit reminders (use calendar default)
+ * Build event payload from plan. Uses buildEventReminders only.
+ * Never preset useDefault, never merge from template.
  */
 export function planToEventPayload(plan: {
   title: string;
@@ -250,6 +261,8 @@ export function planToEventPayload(plan: {
   const tz = DEFAULT_TZ;
   const startDate = new Date(plan.start);
   const endDate = new Date(plan.end);
+  const overridesMinutes = (plan.reminders ?? []).map((r) => Math.floor(r.minutesBeforeStart ?? 0));
+  const reminders = buildEventReminders(overridesMinutes);
 
   const result: EventPayload = {
     summary: plan.title,
@@ -258,17 +271,6 @@ export function planToEventPayload(plan: {
     start: { dateTime: startDate.toISOString(), timeZone: tz },
     end: { dateTime: endDate.toISOString(), timeZone: tz },
   };
-
-  if (plan.reminders && plan.reminders.length > 0) {
-    const raw = plan.reminders.map((r) => Math.max(0, Math.floor(r.minutesBeforeStart ?? 0)));
-    const uniqueMinutes = [...new Set(raw)].filter((m) => m > 0).sort((a, b) => b - a);
-    if (uniqueMinutes.length > 0) {
-      result.reminders = {
-        useDefault: false,
-        overrides: uniqueMinutes.map((m) => ({ method: 'popup' as const, minutes: m })),
-      };
-    }
-  }
-
+  if (reminders) result.reminders = reminders;
   return result;
 }
