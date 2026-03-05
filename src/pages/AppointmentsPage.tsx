@@ -3,7 +3,8 @@ import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastProvider';
-import { Plus, Edit2, Trash2, Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle } from 'lucide-react';
+import { PlanModal } from '../components/PlanModal';
+import { Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle, Trash2 } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Appointment, AppointmentStatus } from '../types/models';
 import { format } from 'date-fns';
@@ -16,12 +17,14 @@ export const AppointmentsPage: React.FC = () => {
   const { showToast } = useToast();
 
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
   const dateLocale = language === 'he' ? he : enUS;
 
   const getPerson = (id: string) => people.find((p) => p.id === id);
 
-  const toggleStatus = (appointment: Appointment) => {
+  const toggleStatus = (appointment: Appointment, e: React.MouseEvent) => {
+    e.stopPropagation();
     const newStatus: AppointmentStatus = appointment.status === 'PLANNED' ? 'DONE' : 'PLANNED';
     updateAppointment(appointment.id, { status: newStatus });
     showToast(t('appointment_updated'), 'success');
@@ -33,6 +36,27 @@ export const AppointmentsPage: React.FC = () => {
       showToast(t('appointment_deleted'), 'success');
       setAppointmentToDelete(null);
     }
+  };
+
+  const handleSaveFromModal = (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
+    if (editingAppointment) {
+      updateAppointment(editingAppointment.id, {
+        title: data.title,
+        personId: data.personId,
+        start: data.start,
+        end: data.end,
+        location: data.location,
+        notes: data.notes,
+        reminders: data.reminders,
+      });
+      showToast(t('appointment_updated'), 'success');
+    }
+  };
+
+  const handleDeleteFromModal = (id: string) => {
+    deleteAppointment(id);
+    showToast(t('appointment_deleted'), 'success');
+    setEditingAppointment(null);
   };
 
   // Sort appointments by start date
@@ -63,7 +87,11 @@ export const AppointmentsPage: React.FC = () => {
             return (
               <div
                 key={appointment.id}
-                className={`group flex flex-col sm:flex-row gap-4 p-5 bg-white rounded-2xl border border-stone-200 shadow-sm transition-all relative overflow-hidden ${
+                onClick={() => setEditingAppointment(appointment)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingAppointment(appointment)}
+                className={`group flex flex-col sm:flex-row gap-4 p-5 bg-white rounded-2xl border border-stone-200 shadow-sm transition-all relative overflow-hidden cursor-pointer hover:border-stone-300 ${
                   isDone ? 'opacity-60' : ''
                 }`}
               >
@@ -74,7 +102,7 @@ export const AppointmentsPage: React.FC = () => {
                 
                 <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ml-2">
                   <button
-                    onClick={() => toggleStatus(appointment)}
+                    onClick={(e) => toggleStatus(appointment, e)}
                     disabled={!canEdit}
                     className="flex-shrink-0 min-h-[44px] min-w-[44px] text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -124,9 +152,9 @@ export const AppointmentsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 sm:self-start justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-2 sm:self-start justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   <button
-                    onClick={() => setAppointmentToDelete(appointment.id)}
+                    onClick={(e) => { e.stopPropagation(); setAppointmentToDelete(appointment.id); }}
                     disabled={!canEdit}
                     className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -138,6 +166,18 @@ export const AppointmentsPage: React.FC = () => {
           })}
         </div>
       )}
+
+      <PlanModal
+        isOpen={!!editingAppointment}
+        onClose={() => setEditingAppointment(null)}
+        mode="edit"
+        appointment={editingAppointment}
+        people={people}
+        selectedPersonId={null}
+        onSave={handleSaveFromModal}
+        onDelete={handleDeleteFromModal}
+        canEdit={canEdit}
+      />
 
       <ConfirmModal
         isOpen={!!appointmentToDelete}

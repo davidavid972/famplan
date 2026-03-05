@@ -3,12 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
+import { PlanModal } from '../components/PlanModal';
 import { useToast } from '../context/ToastProvider';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, FileText, Upload, Trash2, CheckCircle2, Circle, MapPin, AlignLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { he, enUS } from 'date-fns/locale';
 import { ConfirmModal } from '../components/ConfirmModal';
-import { AppointmentStatus, Attachment } from '../types/models';
+import { Appointment, AppointmentStatus, Attachment } from '../types/models';
 
 export const PersonDashboardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,7 @@ export const PersonDashboardPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past' | 'documents'>('upcoming');
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
@@ -50,13 +52,36 @@ export const PersonDashboardPage: React.FC = () => {
   const personAppointmentIds = personAppointments.map(a => a.id);
   const personAttachments = attachments.filter(a => personAppointmentIds.includes(a.appointmentId));
 
-  const toggleStatus = (appointmentId: string, currentStatus: AppointmentStatus) => {
+  const toggleStatus = (appointmentId: string, currentStatus: AppointmentStatus, e: React.MouseEvent) => {
+    e.stopPropagation();
     const newStatus: AppointmentStatus = currentStatus === 'PLANNED' ? 'DONE' : 'PLANNED';
     updateAppointment(appointmentId, { status: newStatus });
     showToast(t('appointment_updated'), 'success');
   };
 
-  const handleDeleteAppointment = () => {
+  const handleSaveFromModal = (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
+    if (editingAppointment) {
+      updateAppointment(editingAppointment.id, {
+        title: data.title,
+        personId: data.personId,
+        start: data.start,
+        end: data.end,
+        location: data.location,
+        notes: data.notes,
+        reminders: data.reminders,
+      });
+      showToast(t('appointment_updated'), 'success');
+    }
+  };
+
+  const handleDeleteFromModal = (id: string) => {
+    deleteAppointment(id);
+    showToast(t('appointment_deleted'), 'success');
+    setEditingAppointment(null);
+  };
+
+  const handleDeleteAppointment = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (appointmentToDelete) {
       deleteAppointment(appointmentToDelete);
       showToast(t('appointment_deleted'), 'success');
@@ -161,7 +186,11 @@ export const PersonDashboardPage: React.FC = () => {
           return (
             <div
               key={appointment.id}
-              className={`group flex flex-col sm:flex-row gap-4 p-5 bg-white rounded-2xl border border-stone-200 shadow-sm transition-all relative overflow-hidden ${
+              onClick={() => setEditingAppointment(appointment)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && setEditingAppointment(appointment)}
+              className={`group flex flex-col sm:flex-row gap-4 p-5 bg-white rounded-2xl border border-stone-200 shadow-sm transition-all relative overflow-hidden cursor-pointer hover:border-stone-300 ${
                 isDone ? 'opacity-60' : ''
               }`}
             >
@@ -172,7 +201,7 @@ export const PersonDashboardPage: React.FC = () => {
               
               <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ml-2">
                 <button
-                  onClick={() => toggleStatus(appointment.id, appointment.status)}
+                  onClick={(e) => toggleStatus(appointment.id, appointment.status, e)}
                   disabled={!canEdit}
                   className="flex-shrink-0 min-h-[44px] min-w-[44px] text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -214,9 +243,9 @@ export const PersonDashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 sm:self-start justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-2 sm:self-start justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                 <button
-                  onClick={() => setAppointmentToDelete(appointment.id)}
+                  onClick={(e) => { e.stopPropagation(); setAppointmentToDelete(appointment.id); }}
                   disabled={!canEdit}
                   className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -388,10 +417,22 @@ export const PersonDashboardPage: React.FC = () => {
         )}
       </div>
 
+      <PlanModal
+        isOpen={!!editingAppointment}
+        onClose={() => setEditingAppointment(null)}
+        mode="edit"
+        appointment={editingAppointment}
+        people={people}
+        selectedPersonId={null}
+        onSave={handleSaveFromModal}
+        onDelete={handleDeleteFromModal}
+        canEdit={canEdit}
+      />
+
       <ConfirmModal
         isOpen={!!appointmentToDelete}
         onClose={() => setAppointmentToDelete(null)}
-        onConfirm={handleDeleteAppointment}
+        onConfirm={() => handleDeleteAppointment()}
         title={t('delete')}
         message={t('confirm_delete_appointment')}
       />
