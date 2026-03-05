@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
@@ -7,7 +7,7 @@ import { useToast } from '../context/ToastProvider';
 import { PlanModal } from '../components/PlanModal';
 import { PlansFilterBar } from '../components/PlansFilterBar';
 import { PersonAvatar } from '../components/PersonAvatar';
-import { Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle, Trash2, X, Square, CheckSquare } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, AlignLeft, CheckCircle2, Circle, Trash2, X } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Appointment, AppointmentStatus } from '../types/models';
 import { format } from 'date-fns';
@@ -22,11 +22,8 @@ export const AppointmentsPage: React.FC = () => {
 
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const didLongPressRef = useRef(false);
 
   const dateLocale = language === 'he' ? he : enUS;
 
@@ -49,11 +46,11 @@ export const AppointmentsPage: React.FC = () => {
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
     try {
       await deleteAppointments(Array.from(selectedIds));
-      showToast(t('plans_bulk_delete_success'), 'success');
+      showToast(t('plans_deleted_count').replace('{count}', String(count)), 'success');
       setSelectedIds(new Set());
-      setIsSelectMode(false);
       setBulkDeleteConfirm(false);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -70,34 +67,14 @@ export const AppointmentsPage: React.FC = () => {
     });
   }, []);
 
-  const handleCardTouchStart = useCallback((appointment: Appointment) => {
-    didLongPressRef.current = false;
-    longPressTimerRef.current = setTimeout(() => {
-      longPressTimerRef.current = null;
-      didLongPressRef.current = true;
-      setIsSelectMode(true);
-      setSelectedIds((prev) => new Set(prev).add(appointment.id));
-    }, 500);
-  }, []);
-
-  const handleCardTouchEnd = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
-
   const handleCardClick = useCallback((appointment: Appointment) => {
-    if (didLongPressRef.current) {
-      didLongPressRef.current = false;
-      return;
-    }
-    if (isSelectMode) {
-      toggleSelection(appointment.id);
-    } else {
-      setEditingAppointment(appointment);
-    }
-  }, [isSelectMode, toggleSelection]);
+    setEditingAppointment(appointment);
+  }, []);
+
+  const handleCircleClick = useCallback((appointment: Appointment, e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleSelection(appointment.id);
+  }, [toggleSelection]);
 
   const handleSaveFromModal = async (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
     if (editingAppointment) {
@@ -125,46 +102,48 @@ export const AppointmentsPage: React.FC = () => {
   const filteredAppointments = filterSet ? appointments.filter((a) => filterSet.has(a.personId)) : appointments;
   const sortedAppointments = [...filteredAppointments].sort((a, b) => a.start - b.start);
 
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === sortedAppointments.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sortedAppointments.map((a) => a.id)));
+    }
+  }, [selectedIds.size, sortedAppointments]);
+
   return (
-    <div className={`space-y-6 animate-in fade-in duration-300 ${selectedIds.size > 0 ? 'pb-24' : ''}`}>
+    <div className={`space-y-6 animate-in fade-in duration-300 ${selectedIds.size > 0 ? 'pb-24 sm:pb-6 sm:pt-24' : ''}`}>
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('appointments')}</h1>
-        {canEdit && (
-          <button
-            onClick={() => { setIsSelectMode((m) => !m); if (isSelectMode) setSelectedIds(new Set()); }}
-            className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors min-h-[44px] ${
-              isSelectMode ? 'text-white' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
-            }`}
-            style={isSelectMode ? { backgroundColor: selectionColor } : undefined}
-          >
-            {isSelectMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-            {t('plans_select_mode')}
-          </button>
-        )}
       </div>
 
       <PlansFilterBar people={people} />
 
       {selectedIds.size > 0 && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between gap-4 p-4 rounded-t-2xl border-t border-x shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+          className="fixed left-0 right-0 z-40 flex items-center justify-between gap-4 p-4 rounded-2xl border shadow-lg sm:rounded-b-none sm:top-0 sm:bottom-auto bottom-0 sm:rounded-t-2xl border-t border-x"
           style={{ backgroundColor: `${selectionColor}18`, borderColor: `${selectionColor}40` }}
         >
           <span className="font-semibold text-stone-900">{t('plans_selected_count').replace('{count}', String(selectedIds.size))}</span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <button
+              onClick={handleSelectAll}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 transition-colors min-h-[44px]"
+            >
+              {t('select_all')}
+            </button>
             <button
               onClick={() => setBulkDeleteConfirm(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors min-h-[44px]"
             >
               <Trash2 className="w-4 h-4" />
-              {t('delete_selected')}
+              {t('plans_delete_selected_with_count').replace('{count}', String(selectedIds.size))}
             </button>
             <button
-              onClick={() => { setSelectedIds(new Set()); setIsSelectMode(false); }}
+              onClick={() => setSelectedIds(new Set())}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 transition-colors min-h-[44px]"
             >
               <X className="w-4 h-4" />
-              {t('plans_cancel')}
+              {t('plans_clear_selection')}
             </button>
           </div>
         </div>
@@ -206,30 +185,24 @@ export const AppointmentsPage: React.FC = () => {
                   className="absolute top-0 bottom-0 w-2 left-0"
                   style={{ backgroundColor: person.color }}
                 />
-                {isSelectMode && (
-                  <div className="flex-shrink-0 flex items-center min-h-[44px] min-w-[44px]">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleSelection(appointment.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-5 h-5 rounded border-stone-300 cursor-pointer"
-                      style={{ accentColor: selectionColor }}
-                    />
-                  </div>
-                )}
-                <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ml-2">
+                {canEdit && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); toggleStatus(appointment, e); }}
-                    disabled={!canEdit || isSelectMode}
-                    className="flex-shrink-0 min-h-[44px] min-w-[44px] text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={(e) => handleCircleClick(appointment, e)}
+                    className="flex-shrink-0 min-h-[44px] min-w-[44px] rounded-full flex items-center justify-center transition-colors border-2"
+                    style={{
+                      backgroundColor: isSelected ? selectionColor : 'transparent',
+                      borderColor: isSelected ? selectionColor : 'rgb(214 211 209)',
+                      color: isSelected ? 'white' : 'rgb(120 113 108)',
+                    }}
                   >
-                    {isDone ? (
-                      <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                    {isSelected ? (
+                      <CheckCircle2 className="w-8 h-8" />
                     ) : (
                       <Circle className="w-8 h-8" />
                     )}
                   </button>
+                )}
+                <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-center ml-2">
 
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
@@ -271,7 +244,7 @@ export const AppointmentsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {!isSelectMode && (
+                {selectedIds.size === 0 && (
                 <div className="flex items-center gap-2 sm:self-start justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={(e) => { e.stopPropagation(); setAppointmentToDelete(appointment.id); }}
@@ -313,7 +286,9 @@ export const AppointmentsPage: React.FC = () => {
         onClose={() => setBulkDeleteConfirm(false)}
         onConfirm={handleBulkDelete}
         title={t('delete')}
-        message={t('confirm_delete_appointments')}
+        message={t('confirm_delete_plans_count').replace('{count}', String(selectedIds.size))}
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
       />
     </div>
   );
