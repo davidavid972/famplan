@@ -1,0 +1,86 @@
+import React from 'react';
+import { useI18n } from '../i18n/I18nProvider';
+import { useAuth } from '../context/AuthProvider';
+import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon } from 'lucide-react';
+
+export const SettingsPage: React.FC = () => {
+  const { t } = useI18n();
+  const { isConnected, email, setEmail, disconnect } = useAuth();
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight text-stone-900">{t('settings_title')}</h1>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
+        <div className="p-8 text-center space-y-6">
+          <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mx-auto">
+            <Settings className="w-10 h-10 text-stone-400" />
+          </div>
+          
+          <div className="max-w-md mx-auto space-y-2">
+            <h2 className="text-xl font-semibold text-stone-900">
+              {t('settings_subtitle')}
+            </h2>
+            <p className="text-stone-500">
+              {t('settings_reserved_area')}
+            </p>
+          </div>
+
+          <div className="max-w-md mx-auto pt-6 pb-4">
+            <h3 className="text-sm font-medium text-stone-700 mb-2">{t('auth_profile')}</h3>
+            <div className="flex items-center gap-3 p-4 bg-stone-50 rounded-xl border border-stone-100">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg border border-stone-200 text-sm bg-white"
+                placeholder={t('auth_email_placeholder')}
+                dir="ltr"
+              />
+              <button
+                onClick={disconnect}
+                className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
+              >
+                {t('auth_disconnect')}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto pt-4">
+            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100">
+              <Shield className="w-8 h-8 text-blue-600 mb-3" />
+              <h3 className="font-medium text-stone-900">{t('settings_cards_access_title')}</h3>
+              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_access_subtitle')}</p>
+            </div>
+            
+            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100">
+              <Share2 className="w-8 h-8 text-emerald-600 mb-3" />
+              <h3 className="font-medium text-stone-900">{t('settings_cards_sharing_title')}</h3>
+              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_sharing_subtitle')}</p>
+            </div>
+            
+            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100">
+              <CalendarIcon className="w-8 h-8 text-purple-600 mb-3" />
+              <h3 className="font-medium text-stone-900">{t('settings_cards_calendar_title')}</h3>
+              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_calendar_subtitle')}</p>
+              <p className={`mt-2 text-xs font-medium ${isConnected ? 'text-emerald-600' : 'text-amber-600'}`}>
+                {isConnected ? t('auth_connected') : t('auth_not_connected')}
+              </p>
+            </div>
+            
+            <div className="flex flex-col items-center p-6 bg-stone-50 rounded-2xl border border-stone-100">
+              <HardDrive className="w-8 h-8 text-amber-600 mb-3" />
+              <h3 className="font-medium text-stone-900">{t('settings_cards_drive_title')}</h3>
+              <p className="text-sm text-stone-500 text-center mt-1">{t('settings_cards_drive_subtitle')}</p>
+              <p className={`mt-2 text-xs font-medium ${isConnected ? 'text-emerald-600' : 'text-amber-600'}`}>
+                {isConnected ? t('auth_connected') : t('auth_not_connected')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
