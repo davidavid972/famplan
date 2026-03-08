@@ -16,8 +16,8 @@ export const IndexPage: React.FC = () => {
   const { t, language } = useI18n();
   const navigate = useNavigate();
   const { familyDisplayName } = useFamily();
-  const { isConnected, connect, isConnecting, canEdit } = useAuth();
-  const { people, appointments, deleteAppointment, lastSyncSource } = useData();
+  const { isConnected, connect, disconnect, isConnecting, canEdit } = useAuth();
+  const { people, appointments, deleteAppointment } = useData();
   const { showToast } = useToast();
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
 
@@ -90,16 +90,26 @@ export const IndexPage: React.FC = () => {
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground">{t('auth_connect_google')}</p>
-          <p className="text-xs text-muted-foreground">{t('index_google_sync')}</p>
+          <p className="text-sm font-medium text-foreground">{isConnected ? t('index_connected') : t('auth_connect_google')}</p>
+          <p className="text-xs text-muted-foreground">{isConnected ? t('index_connected_desc') : t('index_google_sync')}</p>
         </div>
-        <button
-          onClick={handleConnect}
-          disabled={isConnecting}
-          className="theme-primary-btn px-4 py-2 bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-colors disabled:opacity-60"
-        >
-          {isConnecting ? t('auth_connecting') : isConnected ? t('settings_title') : t('index_connect')}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {isConnected && (
+            <button
+              onClick={disconnect}
+              className="px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+            >
+              {t('auth_disconnect')}
+            </button>
+          )}
+          <button
+            onClick={handleConnect}
+            disabled={isConnecting}
+            className="theme-primary-btn px-4 py-2 bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-colors disabled:opacity-60"
+          >
+            {isConnecting ? t('auth_connecting') : isConnected ? t('settings_title') : t('index_connect')}
+          </button>
+        </div>
       </motion.div>
 
       {/* Stats */}
