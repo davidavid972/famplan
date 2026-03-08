@@ -44,7 +44,7 @@ export const en: Record<string, string> = {
   status_cancelled: "Cancelled",
 
   // ─── People page ───
-  people_title: "People",
+  people_title: "Family Members",
   people_add_title: "Add family member",
   people_name_placeholder: "Full name",
   people_adding: "Adding…",

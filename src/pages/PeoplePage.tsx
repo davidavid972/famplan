@@ -24,7 +24,7 @@ const PEOPLE_PHOTOS_FOLDER_KEY = 'famplan_drive_people_photos_folder_id';
 export const PeoplePage: React.FC = () => {
   const { t, dir } = useI18n();
   const { canEdit, isConnected } = useAuth();
-  const { people, addPerson, updatePerson, deletePerson } = useData();
+  const { people, appointments, addPerson, updatePerson, deletePerson } = useData();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -135,7 +135,7 @@ export const PeoplePage: React.FC = () => {
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1" style={{ fontFamily: 'Rubik, sans-serif' }}>{t('people')}</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1" style={{ fontFamily: 'Rubik, sans-serif' }}>{t('people_title')}</h1>
           <p className="text-sm text-muted-foreground mb-6">{t('people_subtitle')}</p>
         </div>
         <button
@@ -165,44 +165,63 @@ export const PeoplePage: React.FC = () => {
         </div>
       ) : (
         <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`}>
-          {people.map((person, i) => (
-            <motion.div
-              key={person.id}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 * i }}
-              onClick={() => navigate(`/people/${person.id}`)}
-              className="group flex items-center gap-4 p-4 theme-surface hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden"
-            >
-              <div
-                className="absolute top-0 left-0 right-0 h-1"
-                style={{ backgroundColor: person.color }}
-              />
-              <PersonAvatar person={person} size="md" className="mt-1 shrink-0" />
-              <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                <h3 className="text-base font-semibold text-foreground truncate">{person.name}</h3>
-                <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => handleOpenModal(person)}
-                    disabled={!canEdit}
-                    className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setPersonToDelete(person.id)}
-                    disabled={!canEdit}
-                    className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+          {people.map((person, i) => {
+            const personAppointments = (appointments ?? []).filter((a) => a?.personId === person.id);
+            const eventsCount = personAppointments.filter((a) => a?.status === 'DONE').length;
+            const tasksCount = personAppointments.filter((a) => a?.status === 'PLANNED').length;
+            return (
+              <motion.div
+                key={person.id}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08 * i }}
+                onClick={() => navigate(`/people/${person.id}`)}
+                className="group flex flex-col sm:flex-row sm:items-center gap-4 p-4 theme-surface hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden"
+              >
+                <div
+                  className="absolute top-0 left-0 right-0 h-1"
+                  style={{ backgroundColor: person.color }}
+                />
+                <PersonAvatar person={person} size="md" className="mt-1 shrink-0" />
+                <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-2">
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground truncate">{person.name}</h3>
+                  </div>
+                  <div className="flex gap-4 text-center shrink-0">
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{eventsCount}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('stats_events')}</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{tasksCount}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('stats_tasks')}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center text-primary font-medium text-sm shrink-0">
-                {dir === 'rtl' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-              </div>
-            </motion.div>
-          ))}
+                <div className="flex items-center justify-between sm:justify-end gap-2">
+                  <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => handleOpenModal(person)}
+                      disabled={!canEdit}
+                      className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPersonToDelete(person.id)}
+                      disabled={!canEdit}
+                      className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex items-center text-primary font-medium text-sm shrink-0">
+                    {dir === 'rtl' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 

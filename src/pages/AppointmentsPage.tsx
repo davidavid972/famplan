@@ -25,6 +25,7 @@ export const AppointmentsPage: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false);
 
   const timeLocale = language === 'he' ? 'he-IL' : 'en-GB';
   const safeFormatDateTime = (ts: number | undefined) => {
@@ -86,8 +87,12 @@ export const AppointmentsPage: React.FC = () => {
 
   const handleCircleClick = useCallback((appointment: Appointment, e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleSelection(appointment.id);
-  }, [toggleSelection]);
+    if (isSelectMode) {
+      toggleSelection(appointment.id);
+    } else {
+      toggleStatus(appointment, e);
+    }
+  }, [toggleSelection, isSelectMode]);
 
   const handleSaveFromModal = async (data: { title: string; personId: string; start: number; end: number; location: string; notes: string; reminders: { minutesBeforeStart: number }[] }) => {
     if (editingAppointment) {
@@ -146,7 +151,7 @@ export const AppointmentsPage: React.FC = () => {
     <div className={`space-y-6 ${selectedIds.size > 0 ? 'plans-page-with-selection sm:pt-24' : ''}`}>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1" style={{ fontFamily: 'Rubik, sans-serif' }}>{t('appointments')}</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1" style={{ fontFamily: 'Rubik, sans-serif' }}>{t('plans_title')}</h1>
           <p className="text-sm text-muted-foreground mb-6">{t('plans_subtitle')}</p>
         </div>
         {canEdit && (
@@ -160,7 +165,20 @@ export const AppointmentsPage: React.FC = () => {
         )}
       </motion.div>
 
-      <PlansFilterBar people={Array.isArray(people) ? people.filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string') : []} />
+      <div className="flex flex-wrap items-center gap-2">
+        <PlansFilterBar people={Array.isArray(people) ? people.filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string') : []} />
+        {canEdit && sortedAppointments.length > 0 && (
+          <button
+            onClick={() => { setIsSelectMode(!isSelectMode); if (!isSelectMode) setSelectedIds(new Set()); }}
+            className={`flex-shrink-0 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              isSelectMode ? 'text-primary-foreground' : 'bg-card text-muted-foreground border border-border hover:bg-muted'
+            }`}
+            style={{ backgroundColor: isSelectMode ? selectionColor : undefined }}
+          >
+            {t('plans_select_mode')}
+          </button>
+        )}
+      </div>
 
       {selectedIds.size > 0 && (
         <div
@@ -235,34 +253,36 @@ export const AppointmentsPage: React.FC = () => {
                 {canEdit && (
                   <button
                     onClick={(e) => handleCircleClick(appointment, e)}
-                    className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors border-2 self-center sm:self-start mt-0.5"
-                    style={{
-                      backgroundColor: isSelected ? selectionColor : 'transparent',
-                      borderColor: isSelected ? selectionColor : 'rgb(214 211 209)',
-                      color: isSelected ? 'white' : 'rgb(120 113 108)',
-                    }}
+                    className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors self-center sm:self-start mt-0.5"
+                    style={
+                      isSelectMode
+                        ? {
+                            backgroundColor: isSelected ? selectionColor : 'transparent',
+                            borderColor: isSelected ? selectionColor : 'rgb(214 211 209)',
+                            color: isSelected ? 'white' : 'rgb(120 113 108)',
+                            borderWidth: 2,
+                          }
+                        : undefined
+                    }
                   >
-                    {isSelected ? (
-                      <CheckCircle2 className="w-5 h-5" />
+                    {isSelectMode ? (
+                      isSelected ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <Circle className="w-5 h-5" />
+                      )
+                    ) : isDone ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
                     ) : (
-                      <Circle className="w-5 h-5" />
+                      <Circle className="w-5 h-5 text-muted-foreground" />
                     )}
                   </button>
                 )}
                 <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:items-center min-w-0 ms-1 sm:ms-0">
-
                   <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className={`text-base font-semibold text-foreground ${isDone ? 'line-through' : ''}`}>
-                        {appointment.title}
-                      </h3>
-                      <span
-                        className="px-2 py-0.5 rounded-full text-xs font-medium text-white shrink-0"
-                        style={{ backgroundColor: person.color }}
-                      >
-                        {person.name}
-                      </span>
-                    </div>
+                    <h3 className={`text-base font-semibold text-foreground ${isDone ? 'line-through' : ''}`}>
+                      {appointment.title}
+                    </h3>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
@@ -280,7 +300,6 @@ export const AppointmentsPage: React.FC = () => {
                         </div>
                       )}
                     </div>
-
                     {appointment.notes && (
                       <div className="flex items-start gap-1 text-xs text-muted-foreground mt-1.5 bg-muted px-2 py-1.5 rounded-lg">
                         <AlignLeft className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -288,6 +307,12 @@ export const AppointmentsPage: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  <span
+                    className="text-xs font-medium shrink-0 px-2 py-0.5 rounded-full text-white"
+                    style={{ backgroundColor: person.color }}
+                  >
+                    {person.name}
+                  </span>
                 </div>
 
                 {selectedIds.size === 0 && (

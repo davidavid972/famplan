@@ -9,10 +9,17 @@ interface PersonAvatarProps {
   className?: string;
 }
 
+const DEFAULT_EMOJIS = ['👨', '👩', '👦', '👧', '🧒'];
+
+function getDefaultEmoji(personId: string): string {
+  const hash = personId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return DEFAULT_EMOJIS[Math.abs(hash) % DEFAULT_EMOJIS.length];
+}
+
 const sizeClasses = {
-  sm: 'w-8 h-8 text-sm',
-  md: 'w-12 h-12 text-xl',
-  lg: 'w-14 h-14 text-2xl',
+  sm: 'w-8 h-8 text-base',
+  md: 'w-12 h-12 text-2xl',
+  lg: 'w-14 h-14 text-3xl',
 };
 
 export const PersonAvatar: React.FC<PersonAvatarProps> = ({ person, size = 'md', className = '' }) => {
@@ -49,12 +56,13 @@ export const PersonAvatar: React.FC<PersonAvatarProps> = ({ person, size = 'md',
     );
   }
 
+  const emoji = getDefaultEmoji(person.id);
   return (
     <div
-      className={`${sizeClass} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${className}`}
-      style={{ backgroundColor: person.color || '#94a3b8' }}
+      className={`${sizeClass} rounded-2xl flex items-center justify-center flex-shrink-0 ${className}`}
+      style={{ backgroundColor: `${person.color || '#94a3b8'}20` }}
     >
-      {((person.name && String(person.name).charAt(0)) || '?').toUpperCase()}
+      <span>{emoji}</span>
     </div>
   );
 };

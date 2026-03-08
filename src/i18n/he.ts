@@ -44,7 +44,7 @@ export const he: Record<string, string> = {
   status_cancelled: "בוטל",
 
   // ─── People page ───
-  people_title: "אנשים",
+  people_title: "בני המשפחה",
   people_add_title: "הוסף בן משפחה",
   people_name_placeholder: "שם מלא",
   people_adding: "מוסיף…",
