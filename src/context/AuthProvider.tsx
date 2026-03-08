@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as googleAuth from '../lib/googleAuth';
+import { cacheClear } from '../lib/cache';
 import { useUserRole } from './UserRoleProvider';
 
 interface AuthContextType {
@@ -38,6 +39,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const disconnect = () => {
     googleAuth.clearGoogleSession();
     ['famplan_drive_family_file_id', 'famplan_drive_root_folder_id', 'famplan_drive_data_folder_id', 'famplan_drive_people_photos_folder_id', 'famplan_drive_sync_status', 'famplan_drive_people_file_id', 'famplan_drive_appointments_file_id', 'famplan_drive_attachments_index_file_id', 'famplan_drive_users_file_id', 'famplan_drive_sync_people', 'famplan_drive_sync_appointments', 'famplan_drive_sync_index', 'famplan_calendar_id'].forEach((k) => localStorage.removeItem(k));
+    cacheClear();
     setIsConnected(false);
     setEmailState('');
     setConnectError(null);

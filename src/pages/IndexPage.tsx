@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useI18n } from '../i18n/I18nProvider';
@@ -17,7 +17,7 @@ export const IndexPage: React.FC = () => {
   const navigate = useNavigate();
   const { familyDisplayName } = useFamily();
   const { isConnected, connect, isConnecting, canEdit } = useAuth();
-  const { people, appointments, deleteAppointment } = useData();
+  const { people, appointments, deleteAppointment, lastSyncSource } = useData();
   const { showToast } = useToast();
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
 
@@ -34,9 +34,24 @@ export const IndexPage: React.FC = () => {
 
   const todayAppointments = appointments.filter((a) => isSameDay(new Date(a.start), today));
   const doneCount = appointments.filter((a) => a.status === 'DONE').length;
-  const remindersCount = appointments.filter((a) =>
+  /** Reminders: FamPlan-only. Count plans with at least one reminder (minutesBeforeStart > 0). Not from Google Calendar. */
+  const remindersWithPlans = appointments.filter((a) =>
     (a.reminders ?? []).some((r) => r.minutesBeforeStart > 0)
-  ).length;
+  );
+  const remindersCount = remindersWithPlans.length;
+
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const ids = appointments
+        .filter((a) => (a.reminders ?? []).some((r) => r.minutesBeforeStart > 0))
+        .map((a) => a.id);
+      console.log('[FamPlan] Reminders debug:', {
+        reminderCount: remindersCount,
+        planIds: ids,
+        dataSource: lastSyncSource ?? 'initial',
+      });
+    }
+  }, [remindersCount, appointments, lastSyncSource]);
 
   const upcomingAppointments = appointments
     .filter((a) => new Date(a.start) >= today)

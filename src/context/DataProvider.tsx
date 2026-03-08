@@ -37,6 +37,8 @@ interface DataContextType {
   appointments: Appointment[];
   attachments: Attachment[];
   syncError: string | null;
+  /** 'drive' = from Drive sync, 'cache' = from local cache/initial load */
+  lastSyncSource: 'drive' | 'cache' | null;
   syncCalendarToGoogle: () => Promise<{ synced: number; created: number; failed: number }>;
   addPerson: (person: Omit<Person, 'id' | 'createdAt'>) => Person;
   updatePerson: (id: string, person: Partial<Person>) => void;
@@ -76,6 +78,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [appointments, setAppointments] = useState<Appointment[]>(() => loadAppointmentsFromCache());
   const [attachments, setAttachments] = useState<Attachment[]>(() => loadFromCache(CACHE_KEYS.attachments_index, []));
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [lastSyncSource, setLastSyncSource] = useState<'drive' | 'cache' | null>(null);
   const peopleFileIdRef = useRef<string | null>(null);
   const appointmentsFileIdRef = useRef<string | null>(null);
   const indexFileIdRef = useRef<string | null>(null);
@@ -86,6 +89,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (!isConnected) {
       initialDriveLoadDoneRef.current = false;
+      setPeople([]);
+      setAppointments([]);
+      setAttachments([]);
+      setLastSyncSource(null);
       return;
     }
     peopleFileIdRef.current = localStorage.getItem(PEOPLE_FILE_ID_KEY);
@@ -99,6 +106,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPeople(Array.isArray(data.people) ? data.people : []);
     setAppointments(validateAppointments(data.appointments ?? []));
     setAttachments(Array.isArray(data.attachments) ? data.attachments : []);
+    setLastSyncSource(fileIds ? 'drive' : 'cache');
     if (fileIds) {
       peopleFileIdRef.current = fileIds.people;
       appointmentsFileIdRef.current = fileIds.appointments;
@@ -386,6 +394,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         people,
         appointments,
         attachments,
+        lastSyncSource,
         syncCalendarToGoogle,
         addPerson,
         updatePerson,
