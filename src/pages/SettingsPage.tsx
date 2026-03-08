@@ -3,13 +3,12 @@ import { useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
-import { useData } from '../context/DataProvider';
 import { useUserRole } from '../context/UserRoleProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { useActivity } from '../context/ActivityContext';
 import { useToast } from '../context/ToastProvider';
 import { cacheClear } from '../lib/cache';
-import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X, Activity, Bell, Globe, ChevronLeft, RefreshCw } from 'lucide-react';
+import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X, Activity, Bell, Globe, ChevronLeft } from 'lucide-react';
 import { FamilySharingModal } from '../components/FamilySharingModal';
 import { CalendarModal } from '../components/CalendarModal';
 import { auditLogLoad, type AuditLogEntry } from '../lib/auditLog';
@@ -41,7 +40,6 @@ export const SettingsPage: React.FC = () => {
   const { userRole } = useUserRole();
   const { showToast } = useToast();
   const { familyDisplayName, familyPhoto, selectionColor, setFamilyDisplayName, setFamilyPhoto, setSelectionColor } = useFamily();
-  const { syncCalendarToGoogle } = useData();
   const { hasNewActivity, clearBadge, refreshBadge } = useActivity();
   const [activeSection, setActiveSection] = useState<SectionId>(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -57,7 +55,6 @@ export const SettingsPage: React.FC = () => {
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [activityEntries, setActivityEntries] = useState<AuditLogEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
-  const [isCalendarSyncing, setIsCalendarSyncing] = useState(false);
   const authSectionRef = useRef<HTMLDivElement>(null);
 
   const refreshDriveDebug = () => {
@@ -301,33 +298,6 @@ export const SettingsPage: React.FC = () => {
             <div className="border-b border-border pb-6">
               <h3 className="text-sm font-semibold text-foreground mb-3">{t('sync_options_title')}</h3>
               <div className="space-y-2">
-                {isConnected && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsCalendarSyncing(true);
-                      try {
-                        const { synced, created } = await syncCalendarToGoogle();
-                        showToast(t('sync_calendar_done').replace('{synced}', String(synced)).replace('{created}', String(created)), 'success');
-                      } catch (e) {
-                        showToast(e instanceof Error ? e.message : 'Sync failed', 'error');
-                      } finally {
-                        setIsCalendarSyncing(false);
-                      }
-                    }}
-                    disabled={!canEdit || isCalendarSyncing}
-                    className="flex items-center gap-4 w-full p-4 rounded-xl bg-muted/50 border border-border hover:bg-muted transition-colors text-right disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CalendarIcon className="w-5 h-5 text-primary shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground">{t('sync_calendar_btn')}</p>
-                      <p className="text-xs text-muted-foreground">{t('sync_calendar_desc')}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/20 text-primary">
-                      <RefreshCw className={`w-5 h-5 ${isCalendarSyncing ? 'animate-spin' : ''}`} />
-                    </div>
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() => setCalendarModalOpen(true)}
@@ -336,7 +306,7 @@ export const SettingsPage: React.FC = () => {
                   <CalendarIcon className="w-5 h-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground">{t('settings_cards_calendar_title')}</p>
-                    <p className="text-xs text-muted-foreground">{t('sync_calendar_desc')}</p>
+                    <p className="text-xs text-muted-foreground">{t('sync_calendar_notifications_desc')}</p>
                   </div>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isConnected ? 'bg-primary/20 text-primary' : 'bg-muted border border-border'}`}>
                     {isConnected ? <span className="text-lg">✓</span> : <span className="w-4 h-4 rounded-full border-2 border-muted-foreground/50" />}
@@ -597,7 +567,7 @@ export const SettingsPage: React.FC = () => {
                     <li key={i} className="text-sm p-3 bg-muted rounded-xl">
                       <span className="font-medium text-foreground">{formatAction(e.action)}</span>
                       {e.summary && <span className="text-muted-foreground"> — {e.summary}</span>}
-                      <div className="text-xs text-muted-foreground mt-1">{e.userEmail} · {new Date(e.ts).toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{e.userEmail ? `${t('activity_by_user')}: ${e.userEmail} · ` : ''}{new Date(e.ts).toLocaleString()}</div>
                     </li>
                   ))}
                 </ul>

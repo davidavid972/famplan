@@ -3,10 +3,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useToast } from '../context/ToastProvider';
+import { useData } from '../context/DataProvider';
 import {
   driveEnsureFamPlanStructure,
   driveLoadFamily,
@@ -28,7 +29,9 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
   const { t } = useI18n();
   const { isConnected } = useAuth();
   const { showToast } = useToast();
+  const { syncCalendarToGoogle } = useData();
   const [isEnsuring, setIsEnsuring] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [calendarId, setCalendarId] = useState<string | null>(null);
   const [multipleFound, setMultipleFound] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -105,24 +108,45 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
                 </div>
               )}
               {calendarId && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setIsTesting(true);
-                    try {
-                      await createTestNotificationEvent(calendarId);
-                      showToast(t('test_notification_sent'), 'success');
-                    } catch (e) {
-                      showToast(e instanceof Error ? e.message : 'Failed', 'error');
-                    } finally {
-                      setIsTesting(false);
-                    }
-                  }}
-                  disabled={isTesting}
-                  className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted disabled:opacity-60"
-                >
-                  {isTesting ? '...' : t('test_notification')}
-                </button>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsSyncing(true);
+                      try {
+                        const { synced, created } = await syncCalendarToGoogle();
+                        showToast(t('sync_calendar_done').replace('{synced}', String(synced)).replace('{created}', String(created)), 'success');
+                      } catch (e) {
+                        showToast(e instanceof Error ? e.message : 'Sync failed', 'error');
+                      } finally {
+                        setIsSyncing(false);
+                      }
+                    }}
+                    disabled={isSyncing}
+                    className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted disabled:opacity-60 flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? '...' : t('sync_calendar_btn')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsTesting(true);
+                      try {
+                        await createTestNotificationEvent(calendarId);
+                        showToast(t('test_notification_sent'), 'success');
+                      } catch (e) {
+                        showToast(e instanceof Error ? e.message : 'Failed', 'error');
+                      } finally {
+                        setIsTesting(false);
+                      }
+                    }}
+                    disabled={isTesting}
+                    className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted disabled:opacity-60"
+                  >
+                    {isTesting ? '...' : t('test_notification')}
+                  </button>
+                </div>
               )}
             </>
           )}
