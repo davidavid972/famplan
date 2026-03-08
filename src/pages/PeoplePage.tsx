@@ -212,11 +212,12 @@ export const PeoplePage: React.FC = () => {
                   </button>
                 </div>
                 <PersonAvatar person={person} size="md" className={`shrink-0 ${isDefaultDesign ? 'w-14 h-14 text-2xl' : 'mt-1'}`} />
-                <div className="flex-1 min-w-0 pe-16" dir={dir}>
+                <div className="flex-1 min-w-0 max-w-[calc(100%-8rem)] pe-16 overflow-hidden" dir={dir}>
                   <div
-                    className={`truncate text-end font-semibold text-foreground ${
+                    className={`font-semibold text-foreground text-end w-full ${
                       person.name.length > 10 ? 'text-xs' : person.name.length > 3 ? 'text-sm' : 'text-base'
                     }`}
+                    style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                     title={person.name}
                   >
                     {person.name}

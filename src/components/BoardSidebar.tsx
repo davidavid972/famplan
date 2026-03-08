@@ -14,7 +14,7 @@ export const BoardSidebar: React.FC = () => {
   const { isConnected } = useAuth();
 
   const navItems = [
-    { icon: LayoutDashboard, label: t('calendar'), path: '/calendar' },
+    { icon: LayoutDashboard, label: 'לוח', path: '/calendar' },
     { icon: List, label: t('appointments'), path: '/appointments' },
     { icon: Users, label: t('people'), path: '/people' },
     { icon: Settings, label: t('settings'), path: '/settings' },
