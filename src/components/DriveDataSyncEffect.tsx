@@ -44,6 +44,16 @@ export function DriveDataSyncEffect() {
     return () => window.removeEventListener('famplan-drive-sync-request', handler);
   }, []);
 
+  // Periodic refresh for multi-device sync (every 20s when connected)
+  useEffect(() => {
+    if (!isConnected) return;
+    const interval = setInterval(() => {
+      hasRunRef.current = false;
+      setSyncTrigger((t) => t + 1);
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [isConnected]);
+
   useEffect(() => {
     if (!isConnected) {
       hasRunRef.current = false;

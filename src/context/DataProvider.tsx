@@ -85,6 +85,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const dataFolderIdRef = useRef<string | null>(null);
   const peopleVersionRef = useRef<number>(1);
   const initialDriveLoadDoneRef = useRef(false);
+  const skipNextDriveWriteRef = useRef(false);
 
   useEffect(() => {
     if (!isConnected) {
@@ -113,6 +114,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const syncFromDrive = useCallback((data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string }) => {
     setSyncError(null);
+    if (fileIds) skipNextDriveWriteRef.current = true;
     setPeople(Array.isArray(data.people) ? data.people : []);
     setAppointments(validateAppointments(data.appointments ?? []));
     setAttachments(Array.isArray(data.attachments) ? data.attachments : []);
@@ -152,9 +154,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     cacheSet(CACHE_KEYS.attachments_index, attachments);
   }, [attachments]);
 
-  // Write to Drive when connected (debounced)
+  // Write to Drive when connected (debounced). Skip when data came from Drive load.
   useEffect(() => {
     if (!isConnected || !dataFolderIdRef.current || !initialDriveLoadDoneRef.current) return;
+    if (skipNextDriveWriteRef.current) {
+      skipNextDriveWriteRef.current = false;
+      return;
+    }
     const pid = peopleFileIdRef.current;
     const aid = appointmentsFileIdRef.current;
     const iid = indexFileIdRef.current;
