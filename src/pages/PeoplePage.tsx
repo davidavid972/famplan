@@ -19,6 +19,8 @@ const COLORS = [
   '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
 ];
 
+const AVATAR_EMOJIS = ['👨', '👩', '👦', '👧', '🧒', '👴', '👵', '👶', '🧑', '👤', '👷', '👩‍🍳', '👨‍💼', '👩‍💼', '🧑‍🎓', '👨‍⚕️', '👩‍⚕️'];
+
 const PEOPLE_PHOTOS_FOLDER_KEY = 'famplan_drive_people_photos_folder_id';
 
 export const PeoplePage: React.FC = () => {
@@ -32,6 +34,7 @@ export const PeoplePage: React.FC = () => {
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [name, setName] = useState('');
   const [color, setColor] = useState(COLORS[0]);
+  const [emoji, setEmoji] = useState(AVATAR_EMOJIS[0]);
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
   const [personToDelete, setPersonToDelete] = useState<string | null>(null);
@@ -42,10 +45,12 @@ export const PeoplePage: React.FC = () => {
       setEditingPerson(person);
       setName(person.name);
       setColor(person.color);
+      setEmoji(person.emoji || AVATAR_EMOJIS[people.indexOf(person) % AVATAR_EMOJIS.length]);
     } else {
       setEditingPerson(null);
       setName('');
       setColor(COLORS[Math.floor(Math.random() * COLORS.length)]);
+      setEmoji(AVATAR_EMOJIS[people.length % AVATAR_EMOJIS.length]);
     }
     setPendingPhotoFile(null);
     setRemovePhoto(false);
@@ -56,6 +61,7 @@ export const PeoplePage: React.FC = () => {
     setIsModalOpen(false);
     setEditingPerson(null);
     setName('');
+    setEmoji(AVATAR_EMOJIS[0]);
     setPendingPhotoFile(null);
     setRemovePhoto(false);
     setIsSaving(false);
@@ -89,7 +95,7 @@ export const PeoplePage: React.FC = () => {
     if (editingPerson) {
       const prevPhotoFileId = editingPerson.photoFileId;
       const photoFileId = removePhoto ? null : prevPhotoFileId;
-      updatePerson(editingPerson.id, { name, color, photoFileId: photoFileId ?? undefined });
+      updatePerson(editingPerson.id, { name, color, emoji, photoFileId: photoFileId ?? undefined });
       handleCloseModal();
       showToast(t('saved'), 'success');
 
@@ -105,7 +111,7 @@ export const PeoplePage: React.FC = () => {
           });
       }
     } else {
-      const added = addPerson({ name, color });
+      const added = addPerson({ name, color, emoji });
       handleCloseModal();
       showToast(t('saved'), 'success');
 
@@ -199,7 +205,7 @@ export const PeoplePage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center justify-between sm:justify-end gap-2">
-                  <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => handleOpenModal(person)}
                       disabled={!canEdit}
@@ -240,19 +246,13 @@ export const PeoplePage: React.FC = () => {
                   {t('person_photo_label')}
                 </label>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-secondary" style={{ border: `2px solid ${color}` }}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 text-3xl" style={{ border: `2px solid ${color}`, backgroundColor: `${color}20` }}>
                     {pendingPhotoFile ? (
                       <img src={URL.createObjectURL(pendingPhotoFile)} alt="" className="w-full h-full object-cover" />
-                    ) : editingPerson && !removePhoto ? (
+                    ) : editingPerson && !removePhoto && editingPerson.photoFileId ? (
                       <PersonAvatar person={{ ...editingPerson, color }} size="lg" />
-                    ) : !editingPerson ? (
-                      <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-white" style={{ backgroundColor: color }}>
-                        {name ? name.charAt(0).toUpperCase() : '?'}
-                      </div>
                     ) : (
-                      <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-white" style={{ backgroundColor: color }}>
-                        {(name || editingPerson.name || '?').charAt(0).toUpperCase()}
-                      </div>
+                      <span>{emoji}</span>
                     )}
                   </div>
                   {canEdit && isConnected ? (
@@ -287,6 +287,25 @@ export const PeoplePage: React.FC = () => {
                       {t('delete')}
                     </button>
                   )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  {t('person_avatar_label')}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {AVATAR_EMOJIS.map((e) => (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => setEmoji(e)}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-transform hover:scale-110 ${
+                        emoji === e ? 'ring-2 ring-offset-2 ring-primary scale-110 bg-primary/10' : 'bg-muted hover:bg-secondary'
+                      }`}
+                    >
+                      {e}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div>

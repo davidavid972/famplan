@@ -5,6 +5,8 @@ export interface Person {
   createdAt: number;
   /** Drive file id for person photo (stored in FamPlan/people_photos/) */
   photoFileId?: string | null;
+  /** Emoji avatar when no photo (e.g. 👨 👩 👦 👧) */
+  emoji?: string | null;
 }
 
 export type AppointmentStatus = 'PLANNED' | 'DONE';

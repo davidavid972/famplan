@@ -56,7 +56,7 @@ export const PersonAvatar: React.FC<PersonAvatarProps> = ({ person, size = 'md',
     );
   }
 
-  const emoji = getDefaultEmoji(person.id);
+  const emoji = person.emoji || getDefaultEmoji(person.id);
   return (
     <div
       className={`${sizeClass} rounded-2xl flex items-center justify-center flex-shrink-0 ${className}`}
