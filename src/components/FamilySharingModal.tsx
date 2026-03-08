@@ -146,37 +146,37 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b border-stone-100 shrink-0">
-          <h2 className="text-lg font-semibold text-stone-900">{modalTitle}</h2>
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+        <div className="flex justify-between items-center p-4 border-b border-border shrink-0">
+          <h2 className="text-lg font-semibold text-foreground">{modalTitle}</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-stone-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-2 rounded-full hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            <X className="w-5 h-5 text-stone-500" />
+            <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
 
         <div className="p-4 overflow-y-auto flex-1 space-y-6">
           {!isConnected ? (
-            <p className="text-stone-600 text-sm">{t('sharing_connect_required')}</p>
+            <p className="text-muted-foreground text-sm">{t('sharing_connect_required')}</p>
           ) : (
             <>
               {isAdmin && !rolesMode && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-stone-700">{t('sharing_invite_title')}</h3>
+                  <h3 className="text-sm font-medium text-foreground">{t('sharing_invite_title')}</h3>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                       placeholder={t('sharing_invite_email_placeholder')}
-                      className="flex-1 min-h-[44px] px-4 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400"
+                      className="flex-1 min-h-[44px] px-4 rounded-xl border border-border text-foreground placeholder:text-muted-foreground"
                     />
                     <select
                       value={inviteRole}
                       onChange={(e) => setInviteRole(e.target.value as 'viewer' | 'editor')}
-                      className="min-h-[44px] px-4 rounded-xl border border-stone-200 text-stone-900"
+                      className="min-h-[44px] px-4 rounded-xl border border-border text-foreground"
                     >
                       <option value="viewer">{t('sharing_role_viewer')}</option>
                       <option value="editor">{t('sharing_role_editor')}</option>
@@ -184,7 +184,7 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
                     <button
                       onClick={handleInvite}
                       disabled={!inviteEmail.trim() || isInviting}
-                      className="min-h-[44px] px-4 py-2 rounded-xl font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="min-h-[44px] px-4 py-2 rounded-xl font-medium text-white bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {t('sharing_invite_btn')}
                     </button>
@@ -193,13 +193,13 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
               )}
 
               {showInvitePanel && (
-                <div className="space-y-3 p-4 rounded-xl bg-emerald-50 border border-emerald-100">
-                  <h3 className="text-sm font-medium text-stone-700">{t('invite_msg_panel_title')}</h3>
+                <div className="space-y-3 p-4 rounded-xl bg-primary/10 border border-primary/30">
+                  <h3 className="text-sm font-medium text-foreground">{t('invite_msg_panel_title')}</h3>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={handleCopy}
-                      className="min-h-[44px] px-4 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2"
+                      className="min-h-[44px] px-4 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted flex items-center justify-center gap-2"
                     >
                       <Copy className="w-4 h-4" />
                       {t('invite_copy_btn')}
@@ -207,7 +207,7 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
                     <button
                       type="button"
                       onClick={handleMailto}
-                      className="min-h-[44px] px-4 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2"
+                      className="min-h-[44px] px-4 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted flex items-center justify-center gap-2"
                     >
                       <Mail className="w-4 h-4" />
                       {t('invite_mailto_btn')}
@@ -215,7 +215,7 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
                     <button
                       type="button"
                       onClick={handleWhatsApp}
-                      className="min-h-[44px] px-4 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2"
+                      className="min-h-[44px] px-4 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted flex items-center justify-center gap-2"
                     >
                       <MessageCircle className="w-4 h-4" />
                       {t('invite_whatsapp_btn')}
@@ -223,7 +223,7 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
                     <button
                       type="button"
                       onClick={handleShare}
-                      className="min-h-[44px] px-4 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 flex items-center justify-center gap-2"
+                      className="min-h-[44px] px-4 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted flex items-center justify-center gap-2"
                     >
                       <Share2 className="w-4 h-4" />
                       {t('invite_share_btn')}
@@ -233,11 +233,11 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
               )}
 
               <div className="space-y-2">
-                <h3 className="text-sm font-medium text-stone-700">{t('sharing_members_title')}</h3>
+                <h3 className="text-sm font-medium text-foreground">{t('sharing_members_title')}</h3>
                 {isLoading ? (
-                  <p className="text-stone-500 text-sm">...</p>
+                  <p className="text-muted-foreground text-sm">...</p>
                 ) : members.length === 0 ? (
-                  <p className="text-stone-500 text-sm">{t('no_people')}</p>
+                  <p className="text-muted-foreground text-sm">{t('no_people')}</p>
                 ) : (
                   <ul className="space-y-2">
                     {members.map((m) => {
@@ -247,11 +247,11 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
                       return (
                         <li
                           key={m.email}
-                          className="flex items-center justify-between gap-2 p-3 rounded-xl bg-stone-50 border border-stone-100"
+                          className="flex items-center justify-between gap-2 p-3 rounded-xl bg-muted border border-border"
                         >
                           <div className="min-w-0 flex-1">
-                            <p className="text-stone-900 font-medium truncate">{m.email}</p>
-                            <p className="text-xs text-stone-500">{roleLabel(m.role, t)}</p>
+                            <p className="text-foreground font-medium truncate">{m.email}</p>
+                            <p className="text-xs text-muted-foreground">{roleLabel(m.role, t)}</p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             {canChangeRole && (
@@ -259,7 +259,7 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
                                 value={m.role}
                                 onChange={(e) => handleChangeRole(m, e.target.value as 'viewer' | 'editor')}
                                 disabled={changingRoleEmail === m.email}
-                                className="text-sm min-h-[36px] px-2 rounded-lg border border-stone-200 text-stone-700"
+                                className="text-sm min-h-[36px] px-2 rounded-lg border border-border text-foreground"
                               >
                                 <option value="viewer">{t('sharing_role_viewer')}</option>
                                 <option value="editor">{t('sharing_role_editor')}</option>
@@ -269,7 +269,7 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
                               <button
                                 onClick={() => handleRemove(m)}
                                 disabled={removingEmail === m.email}
-                                className="min-h-[36px] px-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                                className="min-h-[36px] px-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
                               >
                                 {t('sharing_member_remove')}
                               </button>
@@ -285,10 +285,10 @@ export function FamilySharingModal({ open, onClose, rolesMode }: FamilySharingMo
           )}
         </div>
 
-        <div className="p-4 border-t border-stone-100 shrink-0">
+        <div className="p-4 border-t border-border shrink-0">
           <button
             onClick={onClose}
-            className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50"
+            className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted"
           >
             {t('cancel')}
           </button>

@@ -20,7 +20,7 @@ export function OfflineBanner({ isOnline, isConnected }: OfflineBannerProps) {
 
   return (
     <div
-      className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-900 border-b border-amber-200 text-sm font-medium"
+      className="flex items-center justify-center gap-2 px-4 py-3 bg-accent/10 text-foreground border-b border-accent/30 text-sm font-medium"
       role="alert"
     >
       <Icon className="w-5 h-5 flex-shrink-0" />

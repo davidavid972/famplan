@@ -19,14 +19,14 @@ export function SyncErrorBanner() {
   };
 
   return (
-    <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between gap-4">
+    <div className="bg-accent/10 border-b border-accent/30 px-4 py-3 flex items-center justify-between gap-4">
       <div className="flex items-center gap-2 min-w-0">
-        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-        <p className="text-sm font-medium text-amber-900">{t('sync_error_banner')}</p>
+        <AlertTriangle className="w-5 h-5 text-accent flex-shrink-0" />
+        <p className="text-sm font-medium text-foreground">{t('sync_error_banner')}</p>
       </div>
       <button
         onClick={handleRetry}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-medium text-sm transition-colors min-h-[44px]"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent/20 hover:bg-accent/30 text-foreground font-medium text-sm transition-colors min-h-[44px]"
       >
         <RefreshCw className="w-4 h-4" />
         {t('sync_error_retry')}

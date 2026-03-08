@@ -257,35 +257,35 @@ export const PlanModal: React.FC<PlanModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto overscroll-contain">
       {recurringProgress && (
         <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-3xl">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4 flex flex-col items-center gap-4">
-            <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
-            <p className="text-stone-700 font-medium">
+          <div className="theme-surface rounded-2xl p-6 max-w-sm w-full mx-4 flex flex-col items-center gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="text-foreground font-medium">
               {t('rec_progress').replace('{current}', String(recurringProgress.current)).replace('{total}', String(recurringProgress.total))}
             </p>
             <button
               type="button"
               onClick={handleRecurringCancel}
-              className="px-4 py-2 text-sm font-medium text-stone-600 bg-stone-100 rounded-xl hover:bg-stone-200 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary rounded-xl hover:bg-muted transition-colors"
             >
               {t('rec_cancel')}
             </button>
           </div>
         </div>
       )}
-      <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 my-8">
-        <div className="p-6 border-b border-stone-100 flex justify-between items-center shrink-0 bg-white z-10">
-          <h2 className="text-xl font-bold text-stone-900">
+      <div className="theme-surface rounded-3xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 my-8">
+        <div className="p-6 border-b border-border flex justify-between items-center shrink-0 bg-card z-10">
+          <h2 className="text-xl font-bold text-foreground">
             {mode === 'edit' ? t('edit_appointment') : t('add_appointment')}
           </h2>
         </div>
 
         {people.length === 0 ? (
           <div className="p-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto">
-              <CalendarIcon className="w-8 h-8 text-amber-600" />
+            <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
+              <CalendarIcon className="w-8 h-8 text-accent" />
             </div>
-            <p className="text-stone-600">{t('no_people')}</p>
-            <button onClick={onClose} className="px-6 py-2 bg-stone-900 text-white rounded-xl hover:bg-stone-800 transition-colors">
+            <p className="text-muted-foreground">{t('no_people')}</p>
+            <button onClick={onClose} className="px-6 py-2 bg-foreground text-background rounded-xl hover:opacity-90 transition-colors">
               {t('cancel')}
             </button>
           </div>
@@ -293,22 +293,22 @@ export const PlanModal: React.FC<PlanModalProps> = ({
           <>
             <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
               {saveError && (
-                <p className="text-sm text-red-600 bg-red-50 p-3 rounded-xl">{saveError}</p>
+                <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-xl">{saveError}</p>
               )}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t('title')} *</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('title')} *</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={!canEdit}
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white disabled:opacity-60"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-muted focus:bg-card disabled:opacity-60"
                   placeholder={t('title')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t('person')} *</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('person')} *</label>
                 <div className="flex flex-wrap gap-2">
                   {people.map((person) => (
                     <button
@@ -317,7 +317,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                       onClick={() => canEdit && setPersonId(person.id)}
                       disabled={!canEdit}
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 border ${
-                        personId === person.id ? 'border-transparent text-white shadow-sm' : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+                        personId === person.id ? 'border-transparent text-white shadow-sm' : 'border-border bg-card text-muted-foreground hover:bg-muted'
                       } disabled:opacity-60 disabled:cursor-not-allowed`}
                       style={{ backgroundColor: personId === person.id ? person.color : undefined }}
                     >
@@ -330,41 +330,41 @@ export const PlanModal: React.FC<PlanModalProps> = ({
 
               <div className="grid grid-cols-2 gap-4" lang={language === 'he' ? 'he-IL' : 'en-GB'}>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">{t('start_time')} *</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">{t('start_time')} *</label>
                   <input
                     type="datetime-local"
                     value={start}
                     onChange={(e) => handleStartChange(e.target.value)}
                     disabled={!canEdit}
                     step="300"
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white disabled:opacity-60"
+                    className="w-full px-4 py-3 rounded-xl border border-border focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-muted focus:bg-card disabled:opacity-60"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">{t('end_time')} *</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">{t('end_time')} *</label>
                   <input
                     type="datetime-local"
                     value={end}
                     onChange={(e) => handleEndChange(e.target.value)}
                     disabled={!canEdit}
                     step="300"
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white disabled:opacity-60"
+                    className="w-full px-4 py-3 rounded-xl border border-border focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-muted focus:bg-card disabled:opacity-60"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t('location')}</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('location')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-5 w-5 text-stone-400" />
+                    <MapPin className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     disabled={!canEdit}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white disabled:opacity-60"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-border focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-muted focus:bg-card disabled:opacity-60"
                     placeholder={t('location')}
                     dir={dir}
                   />
@@ -372,16 +372,16 @@ export const PlanModal: React.FC<PlanModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t('notes')}</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('notes')}</label>
                 <div className="relative">
                   <div className="absolute top-3 left-3 pointer-events-none">
-                    <AlignLeft className="h-5 w-5 text-stone-400" />
+                    <AlignLeft className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     disabled={!canEdit}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white min-h-[100px] resize-y disabled:opacity-60"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-border focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-muted focus:bg-card min-h-[100px] resize-y disabled:opacity-60"
                     placeholder={t('notes')}
                     dir={dir}
                   />
@@ -389,8 +389,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
               </div>
 
               {/* Reminders */}
-              <div className="pt-4 border-t border-stone-200">
-                <label className="block text-sm font-medium text-stone-700 mb-2">{t('rem_alert')}</label>
+              <div className="pt-4 border-t border-border">
+                <label className="block text-sm font-medium text-foreground mb-2">{t('rem_alert')}</label>
                 <select
                   value={reminderMinutes ?? 'none'}
                   onChange={(e) => {
@@ -398,7 +398,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                     setReminderMinutes(v === 'none' ? null : Number(v));
                   }}
                   disabled={!canEdit}
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white disabled:opacity-60"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-muted focus:bg-card disabled:opacity-60"
                 >
                   <option value="none">{t('rem_no_reminder')}</option>
                   {REMINDER_OPTIONS.map((mins) => (
@@ -416,8 +416,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
 
               {/* Recurrence - add mode only */}
               {mode === 'add' && (
-                <div className="pt-4 border-t border-stone-200">
-                  <label className="block text-sm font-medium text-stone-700 mb-2">{t('rec_section')}</label>
+                <div className="pt-4 border-t border-border">
+                  <label className="block text-sm font-medium text-foreground mb-2">{t('rec_section')}</label>
                   <div className="flex items-center gap-3 mb-3">
                     <button
                       type="button"
@@ -426,22 +426,22 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                       onClick={() => canEdit && setIsRecurring((v) => !v)}
                       disabled={!canEdit}
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 transition-colors disabled:opacity-60 ${
-                        isRecurring ? 'bg-emerald-600 border-emerald-600' : 'bg-stone-200 border-stone-200'
+                        isRecurring ? 'bg-primary border-primary' : 'bg-muted border-border'
                       }`}
                     >
-                      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${isRecurring ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-card shadow transition-transform ${isRecurring ? 'translate-x-5' : 'translate-x-0.5'}`} />
                     </button>
-                    <span className="text-sm font-medium text-stone-700">{t('rec_repeating')}</span>
+                    <span className="text-sm font-medium text-foreground">{t('rec_repeating')}</span>
                   </div>
                   {isRecurring && (
                     <div className="space-y-3 pl-0">
                       <div>
-                        <label className="block text-xs text-stone-500 mb-1">{t('rec_weekly')}</label>
+                        <label className="block text-xs text-muted-foreground mb-1">{t('rec_weekly')}</label>
                         <select
                           value={intervalWeeks}
                           onChange={(e) => setIntervalWeeks(Number(e.target.value))}
                           disabled={!canEdit}
-                          className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-stone-50 disabled:opacity-60"
+                          className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-muted disabled:opacity-60"
                         >
                           <option value={1}>{t('rec_weekly')}</option>
                           <option value={2}>{t('rec_every_2_weeks')}</option>
@@ -480,7 +480,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                           value={endDateStr}
                           onChange={(e) => setEndDateStr(e.target.value)}
                           disabled={!canEdit}
-                          className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-stone-50 disabled:opacity-60"
+                          className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-muted disabled:opacity-60"
                           lang={language === 'he' ? 'he-IL' : 'en-GB'}
                         />
                       )}
@@ -492,11 +492,11 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                           value={endCount}
                           onChange={(e) => setEndCount(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
                           disabled={!canEdit}
-                          className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-stone-50 disabled:opacity-60"
+                          className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-muted disabled:opacity-60"
                         />
                       )}
                       {isRecurring && start && (
-                        <p className="text-xs text-stone-500">
+                        <p className="text-xs text-muted-foreground">
                           {t('rec_summary').replace(
                             '{count}',
                             String(
@@ -517,17 +517,17 @@ export const PlanModal: React.FC<PlanModalProps> = ({
 
               {/* Documents - only in add mode */}
               {mode === 'add' && onAddPendingDoc && (
-                <div className="pt-4 border-t border-stone-200">
+                <div className="pt-4 border-t border-border">
                   <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-stone-700">{t('docs_section_attached')}</label>
-                    <span className="text-xs text-stone-500">{t('docs_counter').replace('{used}', String(totalDocs))}</span>
+                    <label className="block text-sm font-medium text-foreground">{t('docs_section_attached')}</label>
+                    <span className="text-xs text-muted-foreground">{t('docs_counter').replace('{used}', String(totalDocs))}</span>
                   </div>
                   {pendingDocs.length > 0 && onRemovePendingDoc && (
                     <div className="space-y-1 mb-2">
                       {pendingDocs.map((p, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm py-1.5 px-2 bg-stone-50 rounded-lg">
-                          <span className="truncate text-stone-700">{p.name}</span>
-                          <button type="button" onClick={() => onRemovePendingDoc(idx)} disabled={!canEdit} className="text-red-600 hover:text-red-700 text-xs font-medium disabled:opacity-60">
+                        <div key={idx} className="flex items-center justify-between text-sm py-1.5 px-2 bg-muted rounded-lg">
+                          <span className="truncate text-foreground">{p.name}</span>
+                          <button type="button" onClick={() => onRemovePendingDoc(idx)} disabled={!canEdit} className="text-destructive hover:text-destructive/90 text-xs font-medium disabled:opacity-60">
                             {t('delete')}
                           </button>
                         </div>
@@ -535,7 +535,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                     </div>
                   )}
                   {(isProcessingFiles || uploadProgress) && (
-                    <div className="flex items-center gap-2 py-2 text-sm text-stone-600">
+                    <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
                       {uploadProgress ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin shrink-0" />
@@ -551,15 +551,15 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                   )}
                   {canEdit && !isSaving && (
                     <div className="flex gap-2 flex-wrap">
-                      <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
+                      <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-card border border-border rounded-xl hover:bg-muted cursor-pointer text-sm font-medium text-foreground">
                         <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setIsProcessingFiles(true); setTimeout(0, () => { onAddPendingDoc(f); setIsProcessingFiles(false); }); } e.target.value = ''; }} />
                         {t('docs_camera')}
                       </label>
-                      <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
+                      <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-card border border-border rounded-xl hover:bg-muted cursor-pointer text-sm font-medium text-foreground">
                         <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setIsProcessingFiles(true); setTimeout(0, () => { onAddPendingDoc(f); setIsProcessingFiles(false); }); } e.target.value = ''; }} />
                         {t('docs_gallery')}
                       </label>
-                      <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-white border border-stone-200 rounded-xl hover:bg-stone-50 cursor-pointer text-sm font-medium text-stone-700">
+                      <label className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-card border border-border rounded-xl hover:bg-muted cursor-pointer text-sm font-medium text-foreground">
                         <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={(e) => { const files = e.target.files; if (files?.length) { setIsProcessingFiles(true); setTimeout(0, () => { onAddPendingDocsMulti?.(files); setIsProcessingFiles(false); }); } e.target.value = ''; }} />
                         {t('docs_multi')}
                       </label>
@@ -570,16 +570,16 @@ export const PlanModal: React.FC<PlanModalProps> = ({
             </div>
 
             {savedCalendarEventId && (
-              <div className="px-6 py-2 text-xs text-stone-500 font-mono bg-stone-100 rounded-lg mx-6 mb-2">
+              <div className="px-6 py-2 text-xs text-muted-foreground font-mono bg-secondary rounded-lg mx-6 mb-2">
                 calendarEventId: {savedCalendarEventId}
               </div>
             )}
-            <div className="flex justify-between gap-3 p-6 bg-stone-50 border-t border-stone-100 shrink-0 z-10">
+            <div className="flex justify-between gap-3 p-6 bg-muted border-t border-border shrink-0 z-10">
               <div className="flex items-center gap-2">
                 {mode === 'edit' && appointment && onDelete && canEdit && !showDeleteChoice && (
                   <button
                     onClick={handleDelete}
-                    className="px-6 py-3 font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
+                    className="px-6 py-3 font-medium text-destructive bg-destructive/10 border border-destructive/30 rounded-xl hover:bg-destructive/20 transition-colors"
                   >
                     {t('delete')}
                   </button>
@@ -588,19 +588,19 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                   <>
                     <button
                       onClick={handleDeleteThisOnly}
-                      className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-destructive bg-destructive/10 border border-destructive/30 rounded-xl hover:bg-destructive/20 transition-colors"
                     >
                       {t('rec_delete_this_only')}
                     </button>
                     <button
                       onClick={handleDeleteSeries}
-                      className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-destructive bg-destructive/10 border border-destructive/30 rounded-xl hover:bg-destructive/20 transition-colors"
                     >
                       {t('rec_delete_whole_series')}
                     </button>
                     <button
                       onClick={() => setShowDeleteChoice(false)}
-                      className="px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 rounded-xl transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary rounded-xl transition-colors"
                     >
                       {t('cancel')}
                     </button>
@@ -608,13 +608,13 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                 )}
               </div>
               <div className="flex gap-3 ms-auto">
-                <button onClick={onClose} className="px-6 py-3 font-medium text-stone-700 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors">
+                <button onClick={onClose} className="px-6 py-3 font-medium text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors">
                   {t('cancel')}
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={!canEdit || isSaving}
-                  className="px-6 py-3 font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 py-3 font-medium text-primary-foreground bg-primary rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {t('save')}

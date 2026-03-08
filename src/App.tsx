@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthProvider';
 import { FamilyProvider } from './context/FamilyProvider';
 import { DataProvider } from './context/DataProvider';
 import { ActivityProvider } from './context/ActivityContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
@@ -14,6 +15,7 @@ import { DriveSyncEffect } from './components/DriveSyncEffect';
 import { DriveDataSyncEffect } from './components/DriveDataSyncEffect';
 import { DriveErrorListener } from './components/DriveErrorListener';
 import { RemoteChangesListener } from './components/RemoteChangesListener';
+import { IndexPage } from './pages/IndexPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { PeoplePage } from './pages/PeoplePage';
@@ -29,13 +31,14 @@ function AppContent() {
       <FamilyProvider>
         <DataProvider>
         <ActivityProvider>
+        <ThemeProvider>
         <BrowserRouter>
           <RemoteChangesListener />
           <DriveSyncEffect />
           <DriveDataSyncEffect />
           <Routes>
             <Route path="/" element={<Layout />}>
-              <Route index element={<Navigate to="/settings" replace />} />
+              <Route index element={<IndexPage />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="people" element={<PeoplePage />} />
@@ -44,6 +47,7 @@ function AppContent() {
             </Route>
           </Routes>
         </BrowserRouter>
+        </ThemeProvider>
         </ActivityProvider>
       </DataProvider>
       </FamilyProvider>

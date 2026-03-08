@@ -48,7 +48,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({ size = 'md', className =
 
   return (
     <div
-      className={`${sizeClass} rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-600 flex-shrink-0 ${className}`}
+      className={`${sizeClass} rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary flex-shrink-0 ${className}`}
     >
       {initial}
     </div>

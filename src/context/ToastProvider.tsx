@@ -40,9 +40,9 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             key={toast.id}
             className={cn(
               "flex items-center justify-between p-4 rounded-xl shadow-lg pointer-events-auto transition-all transform translate-y-0 opacity-100",
-              toast.type === 'success' ? "bg-emerald-50 text-emerald-900 border border-emerald-200" :
-              toast.type === 'error' ? "bg-red-50 text-red-900 border border-red-200" :
-              "bg-blue-50 text-blue-900 border border-blue-200"
+              toast.type === 'success' ? "bg-primary/10 text-primary border border-primary/30" :
+              toast.type === 'error' ? "bg-destructive/10 text-destructive border border-destructive/30" :
+              "bg-primary/10 text-primary border border-primary/30"
             )}
           >
             <span className="font-medium text-sm">{toast.message}</span>

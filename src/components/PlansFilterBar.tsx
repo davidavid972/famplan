@@ -43,7 +43,7 @@ export const PlansFilterBar: React.FC<PlansFilterBarProps> = ({ people }) => {
         <button
           onClick={handleAll}
           className={`flex-shrink-0 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-            isAll ? 'text-white' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
+            isAll ? 'text-primary-foreground' : 'bg-card text-muted-foreground border border-border hover:bg-muted'
           }`}
           style={{ backgroundColor: isAll ? selectionColor : undefined }}
         >
@@ -52,7 +52,7 @@ export const PlansFilterBar: React.FC<PlansFilterBarProps> = ({ people }) => {
         <button
           onClick={() => setExpanded((e) => !e)}
           className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-            expanded ? 'text-white' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
+            expanded ? 'text-primary-foreground' : 'bg-card text-muted-foreground border border-border hover:bg-muted'
           }`}
           style={{ backgroundColor: expanded ? selectionColor : undefined }}
         >
@@ -64,11 +64,11 @@ export const PlansFilterBar: React.FC<PlansFilterBarProps> = ({ people }) => {
 
       {expanded && (
         <div
-          className={`flex flex-col gap-2 p-4 bg-white rounded-2xl border border-stone-200 shadow-sm ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+          className={`flex flex-col gap-2 p-4 theme-surface rounded-2xl ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
         >
           <button
             onClick={handleSelectAll}
-            className="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors py-1"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
           >
             {t('select_all')}
           </button>
@@ -84,11 +84,11 @@ export const PlansFilterBar: React.FC<PlansFilterBarProps> = ({ people }) => {
                     type="checkbox"
                     checked={checked}
                     onChange={() => handleTogglePerson(person.id)}
-                    className="w-5 h-5 rounded border-stone-300 text-stone-600 focus:ring-2 focus:ring-offset-0 cursor-pointer"
+                    className="w-5 h-5 rounded border-border text-muted-foreground focus:ring-2 focus:ring-offset-0 cursor-pointer"
                     style={{ accentColor: selectionColor }}
                   />
                   <PersonAvatar person={person} size="sm" />
-                  <span className="text-stone-900 font-medium">{person.name}</span>
+                  <span className="text-foreground font-medium">{person.name}</span>
                 </label>
               );
             })}

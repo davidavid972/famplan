@@ -79,27 +79,27 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto overscroll-contain">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 my-8">
-        <div className="flex justify-between items-center p-4 border-b border-stone-100">
-          <h2 className="text-lg font-semibold text-stone-900">{t('settings_cards_calendar_title')}</h2>
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 my-8">
+        <div className="flex justify-between items-center p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">{t('settings_cards_calendar_title')}</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-stone-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-2 rounded-full hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            <X className="w-5 h-5 text-stone-500" />
+            <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
         <div className="p-6 space-y-4">
           {!isConnected ? (
-            <p className="text-stone-600 text-sm">{t('sharing_connect_required')}</p>
+            <p className="text-muted-foreground text-sm">{t('sharing_connect_required')}</p>
           ) : isEnsuring ? (
-            <p className="text-stone-600 text-sm">...</p>
+            <p className="text-muted-foreground text-sm">...</p>
           ) : (
             <>
-              <p className="text-stone-700">{t('cal_detected_created')} ✓</p>
+              <p className="text-foreground">{t('cal_detected_created')} ✓</p>
               {multipleFound && calendarId && (
-                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
-                  <p className="text-sm text-amber-800">
+                <div className="p-4 rounded-xl bg-accent/10 border border-accent/30">
+                  <p className="text-sm text-accent-foreground">
                     {t('cal_multiple_warning').replace('<id>', calendarId)}
                   </p>
                 </div>
@@ -119,7 +119,7 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
                     }
                   }}
                   disabled={isTesting}
-                  className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 disabled:opacity-60"
+                  className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted disabled:opacity-60"
                 >
                   {isTesting ? '...' : t('test_notification')}
                 </button>
@@ -127,10 +127,10 @@ export function CalendarModal({ open, onClose }: CalendarModalProps) {
             </>
           )}
         </div>
-        <div className="p-4 border-t border-stone-100">
+        <div className="p-4 border-t border-border">
           <button
             onClick={onClose}
-            className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50"
+            className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted"
           >
             {t('cancel')}
           </button>

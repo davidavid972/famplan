@@ -40,10 +40,10 @@ export const PersonDashboardPage: React.FC = () => {
   if (!person) {
     return (
       <div className="text-center py-12">
-        <p className="text-stone-500">{t('no_person_selected')}</p>
+        <p className="text-muted-foreground">{t('no_person_selected')}</p>
         <button
           onClick={() => navigate('/people')}
-          className="mt-4 px-4 py-2 bg-stone-100 text-stone-700 rounded-xl hover:bg-stone-200 transition-colors"
+          className="mt-4 px-4 py-2 bg-muted text-foreground rounded-xl hover:bg-secondary transition-colors"
         >
           {t('back')}
         </button>
@@ -187,11 +187,11 @@ export const PersonDashboardPage: React.FC = () => {
   const renderAppointmentList = (list: typeof upcomingAppointments) => {
     if (list.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-stone-200 border-dashed text-center">
-          <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mb-4">
-            <CalendarIcon className="w-8 h-8 text-stone-400" />
+        <div className="flex flex-col items-center justify-center p-12 bg-card rounded-3xl border border-border border-dashed text-center">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+            <CalendarIcon className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-medium text-stone-900 mb-1">{t('no_appointments')}</h3>
+          <h3 className="text-lg font-medium text-foreground mb-1">{t('no_appointments')}</h3>
         </div>
       );
     }
@@ -207,7 +207,7 @@ export const PersonDashboardPage: React.FC = () => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && setEditingAppointment(appointment)}
-              className={`group flex flex-col sm:flex-row gap-4 p-5 bg-white rounded-2xl border border-stone-200 shadow-sm transition-all relative overflow-hidden cursor-pointer hover:border-stone-300 ${
+              className={`group flex flex-col sm:flex-row gap-4 p-5 bg-white rounded-2xl border border-border shadow-sm transition-all relative overflow-hidden cursor-pointer hover:border-muted-foreground/50 ${
                 isDone ? 'opacity-60' : ''
               }`}
             >
@@ -220,21 +220,21 @@ export const PersonDashboardPage: React.FC = () => {
                 <button
                   onClick={(e) => toggleStatus(appointment.id, appointment.status, e)}
                   disabled={!canEdit}
-                  className="flex-shrink-0 min-h-[44px] min-w-[44px] text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-shrink-0 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isDone ? (
-                    <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                    <CheckCircle2 className="w-8 h-8 text-primary" />
                   ) : (
                     <Circle className="w-8 h-8" />
                   )}
                 </button>
 
                 <div className="flex-1 space-y-1">
-                  <h3 className={`text-lg font-semibold text-stone-900 ${isDone ? 'line-through' : ''}`}>
+                  <h3 className={`text-lg font-semibold text-foreground ${isDone ? 'line-through' : ''}`}>
                     {appointment.title}
                   </h3>
                   
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-stone-500">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <CalendarIcon className="w-4 h-4" />
                       <span>
@@ -252,7 +252,7 @@ export const PersonDashboardPage: React.FC = () => {
                   </div>
 
                   {appointment.notes && (
-                    <div className="flex items-start gap-1 text-sm text-stone-600 mt-2 bg-stone-50 p-2 rounded-lg">
+                    <div className="flex items-start gap-1 text-sm text-muted-foreground mt-2 bg-muted p-2 rounded-lg">
                       <AlignLeft className="w-4 h-4 mt-0.5 flex-shrink-0" />
                       <p className="line-clamp-2">{appointment.notes}</p>
                     </div>
@@ -264,7 +264,7 @@ export const PersonDashboardPage: React.FC = () => {
                 <button
                   onClick={(e) => { e.stopPropagation(); setAppointmentToDelete(appointment.id); }}
                   disabled={!canEdit}
-                  className="p-2 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
@@ -281,24 +281,24 @@ export const PersonDashboardPage: React.FC = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/people')}
-          className="p-2 text-stone-500 hover:bg-stone-100 rounded-full transition-colors"
+          className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"
         >
           {dir === 'rtl' ? <ChevronRight className="w-6 h-6" /> : <ChevronLeft className="w-6 h-6" />}
         </button>
         <div className="flex items-center gap-4">
           <PersonAvatar person={person} size="lg" />
-          <h1 className="text-3xl font-bold tracking-tight text-stone-900">{person.name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{person.name}</h1>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-stone-200">
+      <div className="flex border-b border-border">
         <button
           onClick={() => setActiveTab('upcoming')}
           className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
             activeTab === 'upcoming'
-              ? 'border-emerald-600 text-emerald-600'
-              : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
           }`}
         >
           {t('upcoming')} ({upcomingAppointments.length})
@@ -307,8 +307,8 @@ export const PersonDashboardPage: React.FC = () => {
           onClick={() => setActiveTab('past')}
           className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
             activeTab === 'past'
-              ? 'border-emerald-600 text-emerald-600'
-              : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
           }`}
         >
           {t('past')} ({pastAppointments.length})
@@ -317,8 +317,8 @@ export const PersonDashboardPage: React.FC = () => {
           onClick={() => setActiveTab('documents')}
           className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
             activeTab === 'documents'
-              ? 'border-emerald-600 text-emerald-600'
-              : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
           }`}
         >
           {t('documents')} ({personAttachments.length})
@@ -332,9 +332,9 @@ export const PersonDashboardPage: React.FC = () => {
         
         {activeTab === 'documents' && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-2xl border border-border shadow-sm">
               <div className="flex items-center gap-3">
-                <span className="text-sm text-stone-500">{t('docs_counter').replace('{used}', String(attachments.length))}</span>
+                <span className="text-sm text-muted-foreground">{t('docs_counter').replace('{used}', String(attachments.length))}</span>
                 {canEdit ? (
                   <div className="relative">
                     <input ref={fileInputRef} type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} />
@@ -351,11 +351,11 @@ export const PersonDashboardPage: React.FC = () => {
                     {addDocsMenuOpen && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setAddDocsMenuOpen(false)} aria-hidden="true" />
-                        <div className={`absolute top-full mt-2 z-50 min-w-[200px] py-2 bg-white rounded-xl border border-stone-200 shadow-lg ${dir === 'rtl' ? 'right-0 left-auto' : 'left-0'}`}>
+                        <div className={`absolute top-full mt-2 z-50 min-w-[200px] py-2 bg-white rounded-xl border border-border shadow-lg ${dir === 'rtl' ? 'right-0 left-auto' : 'left-0'}`}>
                           <button
                             type="button"
                             onClick={triggerFileSelect}
-                            className="w-full px-4 py-3 min-h-[44px] text-left text-stone-700 hover:bg-stone-50 transition-colors font-medium flex items-center gap-2"
+                            className="w-full px-4 py-3 min-h-[44px] text-left text-foreground hover:bg-muted transition-colors font-medium flex items-center gap-2"
                           >
                             <FileText className="w-5 h-5" />
                             {t('docs_select_from_device')}
@@ -363,7 +363,7 @@ export const PersonDashboardPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={triggerCameraCapture}
-                            className="w-full px-4 py-3 min-h-[44px] text-left text-stone-700 hover:bg-stone-50 transition-colors font-medium flex items-center gap-2"
+                            className="w-full px-4 py-3 min-h-[44px] text-left text-foreground hover:bg-muted transition-colors font-medium flex items-center gap-2"
                           >
                             <Upload className="w-5 h-5" />
                             {t('docs_capture_now')}
@@ -379,14 +379,14 @@ export const PersonDashboardPage: React.FC = () => {
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                   <button
                     onClick={toggleSelectAll}
-                    className="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors min-h-[44px] flex items-center"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors min-h-[44px] flex items-center"
                   >
                     {selectedDocuments.size === personAttachments.length ? t('cancel') : t('select_all')}
                   </button>
                   {selectedDocuments.size > 0 && (
                     <button
                       onClick={() => setIsBulkDeleteModalOpen(true)}
-                      className="flex items-center gap-1 px-3 py-1.5 min-h-[44px] bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                      className="flex items-center gap-1 px-3 py-1.5 min-h-[44px] bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors text-sm font-medium"
                     >
                       <Trash2 className="w-4 h-4" />
                       <span>{t('delete_selected')} ({selectedDocuments.size})</span>
@@ -397,12 +397,12 @@ export const PersonDashboardPage: React.FC = () => {
             </div>
 
             {personAttachments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-stone-200 border-dashed text-center">
-                <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mb-4">
-                  <FileText className="w-8 h-8 text-stone-400" />
+              <div className="flex flex-col items-center justify-center p-12 bg-card rounded-3xl border border-border border-dashed text-center">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <FileText className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium text-stone-900 mb-1">{t('no_documents')}</h3>
-                <p className="text-stone-500 max-w-sm">{t('upload_document')}</p>
+                <h3 className="text-lg font-medium text-foreground mb-1">{t('no_documents')}</h3>
+                <p className="text-muted-foreground max-w-sm">{t('upload_document')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -411,13 +411,13 @@ export const PersonDashboardPage: React.FC = () => {
                     key={doc.id}
                     className={`flex items-start gap-3 p-4 bg-white rounded-2xl border transition-all ${
                       canEdit ? 'cursor-pointer' : 'cursor-default'
-                    } ${selectedDocuments.has(doc.id) ? 'ring-1' : 'border-stone-200 hover:border-stone-300'}`}
+                    } ${selectedDocuments.has(doc.id) ? 'ring-1' : 'border-border hover:border-muted-foreground/50'}`}
                     style={selectedDocuments.has(doc.id) ? { borderColor: selectionColor, boxShadow: `0 0 0 1px ${selectionColor}`, backgroundColor: `${selectionColor}15` } : {}}
                     onClick={() => canEdit && toggleDocumentSelection(doc.id)}
                   >
                     <div className="flex-shrink-0 pt-1">
                       <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                        selectedDocuments.has(doc.id) ? 'text-white' : 'border-stone-300 bg-white'
+                        selectedDocuments.has(doc.id) ? 'text-white' : 'border-border bg-white'
                       }`}
                         style={selectedDocuments.has(doc.id) ? { backgroundColor: selectionColor, borderColor: selectionColor } : {}}
                       >
@@ -426,7 +426,7 @@ export const PersonDashboardPage: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-medium text-stone-900 truncate" title={doc.name}>
+                        <h4 className="font-medium text-foreground truncate" title={doc.name}>
                           {doc.name}
                         </h4>
                         <button
@@ -435,12 +435,12 @@ export const PersonDashboardPage: React.FC = () => {
                             if (canEdit) setDocumentToDelete(doc.id);
                           }}
                           disabled={!canEdit}
-                          className="p-1 min-h-[44px] min-w-[44px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-1 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-stone-500">
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                         <span className="truncate max-w-[80px]">{doc.type.split('/')[1] || 'File'}</span>
                         <span>{formatFileSize(doc.size)}</span>
                         <span>{format(doc.createdAt, 'MMM d, yyyy', { locale: dateLocale })}</span>
