@@ -24,7 +24,7 @@ function createEmptyAuditLog(): AuditLogData {
 }
 
 export async function auditLogLoad(dataFolderId: string): Promise<{ data: AuditLogData; fileId: string }> {
-  const fileId = await driveFindFile(AUDIT_LOG_FILE, dataFolderId);
+  const fileId = await driveFindFile(AUDIT_FILE_NAME, dataFolderId);
   if (fileId) {
     const data = await driveReadJson<AuditLogData>(fileId);
     return { data: { entries: Array.isArray(data?.entries) ? data.entries : [] }, fileId };
@@ -52,8 +52,8 @@ export async function auditLogAppend(
     data = createEmptyAuditLog();
   }
   data.entries.push(entry);
-  if (data.entries.length > 500) {
-    data.entries = data.entries.slice(-400);
+  if (data.entries.length > 50) {
+    data.entries = data.entries.slice(-50);
   }
   fid = await driveWriteJson(fid, data, dataFolderId, AUDIT_FILE_NAME);
   return fid;

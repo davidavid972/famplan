@@ -9,10 +9,9 @@ import { useFamily } from '../context/FamilyProvider';
 import { useActivity } from '../context/ActivityContext';
 import { useToast } from '../context/ToastProvider';
 import { cacheClear } from '../lib/cache';
-import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X, Activity, Bell, Palette, Globe, ChevronLeft, RefreshCw } from 'lucide-react';
+import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X, Activity, Bell, Globe, ChevronLeft, RefreshCw } from 'lucide-react';
 import { FamilySharingModal } from '../components/FamilySharingModal';
 import { CalendarModal } from '../components/CalendarModal';
-import { ThemeSelector } from '../components/ThemeSelector';
 import { auditLogLoad, type AuditLogEntry } from '../lib/auditLog';
 
 const ROOT_FOLDER_KEY = 'famplan_drive_root_folder_id';
@@ -24,12 +23,11 @@ const SYNC_PEOPLE_KEY = 'famplan_drive_sync_people';
 const SYNC_APPOINTMENTS_KEY = 'famplan_drive_sync_appointments';
 const SYNC_INDEX_KEY = 'famplan_drive_sync_index';
 
-type SectionId = 'general' | 'notifications' | 'theme' | 'sharing' | 'permissions' | 'activity' | 'sync' | null;
+type SectionId = 'general' | 'notifications' | 'sharing' | 'permissions' | 'activity' | 'sync' | null;
 
 const SECTIONS: { id: SectionId; icon: React.ElementType; labelKey: string; descKey: string }[] = [
   { id: 'general', icon: Settings, labelKey: 'settings_general', descKey: 'settings_general_desc' },
   { id: 'notifications', icon: Bell, labelKey: 'settings_notifications', descKey: 'settings_notifications_desc' },
-  { id: 'theme', icon: Palette, labelKey: 'settings_theme', descKey: 'settings_theme_desc' },
   { id: 'sharing', icon: Share2, labelKey: 'settings_sharing', descKey: 'settings_sharing_desc' },
   { id: 'permissions', icon: Shield, labelKey: 'settings_permissions', descKey: 'settings_permissions_desc' },
   { id: 'activity', icon: Activity, labelKey: 'settings_activity', descKey: 'settings_activity_desc' },
@@ -133,11 +131,18 @@ export const SettingsPage: React.FC = () => {
       .finally(() => setActivityLoading(false));
   };
 
-  const formatAction = (action: string) => {
-    if (action === 'people.add') return 'הוספת בן/בת משפחה';
-    if (action === 'people.update') return 'עדכון בן/בת משפחה';
-    if (action === 'people.delete') return 'מחיקת בן/בת משפחה';
-    return action;
+  const formatAction = (action: string): string => {
+    const map: Record<string, string> = {
+      'people.add': t('activity_people_add'),
+      'people.update': t('activity_people_update'),
+      'people.delete': t('activity_people_delete'),
+      'appointments.add': t('activity_appointments_add'),
+      'appointments.update': t('activity_appointments_update'),
+      'appointments.delete': t('activity_appointments_delete'),
+      'attachments.add': t('activity_attachments_add'),
+      'attachments.delete': t('activity_attachments_delete'),
+    };
+    return map[action] ?? action;
   };
 
   const handleConnect = async () => {
@@ -232,12 +237,6 @@ export const SettingsPage: React.FC = () => {
                 </button>
               </div>
             </div>
-          </div>
-        );
-      case 'theme':
-        return (
-          <div className="space-y-6">
-            <ThemeSelector language={language} />
             <div>
               <h3 className="text-sm font-medium text-foreground mb-2">{t('settings_selection_color')}</h3>
               <p className="text-xs text-muted-foreground mb-3">{t('settings_selection_color_subtitle')}</p>
@@ -301,28 +300,34 @@ export const SettingsPage: React.FC = () => {
             {/* Sync options */}
             <div className="border-b border-border pb-6">
               <h3 className="text-sm font-semibold text-foreground mb-3">{t('sync_options_title')}</h3>
-              {isConnected && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setIsCalendarSyncing(true);
-                    try {
-                      const { synced, created } = await syncCalendarToGoogle();
-                      showToast(t('sync_calendar_done').replace('{synced}', String(synced)).replace('{created}', String(created)), 'success');
-                    } catch (e) {
-                      showToast(e instanceof Error ? e.message : 'Sync failed', 'error');
-                    } finally {
-                      setIsCalendarSyncing(false);
-                    }
-                  }}
-                  disabled={!canEdit || isCalendarSyncing}
-                  className="flex items-center gap-2 w-full mb-4 px-4 py-3 rounded-xl border border-border bg-card text-foreground hover:bg-muted font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <RefreshCw className={`w-5 h-5 ${isCalendarSyncing ? 'animate-spin' : ''}`} />
-                  <span>{t('sync_calendar_btn')}</span>
-                </button>
-              )}
               <div className="space-y-2">
+                {isConnected && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsCalendarSyncing(true);
+                      try {
+                        const { synced, created } = await syncCalendarToGoogle();
+                        showToast(t('sync_calendar_done').replace('{synced}', String(synced)).replace('{created}', String(created)), 'success');
+                      } catch (e) {
+                        showToast(e instanceof Error ? e.message : 'Sync failed', 'error');
+                      } finally {
+                        setIsCalendarSyncing(false);
+                      }
+                    }}
+                    disabled={!canEdit || isCalendarSyncing}
+                    className="flex items-center gap-4 w-full p-4 rounded-xl bg-muted/50 border border-border hover:bg-muted transition-colors text-right disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CalendarIcon className="w-5 h-5 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground">{t('sync_calendar_btn')}</p>
+                      <p className="text-xs text-muted-foreground">{t('sync_calendar_desc')}</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/20 text-primary">
+                      <RefreshCw className={`w-5 h-5 ${isCalendarSyncing ? 'animate-spin' : ''}`} />
+                    </div>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setCalendarModalOpen(true)}
@@ -476,7 +481,6 @@ export const SettingsPage: React.FC = () => {
 
   const sectionTitle: Record<string, string> = {
     general: t('settings_general'),
-    theme: t('settings_theme_title'),
     sync: t('settings_sync_title'),
   };
 
@@ -586,7 +590,9 @@ export const SettingsPage: React.FC = () => {
               ) : activityEntries.length === 0 ? (
                 <p className="text-muted-foreground text-sm">{t('activity_empty')}</p>
               ) : (
-                <ul className="space-y-2">
+                <>
+                  <p className="text-xs text-muted-foreground mb-3">{t('activity_showing_up_to_50')}</p>
+                  <ul className="space-y-2">
                   {activityEntries.map((e, i) => (
                     <li key={i} className="text-sm p-3 bg-muted rounded-xl">
                       <span className="font-medium text-foreground">{formatAction(e.action)}</span>
@@ -595,6 +601,7 @@ export const SettingsPage: React.FC = () => {
                     </li>
                   ))}
                 </ul>
+                </>
               )}
             </div>
           </div>

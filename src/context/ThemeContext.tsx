@@ -20,8 +20,6 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export const useTheme = () => useContext(ThemeContext);
 
-const THEME_STORAGE_KEY = 'famplan-theme';
-
 const themes: Record<ThemeId, { cssVars: Record<string, string>; style: string }> = {
   default: {
     style: 'cozy',
@@ -110,25 +108,18 @@ const themes: Record<ThemeId, { cssVars: Record<string, string>; style: string }
 };
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [activeTheme, setActiveThemeState] = useState<ThemeId>(() => {
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    if (saved === 'homeboard' || saved === 'controlcenter' || saved === 'default') return saved;
-    return 'default';
-  });
+  const activeTheme: ThemeId = 'default';
 
-  const setActiveTheme = (id: ThemeId) => {
-    setActiveThemeState(id);
-    localStorage.setItem(THEME_STORAGE_KEY, id);
-  };
+  const setActiveTheme = () => {}; // No-op: only default theme is used
 
   useEffect(() => {
-    const theme = themes[activeTheme];
+    const theme = themes.default;
     const root = document.documentElement;
     Object.entries(theme.cssVars).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
     root.setAttribute('data-ui-style', theme.style);
-  }, [activeTheme]);
+  }, []);
 
   const isBoard = activeTheme === 'homeboard';
   const isControlCenter = activeTheme === 'controlcenter';

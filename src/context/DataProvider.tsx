@@ -264,6 +264,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.warn('[FamPlan] Calendar sync on add failed:', e);
     }
     setAppointments((prev) => [...prev, newAppointment]);
+    const df = dataFolderIdRef.current;
+    if (df && email) {
+      auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'appointments.add', entityId: newAppointment.id, summary: newAppointment.title }).catch(() => {});
+    }
     return newAppointment;
   };
 
@@ -287,11 +291,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const finalData = calendarEventId ? { ...data, calendarEventId } : data;
     setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, ...finalData } : a)));
+    const df = dataFolderIdRef.current;
+    if (df && email && prev) {
+      auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'appointments.update', entityId: id, summary: data.title ?? prev.title }).catch(() => {});
+    }
   };
 
   const deleteAppointment = async (id: string) => {
     if (!canEdit) return;
     const prev = appointments.find((a) => a.id === id);
+    const df = dataFolderIdRef.current;
+    if (df && email && prev) {
+      auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'appointments.delete', entityId: id, summary: prev.title }).catch(() => {});
+    }
     if (prev?.calendarEventId) {
       try {
         const calendarId = await ensureFamPlanCalendar();
@@ -314,7 +326,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!canEdit || ids.length === 0) return;
     const idSet = new Set(ids);
     const toDelete = appointments.filter((a) => idSet.has(a.id));
+    const df = dataFolderIdRef.current;
     for (const app of toDelete) {
+      if (df && email) {
+        auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'appointments.delete', entityId: app.id, summary: app.title }).catch(() => {});
+      }
       if (app.calendarEventId) {
         try {
           const calendarId = await ensureFamPlanCalendar();
@@ -336,15 +352,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       createdAt: Date.now(),
     };
     setAttachments((prev) => [...prev, newAttachment]);
+    const df = dataFolderIdRef.current;
+    if (df && email) {
+      auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'attachments.add', entityId: newAttachment.id, summary: newAttachment.name ?? newAttachment.id }).catch(() => {});
+    }
   };
 
   const deleteAttachment = (id: string) => {
     if (!canEdit) return;
+    const prev = attachments.find((a) => a.id === id);
+    const df = dataFolderIdRef.current;
+    if (df && email && prev) {
+      auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'attachments.delete', entityId: id, summary: prev.name ?? id }).catch(() => {});
+    }
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
   const deleteAttachments = (ids: string[]) => {
     if (!canEdit) return;
+    const df = dataFolderIdRef.current;
+    if (df && email) {
+      for (const id of ids) {
+        const prev = attachments.find((a) => a.id === id);
+        auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'attachments.delete', entityId: id, summary: prev?.name ?? id }).catch(() => {});
+      }
+    }
     setAttachments((prev) => prev.filter((a) => !ids.includes(a.id)));
   };
 
