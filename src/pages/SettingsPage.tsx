@@ -516,7 +516,7 @@ export const SettingsPage: React.FC = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm text-foreground">{t(labelKey)}</p>
-                <p className="text-xs text-muted-foreground">{t(descKey)}</p>
+                {t(descKey) && <p className="text-xs text-muted-foreground">{t(descKey)}</p>}
               </div>
               {id === 'activity' && hasNewActivity && (
                 <span className="w-3 h-3 bg-accent rounded-full flex-shrink-0" aria-label="חדש" />
