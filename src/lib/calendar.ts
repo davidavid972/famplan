@@ -95,7 +95,7 @@ export async function ensureFamPlanCalendarWithMeta(stored?: string | null): Pro
   return { calendarId: preferred, multipleFound: true };
 }
 
-type ReminderOverride = { method: 'popup'; minutes: number };
+type ReminderOverride = { method: 'popup' | 'email'; minutes: number };
 
 type EventPayload = {
   summary: string;
@@ -284,19 +284,27 @@ export function planToEventPayload(plan: {
 }
 
 /**
- * Create a test notification event: 2 minutes from now, 1-minute popup reminder.
+ * Create a test notification event: 2 min from now, popup+email reminder 1 min before.
  * For Settings "Test notification" button.
  */
 export async function createTestNotificationEvent(calendarId: string): Promise<string> {
   const now = Date.now();
   const start = now + 2 * 60 * 1000;
   const end = start + 60 * 1000;
-  const payload = planToEventPayload({
-    title: 'FamPlan Test',
-    start,
-    end,
-    reminders: [{ minutesBeforeStart: 1 }],
-  });
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const payload: EventPayload = {
+    summary: 'FamPlan Test',
+    start: { dateTime: startDate.toISOString(), timeZone: DEFAULT_TZ },
+    end: { dateTime: endDate.toISOString(), timeZone: DEFAULT_TZ },
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: 'popup', minutes: 1 },
+        { method: 'email', minutes: 1 },
+      ],
+    },
+  };
   const { id } = await createEvent(calendarId, payload);
   return id;
 }
