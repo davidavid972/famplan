@@ -185,27 +185,17 @@ export const PeoplePage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 * i }}
                 onClick={() => navigate(`/people/${person.id}`)}
-                className={`group flex items-center gap-4 p-4 theme-surface hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden ${isDefaultDesign ? 'flex-row' : 'flex-col sm:flex-row sm:items-center'}`}
+                className={`group flex items-center gap-4 p-4 pt-5 theme-surface hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden ${isDefaultDesign ? 'flex-row' : 'flex-col sm:flex-row sm:items-center'}`}
               >
                 <div
                   className="absolute top-0 left-0 right-0 h-1"
                   style={{ backgroundColor: person.color }}
                 />
-                <PersonAvatar person={person} size="md" className={`shrink-0 ${isDefaultDesign ? 'w-14 h-14 text-2xl' : 'mt-1'}`} />
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold text-foreground truncate">{person.name}</h3>
-                </div>
-                <div className="flex gap-4 text-center shrink-0">
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{eventsCount}</p>
-                    <p className="text-[10px] text-muted-foreground">{t('stats_events')}</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{tasksCount}</p>
-                    <p className="text-[10px] text-muted-foreground">{t('stats_tasks')}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                {/* Edit/Delete - fixed top-end corner, no overlap with content */}
+                <div
+                  className="absolute top-2 end-2 flex items-center gap-0.5 z-10"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     onClick={() => handleOpenModal(person)}
                     disabled={!canEdit}
@@ -220,6 +210,20 @@ export const PeoplePage: React.FC = () => {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                </div>
+                <PersonAvatar person={person} size="md" className={`shrink-0 ${isDefaultDesign ? 'w-14 h-14 text-2xl' : 'mt-1'}`} />
+                <div className="flex-1 min-w-0 pe-16">
+                  <h3 className="text-base font-semibold text-foreground truncate">{person.name}</h3>
+                </div>
+                <div className="flex gap-4 text-center shrink-0">
+                  <div>
+                    <p className="text-lg font-bold text-foreground">{eventsCount}</p>
+                    <p className="text-[10px] text-muted-foreground">{t('stats_events')}</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-foreground">{tasksCount}</p>
+                    <p className="text-[10px] text-muted-foreground">{t('stats_tasks')}</p>
+                  </div>
                 </div>
                 <div className="flex items-center text-primary font-medium text-sm shrink-0">
                   {dir === 'rtl' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}

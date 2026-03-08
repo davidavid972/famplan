@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
-import { Calendar, CheckCircle2, Bell, Users, CalendarPlus, UserPlus, List, Clock, MapPin, Plus } from 'lucide-react';
+import { useToast } from '../context/ToastProvider';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { Calendar, CheckCircle2, Bell, Users, CalendarPlus, UserPlus, List, Clock, MapPin, Plus, Trash2 } from 'lucide-react';
 import { PersonAvatar } from '../components/PersonAvatar';
 import { format, startOfWeek, addDays, isToday, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -14,8 +16,10 @@ export const IndexPage: React.FC = () => {
   const { t, language } = useI18n();
   const navigate = useNavigate();
   const { familyDisplayName } = useFamily();
-  const { isConnected, connect, isConnecting } = useAuth();
-  const { people, appointments } = useData();
+  const { isConnected, connect, isConnecting, canEdit } = useAuth();
+  const { people, appointments, deleteAppointment } = useData();
+  const { showToast } = useToast();
+  const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
 
   const today = new Date();
   const formattedDate = today.toLocaleDateString(language === 'he' ? 'he-IL' : 'en-GB', {
@@ -43,6 +47,14 @@ export const IndexPage: React.FC = () => {
   const handleConnect = () => {
     if (!isConnected) connect();
     else navigate('/settings');
+  };
+
+  const handleDelete = async () => {
+    if (appointmentToDelete) {
+      await deleteAppointment(appointmentToDelete);
+      showToast(t('appointment_deleted'), 'success');
+      setAppointmentToDelete(null);
+    }
   };
 
   return (
@@ -222,12 +234,16 @@ export const IndexPage: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.08 * i, duration: 0.4 }}
                   onClick={() => navigate('/calendar')}
-                  className="flex items-center gap-3 p-3 theme-surface border-r-4 hover:shadow-sm transition-shadow cursor-pointer"
+                  className="group flex items-center gap-3 p-3 theme-surface border-r-4 hover:shadow-sm transition-shadow cursor-pointer"
                   style={{ borderRightColor: person?.color || 'hsl(var(--primary))' }}
                 >
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ backgroundColor: person ? `${person.color}20` : 'hsl(var(--primary) / 0.15)', color: person?.color || 'hsl(var(--primary))' }}>
-                    {(person?.name || '?').charAt(0)}
-                  </div>
+                  {person ? (
+                    <PersonAvatar person={person} size="sm" className="shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ backgroundColor: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
+                      ?
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-foreground truncate">{app.title} {person ? `- ${person.name}` : ''}</p>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
@@ -243,12 +259,29 @@ export const IndexPage: React.FC = () => {
                       )}
                     </div>
                   </div>
+                  {canEdit && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAppointmentToDelete(app.id); }}
+                      className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors shrink-0"
+                      aria-label={t('delete')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </motion.div>
               );
             })
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!appointmentToDelete}
+        onClose={() => setAppointmentToDelete(null)}
+        onConfirm={handleDelete}
+        title={t('delete')}
+        message={t('confirm_delete_appointment')}
+      />
     </div>
   );
 };

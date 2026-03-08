@@ -3,10 +3,8 @@ import { motion } from 'motion/react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
-import { useFamily } from '../context/FamilyProvider';
 import { useToast } from '../context/ToastProvider';
 import { PlanModal } from '../components/PlanModal';
-import { PlansFilterBar } from '../components/PlansFilterBar';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { he, enUS } from 'date-fns/locale';
@@ -17,7 +15,6 @@ import { v4 as uuidv4 } from 'uuid';
 export const CalendarPage: React.FC = () => {
   const { t, language, dir } = useI18n();
   const { canEdit } = useAuth();
-  const { planFilterPersonIds } = useFamily();
   const { appointments, people, addAppointment, updateAppointment, deleteAppointment, deleteAppointmentsByRecurrenceGroupId, attachments, addAttachment } = useData();
   const { showToast } = useToast();
 
@@ -41,11 +38,9 @@ export const CalendarPage: React.FC = () => {
   const dateFormat = "MMMM yyyy";
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-  const filterSet = planFilterPersonIds && planFilterPersonIds.length > 0 ? new Set(planFilterPersonIds) : null;
-  const filteredAppointments = filterSet ? appointments.filter((a) => filterSet.has(a.personId)) : appointments;
-
+  /* Calendar shows ALL appointments - no filter. Index page also shows all. Filter is Plans-page only. */
   const getAppointmentsForDay = (day: Date) => {
-    return filteredAppointments.filter((app) => isSameDay(new Date(app.start), day));
+    return appointments.filter((app) => isSameDay(new Date(app.start), day));
   };
 
   const totalDocs = attachments.length + pendingDocs.length;
@@ -229,8 +224,6 @@ export const CalendarPage: React.FC = () => {
         </button>
       </motion.div>
 
-      <PlansFilterBar people={people} />
-
       {/* Calendar Grid */}
       <div className="theme-surface rounded-3xl overflow-hidden overflow-x-auto">
         <div className="grid grid-cols-7 border-b border-border bg-muted">
@@ -300,7 +293,7 @@ export const CalendarPage: React.FC = () => {
         appointment={editingAppointment}
         initialDate={initialDate}
         people={people}
-        selectedPersonId={planFilterPersonIds?.[0] ?? null}
+        selectedPersonId={null}
         onSave={handleSave}
         onDelete={handleDelete}
         onDeleteSeries={handleDeleteSeries}
