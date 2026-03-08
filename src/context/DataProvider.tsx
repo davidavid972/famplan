@@ -101,6 +101,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     dataFolderIdRef.current = localStorage.getItem(DATA_FOLDER_KEY);
   }, [isConnected]);
 
+  useEffect(() => {
+    if (!isConnected) return;
+    const handler = (e: Event) => {
+      const { dataFolderId } = (e as CustomEvent).detail || {};
+      if (dataFolderId) dataFolderIdRef.current = dataFolderId;
+    };
+    window.addEventListener('famplan-drive-data-folder-ready', handler);
+    return () => window.removeEventListener('famplan-drive-data-folder-ready', handler);
+  }, [isConnected]);
+
   const syncFromDrive = useCallback((data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string }) => {
     setSyncError(null);
     setPeople(Array.isArray(data.people) ? data.people : []);

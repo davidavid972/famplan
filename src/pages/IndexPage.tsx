@@ -34,24 +34,15 @@ export const IndexPage: React.FC = () => {
 
   const todayAppointments = appointments.filter((a) => isSameDay(new Date(a.start), today));
   const doneCount = appointments.filter((a) => a.status === 'DONE').length;
-  /** Reminders: FamPlan-only. Count plans with at least one reminder (minutesBeforeStart > 0). Not from Google Calendar. */
-  const remindersWithPlans = appointments.filter((a) =>
-    (a.reminders ?? []).some((r) => r.minutesBeforeStart > 0)
-  );
+  /** Reminders: only future plans with at least one reminder. Past plans are excluded. */
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const remindersWithPlans = appointments.filter((a) => {
+    const hasReminders = (a.reminders ?? []).some((r) => r.minutesBeforeStart > 0);
+    const isFuture = a.start >= todayStart;
+    return hasReminders && isFuture;
+  });
   const remindersCount = remindersWithPlans.length;
 
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      const ids = appointments
-        .filter((a) => (a.reminders ?? []).some((r) => r.minutesBeforeStart > 0))
-        .map((a) => a.id);
-      console.log('[FamPlan] Reminders debug:', {
-        reminderCount: remindersCount,
-        planIds: ids,
-        dataSource: lastSyncSource ?? 'initial',
-      });
-    }
-  }, [remindersCount, appointments, lastSyncSource]);
 
   const upcomingAppointments = appointments
     .filter((a) => new Date(a.start) >= today)
