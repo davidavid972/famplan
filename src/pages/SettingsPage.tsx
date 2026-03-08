@@ -8,7 +8,7 @@ import { useFamily } from '../context/FamilyProvider';
 import { useActivity } from '../context/ActivityContext';
 import { useToast } from '../context/ToastProvider';
 import { cacheClear } from '../lib/cache';
-import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X, Activity, Bell, Palette, Globe, ChevronLeft, Users } from 'lucide-react';
+import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X, Activity, Bell, Palette, Globe, ChevronLeft } from 'lucide-react';
 import { FamilySharingModal } from '../components/FamilySharingModal';
 import { CalendarModal } from '../components/CalendarModal';
 import { ThemeSelector } from '../components/ThemeSelector';
@@ -51,7 +51,6 @@ export const SettingsPage: React.FC = () => {
   const [editName, setEditName] = useState('');
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
   const [driveSyncModalOpen, setDriveSyncModalOpen] = useState(false);
-  const [comingSoonModalOpen, setComingSoonModalOpen] = useState(false);
   const [sharingModalOpen, setSharingModalOpen] = useState(false);
   const [sharingModalMode, setSharingModalMode] = useState<'sharing' | 'roles'>('sharing');
   const [calendarModalOpen, setCalendarModalOpen] = useState(false);
@@ -304,20 +303,6 @@ export const SettingsPage: React.FC = () => {
                   </div>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isConnected ? 'bg-primary/20 text-primary' : 'bg-muted border border-border'}`}>
                     {isConnected ? <span className="text-lg">✓</span> : <span className="w-4 h-4 rounded-full border-2 border-muted-foreground/50" />}
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setComingSoonModalOpen(true)}
-                  className="flex items-center gap-4 w-full p-4 rounded-xl bg-muted/50 border border-border hover:bg-muted transition-colors text-right opacity-75"
-                >
-                  <Users className="w-5 h-5 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground">{t('sync_contacts_title')}</p>
-                    <p className="text-xs text-muted-foreground">{t('sync_contacts_desc')}</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
-                    <span className="w-4 h-4 rounded-full border-2 border-muted-foreground/50" />
                   </div>
                 </button>
                 <button
@@ -586,26 +571,6 @@ export const SettingsPage: React.FC = () => {
 
       <FamilySharingModal open={sharingModalOpen} onClose={() => setSharingModalOpen(false)} rolesMode={sharingModalMode === 'roles'} />
 
-      {comingSoonModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-card rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground">{t('coming_soon')}</h2>
-              <button onClick={() => setComingSoonModalOpen(false)} className="p-2 rounded-full hover:bg-secondary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-muted-foreground">{t('coming_soon_desc')}</p>
-            </div>
-            <div className="p-4 border-t border-border">
-              <button onClick={() => setComingSoonModalOpen(false)} className="w-full min-h-[44px] px-4 py-3 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted">
-                {t('cancel')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
