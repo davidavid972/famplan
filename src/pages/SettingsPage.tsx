@@ -190,7 +190,7 @@ export const SettingsPage: React.FC = () => {
       return;
     }
     if (id === 'notifications') {
-      setComingSoonModalOpen(true);
+      setCalendarModalOpen(true);
       return;
     }
     setActiveSection(id);
