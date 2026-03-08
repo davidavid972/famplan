@@ -114,7 +114,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const syncFromDrive = useCallback((data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string }) => {
     setSyncError(null);
-    if (fileIds) skipNextDriveWriteRef.current = true;
+    skipNextDriveWriteRef.current = true;
     setPeople(Array.isArray(data.people) ? data.people : []);
     setAppointments(validateAppointments(data.appointments ?? []));
     setAttachments(Array.isArray(data.attachments) ? data.attachments : []);
