@@ -213,7 +213,7 @@ export const PeoplePage: React.FC = () => {
                 </div>
                 <PersonAvatar person={person} size="md" className={`shrink-0 ${isDefaultDesign ? 'w-14 h-14 text-2xl' : 'mt-1'}`} />
                 <div className="flex-1 min-w-0 pe-16">
-                  <h3 className="text-base font-semibold text-foreground break-words">{person.name}</h3>
+                  <h3 className="text-base font-semibold text-foreground truncate">{person.name}</h3>
                 </div>
                 <div className="flex gap-4 text-center shrink-0">
                   <div>
