@@ -166,16 +166,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const indexPayload: AttachmentsIndexData = { version: 1, updatedAt: now, items: attachments, freeLimit: 20 };
       driveReadJson<PeopleData>(pid)
         .then((remote) => {
-          const merged: Person[] = [...people];
-          for (const p of remote.people ?? []) {
-            if (!merged.some((x) => x.id === p.id)) merged.push(p);
-          }
           const newVersion = (remote.version ?? 1) + 1;
           const peoplePayload: PeopleData = {
             version: newVersion,
             updatedAt: now,
             updatedBy: email || undefined,
-            people: merged,
+            people,
           };
           return driveWriteJson(pid, peoplePayload).then((id) => {
             peopleVersionRef.current = newVersion;
