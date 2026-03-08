@@ -125,7 +125,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (fileIds) {
       mergedPeople = remotePeople.filter((p) => !deletedPeopleIdsRef.current.has(p.id));
       for (const p of peopleRef.current) {
-        if (!mergedPeople.some((x) => x.id === p.id) && !remotePeople.some((x) => x.id === p.id)) {
+        if (!mergedPeople.some((x) => x.id === p.id) && !remotePeople.some((x) => x.id === p.id) && !deletedPeopleIdsRef.current.has(p.id)) {
           mergedPeople = [...mergedPeople, p];
         }
       }
