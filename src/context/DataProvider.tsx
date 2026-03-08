@@ -86,10 +86,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const peopleVersionRef = useRef<number>(1);
   const initialDriveLoadDoneRef = useRef(false);
   const skipNextDriveWriteRef = useRef(false);
+  const deletedPeopleIdsRef = useRef<Set<string>>(new Set());
+  const peopleRef = useRef<Person[]>(people);
 
   useEffect(() => {
     if (!isConnected) {
       initialDriveLoadDoneRef.current = false;
+      deletedPeopleIdsRef.current.clear();
       setPeople([]);
       setAppointments([]);
       setAttachments([]);
@@ -115,9 +118,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const syncFromDrive = useCallback((data: { people: Person[]; appointments: Appointment[]; attachments: Attachment[] }, fileIds?: { people: string; appointments: string; index: string; dataFolderId: string }) => {
     setSyncError(null);
     skipNextDriveWriteRef.current = true;
-    setPeople(Array.isArray(data.people) ? data.people : []);
-    setAppointments(validateAppointments(data.appointments ?? []));
-    setAttachments(Array.isArray(data.attachments) ? data.attachments : []);
+    const remotePeople = Array.isArray(data.people) ? data.people : [];
+    const remoteAppointments = validateAppointments(data.appointments ?? []);
+    const remoteAttachments = Array.isArray(data.attachments) ? data.attachments : [];
+    let mergedPeople = remotePeople;
+    if (fileIds) {
+      mergedPeople = remotePeople.filter((p) => !deletedPeopleIdsRef.current.has(p.id));
+      for (const p of peopleRef.current) {
+        if (!mergedPeople.some((x) => x.id === p.id) && !remotePeople.some((x) => x.id === p.id)) {
+          mergedPeople = [...mergedPeople, p];
+        }
+      }
+    }
+    setPeople(mergedPeople);
+    setAppointments(remoteAppointments);
+    setAttachments(remoteAttachments);
     setLastSyncSource(fileIds ? 'drive' : 'cache');
     if (fileIds) {
       peopleFileIdRef.current = fileIds.people;
@@ -143,6 +158,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Update cache when data changes (cache is TTL-based, not persistent source)
   useEffect(() => {
+    peopleRef.current = people;
     cacheSet(CACHE_KEYS.people, people);
   }, [people]);
 
@@ -192,6 +208,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           });
         })
         .then(() => {
+          deletedPeopleIdsRef.current.clear();
           localStorage.setItem(SYNC_PEOPLE_KEY, now);
           window.dispatchEvent(new CustomEvent('famplan-drive-data-sync-done'));
         })
@@ -224,6 +241,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       createdAt: Date.now(),
     };
     if (canEdit) {
+      window.dispatchEvent(new CustomEvent('famplan-local-change'));
       setPeople((prev) => [...prev, newPerson]);
       const df = dataFolderIdRef.current;
       if (df && email) {
@@ -236,6 +254,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updatePerson = (id: string, data: Partial<Person>) => {
     if (!canEdit) return;
     const prev = people.find((p) => p.id === id);
+    window.dispatchEvent(new CustomEvent('famplan-local-change'));
     setPeople((prevP) => prevP.map((p) => (p.id === id ? { ...p, ...data } : p)));
     const df = dataFolderIdRef.current;
     if (df && email && prev) {
@@ -246,6 +265,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const deletePerson = (id: string) => {
     if (!canEdit) return;
     const prev = people.find((p) => p.id === id);
+    deletedPeopleIdsRef.current.add(id);
+    window.dispatchEvent(new CustomEvent('famplan-local-change'));
     setPeople((prevP) => prevP.filter((p) => p.id !== id));
     setAppointments((prevP) => prevP.filter((a) => a.personId !== id));
     const appointmentsToDelete = appointments.filter(a => a.personId === id).map(a => a.id);
@@ -275,6 +296,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (e) {
       console.warn('[FamPlan] Calendar sync on add failed:', e);
     }
+    window.dispatchEvent(new CustomEvent('famplan-local-change'));
     setAppointments((prev) => [...prev, newAppointment]);
     const df = dataFolderIdRef.current;
     if (df && email) {
@@ -302,6 +324,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.warn('[FamPlan] Calendar sync on update failed:', e);
     }
     const finalData = calendarEventId ? { ...data, calendarEventId } : data;
+    window.dispatchEvent(new CustomEvent('famplan-local-change'));
     setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, ...finalData } : a)));
     const df = dataFolderIdRef.current;
     if (df && email && prev) {
@@ -324,6 +347,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.warn('[FamPlan] Calendar sync on delete failed:', e);
       }
     }
+    window.dispatchEvent(new CustomEvent('famplan-local-change'));
     setAppointments((prev) => prev.filter((a) => a.id !== id));
     setAttachments((prev) => prev.filter((a) => a.appointmentId !== id));
   };
@@ -352,6 +376,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     }
+    window.dispatchEvent(new CustomEvent('famplan-local-change'));
     setAppointments((prev) => prev.filter((a) => !idSet.has(a.id)));
     setAttachments((prev) => prev.filter((a) => !idSet.has(a.appointmentId)));
   };
@@ -363,6 +388,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       id: uuidv4(),
       createdAt: Date.now(),
     };
+    window.dispatchEvent(new CustomEvent('famplan-local-change'));
     setAttachments((prev) => [...prev, newAttachment]);
     const df = dataFolderIdRef.current;
     if (df && email) {
@@ -377,6 +403,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (df && email && prev) {
       auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'attachments.delete', entityId: id, summary: prev.name ?? id }).catch(() => {});
     }
+    window.dispatchEvent(new CustomEvent('famplan-local-change'));
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
@@ -389,6 +416,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         auditLogAppend(df, null, { ts: new Date().toISOString(), userEmail: email, action: 'attachments.delete', entityId: id, summary: prev?.name ?? id }).catch(() => {});
       }
     }
+    window.dispatchEvent(new CustomEvent('famplan-local-change'));
     setAttachments((prev) => prev.filter((a) => !ids.includes(a.id)));
   };
 

@@ -44,13 +44,20 @@ export function DriveDataSyncEffect() {
     return () => window.removeEventListener('famplan-drive-sync-request', handler);
   }, []);
 
-  // Periodic refresh for multi-device sync (every 20s when connected)
+  // Periodic refresh for multi-device sync (every 30s when connected). Skip if local change in last 15s.
+  const lastLocalChangeRef = useRef(0);
+  useEffect(() => {
+    const handler = () => { lastLocalChangeRef.current = Date.now(); };
+    window.addEventListener('famplan-local-change', handler);
+    return () => window.removeEventListener('famplan-local-change', handler);
+  }, []);
   useEffect(() => {
     if (!isConnected) return;
     const interval = setInterval(() => {
+      if (Date.now() - lastLocalChangeRef.current < 15000) return;
       hasRunRef.current = false;
       setSyncTrigger((t) => t + 1);
-    }, 20000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [isConnected]);
 
