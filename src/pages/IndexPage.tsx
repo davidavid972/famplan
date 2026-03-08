@@ -97,17 +97,18 @@ export const IndexPage: React.FC = () => {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: Users, label: t('index_stats_family'), value: String(people.length), color: 'text-family-purple', bg: 'bg-family-purple/10' },
-          { icon: Bell, label: t('index_stats_reminders'), value: String(remindersCount), color: 'text-accent', bg: 'bg-accent/10' },
-          { icon: CheckCircle2, label: t('index_stats_done'), value: String(doneCount), color: 'text-family-green', bg: 'bg-family-green/10' },
-          { icon: Calendar, label: t('index_stats_today'), value: String(todayAppointments.length), color: 'text-primary', bg: 'bg-primary/10' },
+          { icon: Users, label: t('index_stats_family'), value: String(people.length), color: 'text-family-purple', bg: 'bg-family-purple/10', path: '/people' },
+          { icon: Bell, label: t('index_stats_reminders'), value: String(remindersCount), color: 'text-accent', bg: 'bg-accent/10', path: '/calendar' },
+          { icon: CheckCircle2, label: t('index_stats_done'), value: String(doneCount), color: 'text-family-green', bg: 'bg-family-green/10', path: '/appointments' },
+          { icon: Calendar, label: t('index_stats_today'), value: String(todayAppointments.length), color: 'text-primary', bg: 'bg-primary/10', path: '/calendar' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08 * i, duration: 0.4 }}
-            className="flex items-center gap-3 p-4 theme-surface"
+            onClick={() => navigate(stat.path)}
+            className="flex items-center gap-3 p-4 theme-surface cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center`}>
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
@@ -195,14 +196,14 @@ export const IndexPage: React.FC = () => {
           { icon: CalendarPlus, label: t('add_appointment'), color: 'bg-primary/10 text-primary', path: '/calendar' },
           { icon: UserPlus, label: t('add_person'), color: 'bg-family-blue/10 text-family-blue', path: '/people' },
           { icon: List, label: t('appointments'), color: 'bg-family-purple/10 text-family-purple', path: '/appointments' },
-          { icon: Bell, label: t('rem_alert'), color: 'bg-accent/10 text-accent', path: '/calendar' },
+          { icon: Bell, label: t('rem_alert'), color: 'bg-accent/10 text-accent', path: '/settings', state: { openNotifications: true } },
         ].map((action, i) => (
           <motion.button
             key={action.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 * i, duration: 0.4 }}
-            onClick={() => navigate(action.path)}
+            onClick={() => navigate(action.path, { state: action.state })}
             className="flex flex-col items-center gap-2 p-4 theme-surface hover:shadow-md transition-shadow cursor-pointer"
           >
             <div className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center`}>

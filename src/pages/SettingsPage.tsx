@@ -99,6 +99,14 @@ export const SettingsPage: React.FC = () => {
   }, [location.hash]);
 
   useEffect(() => {
+    const state = (location.state as { openNotifications?: boolean } | null)?.openNotifications;
+    if (state) {
+      setCalendarModalOpen(true);
+      window.history.replaceState({}, '', location.pathname);
+    }
+  }, [location.pathname, location.state]);
+
+  useEffect(() => {
     if (isConnected && location.pathname === '/settings') refreshBadge();
   }, [isConnected, location.pathname, refreshBadge]);
 
