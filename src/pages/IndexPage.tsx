@@ -34,7 +34,9 @@ export const IndexPage: React.FC = () => {
 
   const todayAppointments = appointments.filter((a) => isSameDay(new Date(a.start), today));
   const doneCount = appointments.filter((a) => a.status === 'DONE').length;
-  const remindersCount = appointments.filter((a) => (a.reminders?.length ?? 0) > 0).length;
+  const remindersCount = appointments.filter((a) =>
+    (a.reminders ?? []).some((r) => r.minutesBeforeStart > 0)
+  ).length;
 
   const upcomingAppointments = appointments
     .filter((a) => new Date(a.start) >= today)

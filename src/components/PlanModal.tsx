@@ -254,7 +254,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto overscroll-contain">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm overflow-y-auto overscroll-contain">
       {recurringProgress && (
         <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-3xl">
           <div className="theme-surface rounded-2xl p-6 max-w-sm w-full mx-4 flex flex-col items-center gap-4">
@@ -272,7 +272,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
           </div>
         </div>
       )}
-      <div className="theme-surface rounded-3xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 my-8">
+      <div className="theme-surface rounded-3xl w-full max-w-lg max-h-[calc(100vh-2rem)] sm:max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 my-2 sm:my-8 overflow-hidden">
         <div className="p-6 border-b border-border flex justify-between items-center shrink-0 bg-card z-10">
           <h2 className="text-xl font-bold text-foreground">
             {mode === 'edit' ? t('edit_appointment') : t('add_appointment')}
