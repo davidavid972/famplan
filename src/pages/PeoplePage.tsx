@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
@@ -131,41 +132,47 @@ export const PeoplePage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">{t('people')}</h1>
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground mb-1" style={{ fontFamily: 'Rubik, sans-serif' }}>{t('people')}</h1>
+          <p className="text-sm text-muted-foreground mb-6">{t('people_subtitle')}</p>
+        </div>
         <button
           onClick={() => handleOpenModal()}
           disabled={!canEdit}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600 min-h-[44px]"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary min-h-[44px]"
         >
           <Plus className="w-5 h-5" />
           <span className="hidden sm:inline">{t('add_person')}</span>
         </button>
-      </div>
+      </motion.div>
 
       {people.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-stone-200 border-dashed text-center">
-          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
-            <Users className="w-8 h-8 text-emerald-600" />
+        <div className="flex flex-col items-center justify-center p-12 bg-card rounded-3xl border border-border border-dashed text-center">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <Users className="w-8 h-8 text-primary" />
           </div>
-          <h3 className="text-xl font-semibold text-stone-900 mb-2">{t('no_people')}</h3>
-          <p className="text-stone-500 mb-6 max-w-sm">{t('add_first_person')}</p>
+          <h3 className="text-xl font-semibold text-foreground mb-2">{t('no_people')}</h3>
+          <p className="text-muted-foreground mb-6 max-w-sm">{t('add_first_person')}</p>
           <button
             onClick={() => handleOpenModal()}
             disabled={!canEdit}
-            className="px-6 py-3 min-h-[44px] bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
+            className="px-6 py-3 min-h-[44px] bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
           >
             {t('add_person')}
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {people.map((person) => (
-            <div
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`}>
+          {people.map((person, i) => (
+            <motion.div
               key={person.id}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 * i }}
               onClick={() => navigate(`/people/${person.id}`)}
-              className="group flex items-center gap-4 p-4 bg-white rounded-2xl border border-stone-200 shadow-sm hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
+              className="group flex items-center gap-4 p-4 theme-surface hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden"
             >
               <div
                 className="absolute top-0 left-0 right-0 h-1"
@@ -173,28 +180,28 @@ export const PeoplePage: React.FC = () => {
               />
               <PersonAvatar person={person} size="md" className="mt-1 shrink-0" />
               <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                <h3 className="text-base font-semibold text-stone-900 truncate">{person.name}</h3>
+                <h3 className="text-base font-semibold text-foreground truncate">{person.name}</h3>
                 <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleOpenModal(person)}
                     disabled={!canEdit}
-                    className="p-1.5 min-h-[36px] min-w-[36px] text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setPersonToDelete(person.id)}
                     disabled={!canEdit}
-                    className="p-1.5 min-h-[36px] min-w-[36px] text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              <div className="flex items-center text-emerald-600 font-medium text-sm shrink-0">
+              <div className="flex items-center text-primary font-medium text-sm shrink-0">
                 {dir === 'rtl' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
@@ -202,19 +209,19 @@ export const PeoplePage: React.FC = () => {
       {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto overscroll-contain">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 my-8">
-            <div className="p-6 border-b border-stone-100">
-              <h2 className="text-xl font-bold text-stone-900">
+          <div className="bg-card rounded-3xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 my-8">
+            <div className="p-6 border-b border-border">
+              <h2 className="text-xl font-bold text-foreground">
                 {editingPerson ? t('edit_person') : t('add_person')}
               </h2>
             </div>
             <div className="p-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   {t('person_photo_label')}
                 </label>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-stone-100" style={{ border: `2px solid ${color}` }}>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-secondary" style={{ border: `2px solid ${color}` }}>
                     {pendingPhotoFile ? (
                       <img src={URL.createObjectURL(pendingPhotoFile)} alt="" className="w-full h-full object-cover" />
                     ) : editingPerson && !removePhoto ? (
@@ -230,7 +237,7 @@ export const PeoplePage: React.FC = () => {
                     )}
                   </div>
                   {canEdit && isConnected ? (
-                    <label className="flex-1 min-h-[44px] flex items-center justify-center px-4 py-3 rounded-xl border border-stone-200 bg-white text-sm text-stone-600 hover:bg-stone-50 cursor-pointer font-medium">
+                    <label className="flex-1 min-h-[44px] flex items-center justify-center px-4 py-3 rounded-xl border border-border bg-card text-sm text-muted-foreground hover:bg-muted cursor-pointer font-medium">
                       <input
                         type="file"
                         accept="image/*"
@@ -247,7 +254,7 @@ export const PeoplePage: React.FC = () => {
                       {pendingPhotoFile || (editingPerson?.photoFileId && !removePhoto) ? t('person_photo_change') : t('person_photo_upload')}
                     </label>
                   ) : (
-                    <p className="text-sm text-stone-500">{t('person_photo_connect_required')}</p>
+                    <p className="text-sm text-muted-foreground">{t('person_photo_connect_required')}</p>
                   )}
                   {(pendingPhotoFile || (editingPerson?.photoFileId && !removePhoto)) && (
                     <button
@@ -256,7 +263,7 @@ export const PeoplePage: React.FC = () => {
                         setPendingPhotoFile(null);
                         setRemovePhoto(!!editingPerson?.photoFileId);
                       }}
-                      className="min-h-[44px] px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl font-medium"
+                      className="min-h-[44px] px-4 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-xl font-medium"
                     >
                       {t('delete')}
                     </button>
@@ -264,20 +271,20 @@ export const PeoplePage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   {t('name')}
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-stone-50 focus:bg-white"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-muted focus:bg-card"
                   placeholder={t('name')}
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   {t('color')}
                 </label>
                 <div className="grid grid-cols-5 gap-3">
@@ -286,7 +293,7 @@ export const PeoplePage: React.FC = () => {
                       key={c}
                       onClick={() => setColor(c)}
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 ${
-                        color === c ? 'ring-2 ring-offset-2 ring-stone-900 scale-110' : ''
+                        color === c ? 'ring-2 ring-offset-2 ring-foreground scale-110' : ''
                       }`}
                       style={{ backgroundColor: c }}
                     />
@@ -294,17 +301,17 @@ export const PeoplePage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 p-6 bg-stone-50 border-t border-stone-100">
+            <div className="flex justify-end gap-3 p-6 bg-muted border-t border-border">
               <button
                 onClick={handleCloseModal}
-                className="px-6 py-3 font-medium text-stone-700 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
+                className="px-6 py-3 font-medium text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors"
               >
                 {t('cancel')}
               </button>
               <button
                 onClick={handleSave}
                 disabled={!name.trim() || isSaving}
-                className="flex items-center justify-center gap-2 px-6 py-3 font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="flex items-center justify-center gap-2 px-6 py-3 font-medium text-white bg-primary rounded-xl hover:bg-primary/90 text-primary-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 {isSaving ? (
                   <>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
@@ -196,48 +197,48 @@ export const CalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">{t('calendar')}</h1>
-          <div className="flex items-center bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
+          <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: 'Rubik, sans-serif' }}>{t('calendar')}</h1>
+          <div className="flex items-center bg-card rounded-xl border border-border shadow-sm overflow-hidden">
             <button
               onClick={dir === 'rtl' ? nextMonth : prevMonth}
-              className="p-3 min-h-[44px] min-w-[44px] hover:bg-stone-50 transition-colors border-r border-stone-200 flex items-center justify-center"
+              className="p-3 min-h-[44px] min-w-[44px] hover:bg-muted transition-colors border-r border-border flex items-center justify-center"
             >
-              <ChevronLeft className="w-5 h-5 text-stone-600" />
+              <ChevronLeft className="w-5 h-5 text-muted-foreground" />
             </button>
-            <span className="px-4 py-2 font-medium text-stone-900 min-w-[120px] sm:min-w-[140px] text-center text-sm sm:text-base">
+            <span className="px-4 py-2 font-medium text-foreground min-w-[120px] sm:min-w-[140px] text-center text-sm sm:text-base">
               {format(currentDate, dateFormat, { locale: dateLocale })}
             </span>
             <button
               onClick={dir === 'rtl' ? prevMonth : nextMonth}
-              className="p-3 min-h-[44px] min-w-[44px] hover:bg-stone-50 transition-colors border-l border-stone-200 flex items-center justify-center"
+              className="p-3 min-h-[44px] min-w-[44px] hover:bg-muted transition-colors border-l border-border flex items-center justify-center"
             >
-              <ChevronRight className="w-5 h-5 text-stone-600" />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
         </div>
         <button
           onClick={() => handleOpenAddModal(new Date())}
           disabled={!canEdit}
-          className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
+          className="theme-primary-btn flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-colors shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-5 h-5" />
           <span>{t('add_appointment')}</span>
         </button>
-      </div>
+      </motion.div>
 
       <PlansFilterBar people={people} />
 
       {/* Calendar Grid */}
-      <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden overflow-x-auto">
-        <div className="grid grid-cols-7 border-b border-stone-200 bg-stone-50">
+      <div className="theme-surface rounded-3xl overflow-hidden overflow-x-auto">
+        <div className="grid grid-cols-7 border-b border-border bg-muted">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => {
             const date = new Date();
             date.setDate(date.getDate() - date.getDay() + i);
             return (
-              <div key={day} className="py-3 text-center text-sm font-medium text-stone-500">
+              <div key={day} className="py-3 text-center text-sm font-medium text-muted-foreground">
                 {format(date, 'EEEEEE', { locale: dateLocale })}
               </div>
             );
@@ -253,14 +254,14 @@ export const CalendarPage: React.FC = () => {
               <div
                 key={day.toString()}
                 onClick={() => canEdit && handleOpenAddModal(day)}
-                className={`min-h-[80px] sm:min-h-[100px] p-1.5 sm:p-2 border-b border-r border-stone-100 transition-colors relative ${
-                  canEdit ? 'cursor-pointer hover:bg-stone-50' : 'cursor-default'
-                } ${!isCurrentMonth ? 'bg-stone-50/50 text-stone-400' : 'text-stone-900'} ${dayIdx % 7 === 6 ? 'border-r-0' : ''}`}
+                className={`min-h-[80px] sm:min-h-[100px] p-1.5 sm:p-2 border-b border-r border-border transition-colors relative ${
+                  canEdit ? 'cursor-pointer hover:bg-muted' : 'cursor-default'
+                } ${!isCurrentMonth ? 'bg-muted/50 text-muted-foreground' : 'text-foreground'} ${dayIdx % 7 === 6 ? 'border-r-0' : ''}`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span
                     className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium ${
-                      isTodayDate ? 'bg-emerald-600 text-white' : ''
+                      isTodayDate ? 'bg-primary text-primary-foreground' : ''
                     }`}
                   >
                     {format(day, 'd')}
