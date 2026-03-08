@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
 import { useFamily } from '../context/FamilyProvider';
+import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastProvider';
 import { PlanModal } from '../components/PlanModal';
 import { PlansFilterBar } from '../components/PlansFilterBar';
@@ -16,6 +17,8 @@ import { formatTime24, formatDateTime24 } from '../lib/formatTime';
 export const AppointmentsPage: React.FC = () => {
   const { t, language, dir } = useI18n();
   const { canEdit } = useAuth();
+  const { activeTheme } = useTheme();
+  const isDefaultDesign = activeTheme === 'default';
   const { planFilterPersonIds, selectionColor } = useFamily();
   const { appointments, people, addAppointment, updateAppointment, deleteAppointment, deleteAppointments, deleteAppointmentsByRecurrenceGroupId } = useData();
   const { showToast } = useToast();
@@ -241,19 +244,26 @@ export const AppointmentsPage: React.FC = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handleCardClick(appointment)}
-                className={`group flex flex-col sm:flex-row gap-3 p-4 theme-surface transition-shadow relative overflow-hidden cursor-pointer hover:shadow-sm ${
+                className={`group flex items-center gap-3 p-4 theme-surface transition-shadow relative overflow-hidden cursor-pointer hover:shadow-sm ${
                   isDone ? 'opacity-60' : ''
                 } ${isSelected ? 'border-2' : ''}`}
                 style={isSelected ? { borderColor: selectionColor } : undefined}
               >
-                <div
-                  className="absolute top-0 bottom-0 w-1 left-0 rtl:left-auto rtl:right-0"
-                  style={{ backgroundColor: person.color }}
-                />
+                {!isDefaultDesign && (
+                  <div
+                    className="absolute top-0 bottom-0 w-1 left-0 rtl:left-auto rtl:right-0"
+                    style={{ backgroundColor: person.color }}
+                  />
+                )}
+                {isDefaultDesign && (
+                  <span className="text-xs font-medium shrink-0" style={{ color: person.color }}>
+                    {person.name}
+                  </span>
+                )}
                 {canEdit && (
                   <button
                     onClick={(e) => handleCircleClick(appointment, e)}
-                    className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors self-center sm:self-start mt-0.5"
+                    className={`flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-colors ${isDefaultDesign ? 'order-last ms-auto' : ''}`}
                     style={
                       isSelectMode
                         ? {
@@ -267,64 +277,56 @@ export const AppointmentsPage: React.FC = () => {
                   >
                     {isSelectMode ? (
                       isSelected ? (
-                        <CheckCircle2 className="w-5 h-5" />
+                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
                       ) : (
-                        <Circle className="w-5 h-5" />
+                        <Circle className="w-4 h-4 sm:w-5 sm:h-5" />
                       )
                     ) : isDone ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                     ) : (
-                      <Circle className="w-5 h-5 text-muted-foreground" />
+                      <Circle className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                     )}
                   </button>
                 )}
-                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:items-center min-w-0 ms-1 sm:ms-0">
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <h3 className={`text-base font-semibold text-foreground ${isDone ? 'line-through' : ''}`}>
-                      {appointment.title}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
-                        <span>
-                          {safeFormatTime(appointment.start)}–{safeFormatTime(appointment.end)}
-                          <span className="ms-1 opacity-80">
-                            {new Date(appointment.start).toLocaleDateString(timeLocale, { day: 'numeric', month: 'short' })}
-                          </span>
+                <div className="flex-1 min-w-0">
+                  <h3 className={`text-sm sm:text-base font-medium ${isDone ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                    {appointment.title}
+                  </h3>
+                  {!isDefaultDesign && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-0.5">
+                      <span>
+                        {safeFormatTime(appointment.start)}–{safeFormatTime(appointment.end)}
+                        <span className="ms-1 opacity-80">
+                          {new Date(appointment.start).toLocaleDateString(timeLocale, { day: 'numeric', month: 'short' })}
                         </span>
-                      </div>
+                      </span>
                       {appointment.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate max-w-[180px]">{appointment.location}</span>
-                        </div>
+                        <span className="truncate max-w-[180px]">{appointment.location}</span>
                       )}
                     </div>
-                    {appointment.notes && (
-                      <div className="flex items-start gap-1 text-xs text-muted-foreground mt-1.5 bg-muted px-2 py-1.5 rounded-lg">
-                        <AlignLeft className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                        <p className="line-clamp-2">{appointment.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                  <span
-                    className="text-xs font-medium shrink-0 px-2 py-0.5 rounded-full text-white"
-                    style={{ backgroundColor: person.color }}
-                  >
+                  )}
+                  {!isDefaultDesign && appointment.notes && (
+                    <div className="flex items-start gap-1 text-xs text-muted-foreground mt-1 bg-muted px-2 py-1 rounded-lg">
+                      <AlignLeft className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      <p className="line-clamp-2">{appointment.notes}</p>
+                    </div>
+                  )}
+                </div>
+                {!isDefaultDesign && (
+                  <span className="text-xs font-medium shrink-0 px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: person.color }}>
                     {person.name}
                   </span>
-                </div>
-
-                {selectedIds.size === 0 && (
-                <div className="flex items-center gap-1 sm:self-center justify-end sm:opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setAppointmentToDelete(appointment.id); }}
-                    disabled={!canEdit}
-                    className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                )}
+                {selectedIds.size === 0 && canEdit && (
+                  <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAppointmentToDelete(appointment.id); }}
+                      disabled={!canEdit}
+                      className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 )}
               </motion.div>
             );

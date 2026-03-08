@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
+import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastProvider';
 import { PersonAvatar } from '../components/PersonAvatar';
 import { driveUploadPersonPhoto } from '../lib/drive';
@@ -26,6 +27,8 @@ const PEOPLE_PHOTOS_FOLDER_KEY = 'famplan_drive_people_photos_folder_id';
 export const PeoplePage: React.FC = () => {
   const { t, dir } = useI18n();
   const { canEdit, isConnected } = useAuth();
+  const { activeTheme } = useTheme();
+  const isDefaultDesign = activeTheme === 'default';
   const { people, appointments, addPerson, updatePerson, deletePerson } = useData();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -170,7 +173,7 @@ export const PeoplePage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`}>
+        <div className={isDefaultDesign ? 'space-y-3' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
           {people.map((person, i) => {
             const personAppointments = (appointments ?? []).filter((a) => a?.personId === person.id);
             const eventsCount = personAppointments.filter((a) => a?.status === 'DONE').length;
@@ -182,48 +185,44 @@ export const PeoplePage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 * i }}
                 onClick={() => navigate(`/people/${person.id}`)}
-                className="group flex flex-col sm:flex-row sm:items-center gap-4 p-4 theme-surface hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden"
+                className={`group flex items-center gap-4 p-4 theme-surface hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden ${isDefaultDesign ? 'flex-row' : 'flex-col sm:flex-row sm:items-center'}`}
               >
                 <div
                   className="absolute top-0 left-0 right-0 h-1"
                   style={{ backgroundColor: person.color }}
                 />
-                <PersonAvatar person={person} size="md" className="mt-1 shrink-0" />
-                <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-2">
+                <PersonAvatar person={person} size="md" className={`shrink-0 ${isDefaultDesign ? 'w-14 h-14 text-2xl' : 'mt-1'}`} />
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-foreground truncate">{person.name}</h3>
+                </div>
+                <div className="flex gap-4 text-center shrink-0">
                   <div>
-                    <h3 className="text-base font-semibold text-foreground truncate">{person.name}</h3>
+                    <p className="text-lg font-bold text-foreground">{eventsCount}</p>
+                    <p className="text-[10px] text-muted-foreground">{t('stats_events')}</p>
                   </div>
-                  <div className="flex gap-4 text-center shrink-0">
-                    <div>
-                      <p className="text-lg font-bold text-foreground">{eventsCount}</p>
-                      <p className="text-[10px] text-muted-foreground">{t('stats_events')}</p>
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-foreground">{tasksCount}</p>
-                      <p className="text-[10px] text-muted-foreground">{t('stats_tasks')}</p>
-                    </div>
+                  <div>
+                    <p className="text-lg font-bold text-foreground">{tasksCount}</p>
+                    <p className="text-[10px] text-muted-foreground">{t('stats_tasks')}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end gap-2">
-                  <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => handleOpenModal(person)}
-                      disabled={!canEdit}
-                      className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setPersonToDelete(person.id)}
-                      disabled={!canEdit}
-                      className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex items-center text-primary font-medium text-sm shrink-0">
-                    {dir === 'rtl' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                  </div>
+                <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => handleOpenModal(person)}
+                    disabled={!canEdit}
+                    className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setPersonToDelete(person.id)}
+                    disabled={!canEdit}
+                    className="p-1.5 min-h-[36px] min-w-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex items-center text-primary font-medium text-sm shrink-0">
+                  {dir === 'rtl' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </div>
               </motion.div>
             );
