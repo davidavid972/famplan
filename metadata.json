@@ -1,0 +1,5 @@
+{
+  "name": "FamPlan",
+  "description": "Family appointment planner with RTL support.",
+  "requestFramePermissions": ["camera"]
+}

@@ -1,23 +1,28 @@
 <!doctype html>
-<html lang="he">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>famplan</title>
-    <style>
-      body { font-family: Arial, sans-serif; padding: 24px; }
-      .card { max-width: 520px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 16px; }
-      h1 { margin: 0 0 8px; }
-      p { margin: 6px 0; color: #444; }
-      code { background: #f3f3f3; padding: 2px 6px; border-radius: 6px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FamPlan</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+      (function(){
+        var t=localStorage.getItem('famplan-theme')||'default';
+        var s=t==='homeboard'?'homeboard':t==='controlcenter'?'controlcenter':'cozy';
+        document.documentElement.setAttribute('data-ui-style',s);
+        var themes={default:{background:'30 50% 98%',foreground:'220 25% 18%',primary:'168 55% 42%',card:'30 55% 99%',border:'30 24% 84%'},
+          homeboard:{background:'40 60% 96%',foreground:'30 30% 18%',primary:'32 95% 44%',card:'45 55% 93%',border:'35 30% 78%'},
+          controlcenter:{background:'214 50% 97%',foreground:'222 40% 14%',primary:'217 91% 52%',card:'0 0% 100%',border:'214 22% 86%'}};
+        var th=themes[t]||themes.default;
+        var r=document.documentElement.style;
+        r.setProperty('--background',th.background);r.setProperty('--foreground',th.foreground);
+        r.setProperty('--primary',th.primary);r.setProperty('--card',th.card);r.setProperty('--border',th.border);
+      })();
+    </script>
   </head>
   <body>
-    <div class="card">
-      <h1>famplan</h1>
-      <p>הפרויקט מחובר ל-GitHub ול-Vercel ✅</p>
-      <p>השלב הבא: בניית פרונט ב-Google AI Studio ואז Export ל-GitHub.</p>
-      <p><code>UI first, backend later.</code></p>
-    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+

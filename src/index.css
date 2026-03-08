@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&family=Heebo:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+/* Design tokens - theme-aware */
+:root {
+  --background: 30 50% 98%;
+  --foreground: 220 25% 18%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 25% 18%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 25% 18%;
+  --primary: 168 55% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 30 45% 94%;
+  --secondary-foreground: 220 25% 18%;
+  --muted: 30 20% 94%;
+  --muted-foreground: 220 10% 50%;
+  --accent: 25 85% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 30 20% 90%;
+  --input: 30 20% 88%;
+  --ring: 168 55% 42%;
+  --radius: 0.75rem;
+  --family-blue: 210 70% 55%;
+  --family-pink: 340 65% 60%;
+  --family-purple: 270 50% 58%;
+  --family-green: 150 50% 45%;
+  --family-yellow: 42 90% 60%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-family-blue: hsl(var(--family-blue));
+  --color-family-pink: hsl(var(--family-pink));
+  --color-family-purple: hsl(var(--family-purple));
+  --color-family-green: hsl(var(--family-green));
+  --color-family-yellow: hsl(var(--family-yellow));
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: calc(var(--radius) - 0.1rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+}
+
+body {
+  font-family: 'Heebo', 'Rubik', sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  transition: background 220ms ease, color 220ms ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Rubik', sans-serif;
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Theme surface & button utilities */
+.theme-surface {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) + 0.2rem);
+  box-shadow: 0 10px 24px -18px hsl(var(--foreground) / 0.36);
+  transition: border-radius 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.theme-primary-btn {
+  border-radius: calc(var(--radius) - 0.05rem);
+  box-shadow: 0 8px 20px -12px hsl(var(--primary) / 0.6);
+  transition: border-radius 220ms ease, box-shadow 220ms ease;
+}
+
+/* Cozy / default */
+html[data-ui-style="cozy"] body {
+  background-color: hsl(var(--background));
+  background-image: radial-gradient(circle at 84% 0%, hsl(var(--accent) / 0.14), transparent 30%);
+}
+
+/* Home Board (לוח בית חם) */
+html[data-ui-style="homeboard"] body {
+  background-color: hsl(40 60% 96%);
+  background-image:
+    url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Cpath d='M30 0v60M0 30h60' stroke='%23e8d5b8' stroke-width='0.5' opacity='0.3'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, hsl(40 60% 96%), hsl(30 40% 93%));
+  background-size: 60px 60px, 100% 100%;
+}
+
+html[data-ui-style="homeboard"] .theme-surface {
+  border-radius: 0.5rem !important;
+  border-width: 1px;
+  border-color: hsl(35 30% 78%);
+  box-shadow: 2px 3px 8px -2px hsl(30 20% 50% / 0.25), 0 1px 0 0 hsl(40 40% 92%) inset;
+  transform: rotate(-0.3deg);
+  background: linear-gradient(175deg, hsl(48 80% 95%), hsl(45 60% 90%));
+}
+
+html[data-ui-style="homeboard"] .theme-surface:nth-child(even) {
+  transform: rotate(0.5deg);
+  background: linear-gradient(175deg, hsl(200 60% 94%), hsl(195 50% 89%));
+}
+
+html[data-ui-style="homeboard"] .theme-surface:nth-child(3n) {
+  transform: rotate(-0.7deg);
+  background: linear-gradient(175deg, hsl(340 50% 95%), hsl(335 40% 90%));
+}
+
+html[data-ui-style="homeboard"] .theme-primary-btn {
+  border-radius: 0.5rem !important;
+  box-shadow: 2px 3px 6px -2px hsl(var(--primary) / 0.4);
+  font-weight: 600;
+}
+
+/* Control Center (מרכז שליטה) */
+html[data-ui-style="controlcenter"] body {
+  background-color: hsl(214 50% 97%);
+  background-image:
+    radial-gradient(circle at 20% 10%, hsl(var(--primary) / 0.08), transparent 35%),
+    radial-gradient(circle at 85% 80%, hsl(var(--accent) / 0.06), transparent 30%);
+}
+
+html[data-ui-style="controlcenter"] .theme-surface {
+  border-radius: 1.25rem !important;
+  border-width: 1px;
+  border-color: hsl(var(--border));
+  box-shadow: 0 8px 30px -12px hsl(var(--primary) / 0.15), 0 2px 4px hsl(var(--foreground) / 0.04);
+  background: hsl(var(--card));
+}
+
+html[data-ui-style="controlcenter"] .theme-surface:hover {
+  box-shadow: 0 12px 36px -12px hsl(var(--primary) / 0.22), 0 2px 4px hsl(var(--foreground) / 0.04);
+}
+
+html[data-ui-style="controlcenter"] .theme-primary-btn {
+  border-radius: 0.75rem !important;
+  box-shadow: 0 4px 14px -4px hsl(var(--primary) / 0.4);
+  font-weight: 600;
+}
+
+/* Plans selection bar: above bottom nav on mobile, top on desktop */
+.plans-selection-bar {
+  bottom: calc(4rem + 8px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .plans-selection-bar {
+    bottom: auto;
+    top: 0;
+  }
+}
+
+/* Page padding when selection bar visible - mobile only */
+.plans-page-with-selection {
+  padding-bottom: calc(140px + 4rem + 8px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .plans-page-with-selection {
+    padding-bottom: 0;
+  }
+}
