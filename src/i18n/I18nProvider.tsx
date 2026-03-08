@@ -27,7 +27,8 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const t = (key: TranslationKey): string => {
-    return translations[language][key] || key;
+    const val = translations[language][key];
+    return val !== undefined && val !== null ? val : key;
   };
 
   const dir = language === 'he' ? 'rtl' : 'ltr';
