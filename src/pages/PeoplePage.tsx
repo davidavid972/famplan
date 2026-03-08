@@ -212,7 +212,7 @@ export const PeoplePage: React.FC = () => {
                   </button>
                 </div>
                 <PersonAvatar person={person} size="md" className={`shrink-0 ${isDefaultDesign ? 'w-14 h-14 text-2xl' : 'mt-1'}`} />
-                <div className="flex-1 min-w-0 pe-14 overflow-hidden">
+                <div className="flex-1 min-w-0 pe-16 overflow-hidden">
                   <h3
                     className={`font-semibold text-foreground truncate ${
                       person.name.length > 12 ? 'text-xs' : person.name.length > 6 ? 'text-sm' : 'text-base'

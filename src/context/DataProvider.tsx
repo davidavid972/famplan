@@ -37,6 +37,7 @@ interface DataContextType {
   appointments: Appointment[];
   attachments: Attachment[];
   syncError: string | null;
+  syncCalendarToGoogle: () => Promise<{ synced: number; created: number; failed: number }>;
   addPerson: (person: Omit<Person, 'id' | 'createdAt'>) => Person;
   updatePerson: (id: string, person: Partial<Person>) => void;
   deletePerson: (id: string) => void;
@@ -339,12 +340,53 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAttachments((prev) => prev.filter((a) => !ids.includes(a.id)));
   };
 
+  const syncCalendarToGoogle = useCallback(async (): Promise<{ synced: number; created: number; failed: number }> => {
+    const result = { synced: 0, created: 0, failed: 0 };
+    if (!canEdit) return result;
+    const updates: { id: string; calendarEventId: string }[] = [];
+    try {
+      const calendarId = await ensureFamPlanCalendar();
+      for (const app of appointments) {
+        try {
+          const payload = planToEventPayload({
+            title: app.title,
+            start: app.start,
+            end: app.end,
+            location: app.location,
+            notes: app.notes,
+            reminders: app.reminders ?? [{ minutesBeforeStart: 15 }],
+          });
+          if (app.calendarEventId) {
+            await updateEvent(calendarId, app.calendarEventId, payload);
+            result.synced++;
+          } else {
+            const { id: eventId } = await createEvent(calendarId, payload);
+            updates.push({ id: app.id, calendarEventId: eventId });
+            result.created++;
+          }
+        } catch {
+          result.failed++;
+        }
+      }
+      if (updates.length > 0) {
+        const updateMap = new Map(updates.map((u) => [u.id, u.calendarEventId]));
+        setAppointments((prev) =>
+          prev.map((a) => (updateMap.has(a.id) ? { ...a, calendarEventId: updateMap.get(a.id)! } : a))
+        );
+      }
+    } catch {
+      result.failed = appointments.length;
+    }
+    return result;
+  }, [canEdit, appointments]);
+
   return (
     <DataContext.Provider
       value={{
         people,
         appointments,
         attachments,
+        syncCalendarToGoogle,
         addPerson,
         updatePerson,
         deletePerson,

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthProvider';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastProvider';
 import { PlanModal } from '../components/PlanModal';
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, RefreshCw } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { he, enUS } from 'date-fns/locale';
 import type { Appointment } from '../types/models';
@@ -14,8 +14,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const CalendarPage: React.FC = () => {
   const { t, language, dir } = useI18n();
-  const { canEdit } = useAuth();
-  const { appointments, people, addAppointment, updateAppointment, deleteAppointment, deleteAppointmentsByRecurrenceGroupId, attachments, addAttachment } = useData();
+  const { canEdit, connect, isConnecting } = useAuth();
+  const { appointments, people, addAppointment, updateAppointment, deleteAppointment, deleteAppointmentsByRecurrenceGroupId, attachments, addAttachment, syncCalendarToGoogle } = useData();
   const { showToast } = useToast();
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -24,6 +24,7 @@ export const CalendarPage: React.FC = () => {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [initialDate, setInitialDate] = useState<Date>(new Date());
   const [pendingDocs, setPendingDocs] = useState<Array<{ name: string; type: string; size: number }>>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const dateLocale = language === 'he' ? he : enUS;
 
@@ -46,7 +47,6 @@ export const CalendarPage: React.FC = () => {
   const totalDocs = attachments.length + pendingDocs.length;
 
   const handleOpenAddModal = (date: Date) => {
-    if (!canEdit) return;
     setModalMode('add');
     setEditingAppointment(null);
     setInitialDate(date);
@@ -214,14 +214,34 @@ export const CalendarPage: React.FC = () => {
             </button>
           </div>
         </div>
-        <button
-          onClick={() => handleOpenAddModal(new Date())}
-          disabled={!canEdit}
-          className="theme-primary-btn flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-colors shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Plus className="w-5 h-5" />
-          <span>{t('add_appointment')}</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              if (!canEdit) return;
+              setIsSyncing(true);
+              try {
+                const { synced, created } = await syncCalendarToGoogle();
+                showToast(t('sync_calendar_done').replace('{synced}', String(synced)).replace('{created}', String(created)), 'success');
+              } catch (e) {
+                showToast(e instanceof Error ? e.message : 'Sync failed', 'error');
+              } finally {
+                setIsSyncing(false);
+              }
+            }}
+            disabled={!canEdit || isSyncing}
+            className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] rounded-xl border border-border bg-card text-foreground hover:bg-muted font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{t('sync_calendar_btn')}</span>
+          </button>
+          <button
+            onClick={() => handleOpenAddModal(new Date())}
+            className="theme-primary-btn flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-colors shadow-sm font-medium"
+          >
+            <Plus className="w-5 h-5" />
+            <span>{t('add_appointment')}</span>
+          </button>
+        </div>
       </motion.div>
 
       {/* Calendar Grid */}
@@ -246,10 +266,10 @@ export const CalendarPage: React.FC = () => {
             return (
               <div
                 key={day.toString()}
-                onClick={() => canEdit && handleOpenAddModal(day)}
-                className={`min-h-[80px] sm:min-h-[100px] p-1.5 sm:p-2 border-b border-r border-border transition-colors relative ${
-                  canEdit ? 'cursor-pointer hover:bg-muted' : 'cursor-default'
-                } ${!isCurrentMonth ? 'bg-muted/50 text-muted-foreground' : 'text-foreground'} ${dayIdx % 7 === 6 ? 'border-r-0' : ''}`}
+                onClick={() => handleOpenAddModal(day)}
+                className={`min-h-[80px] sm:min-h-[100px] p-1.5 sm:p-2 border-b border-r border-border transition-colors relative cursor-pointer hover:bg-muted ${
+                  !isCurrentMonth ? 'bg-muted/50 text-muted-foreground' : 'text-foreground'
+                } ${dayIdx % 7 === 6 ? 'border-r-0' : ''}`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span
@@ -286,8 +306,33 @@ export const CalendarPage: React.FC = () => {
         </div>
       </div>
 
+      {isModalOpen && !canEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-card rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-foreground">{t('add_appointment')}</h2>
+              <button onClick={closeModal} className="p-2 rounded-full hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            <p className="text-muted-foreground mb-6">{t('google_not_connected_banner')}</p>
+            <div className="flex gap-3">
+              <button onClick={closeModal} className="flex-1 min-h-[44px] px-4 py-3 rounded-xl font-medium text-foreground bg-card border border-border hover:bg-muted">
+                {t('cancel')}
+              </button>
+              <button
+                onClick={() => { connect(); }}
+                disabled={isConnecting}
+                className="flex-1 min-h-[44px] px-4 py-3 rounded-xl font-medium text-primary-foreground bg-primary hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isConnecting ? t('auth_connecting') : t('auth_connect_google')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <PlanModal
-        isOpen={isModalOpen}
+        isOpen={isModalOpen && canEdit}
         onClose={closeModal}
         mode={modalMode}
         appointment={editingAppointment}

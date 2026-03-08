@@ -3,12 +3,13 @@ import { useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthProvider';
+import { useData } from '../context/DataProvider';
 import { useUserRole } from '../context/UserRoleProvider';
 import { useFamily } from '../context/FamilyProvider';
 import { useActivity } from '../context/ActivityContext';
 import { useToast } from '../context/ToastProvider';
 import { cacheClear } from '../lib/cache';
-import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X, Activity, Bell, Palette, Globe, ChevronLeft } from 'lucide-react';
+import { Settings, Share2, Shield, HardDrive, Calendar as CalendarIcon, Pencil, X, Activity, Bell, Palette, Globe, ChevronLeft, RefreshCw } from 'lucide-react';
 import { FamilySharingModal } from '../components/FamilySharingModal';
 import { CalendarModal } from '../components/CalendarModal';
 import { ThemeSelector } from '../components/ThemeSelector';
@@ -42,6 +43,7 @@ export const SettingsPage: React.FC = () => {
   const { userRole } = useUserRole();
   const { showToast } = useToast();
   const { familyDisplayName, familyPhoto, selectionColor, setFamilyDisplayName, setFamilyPhoto, setSelectionColor } = useFamily();
+  const { syncCalendarToGoogle } = useData();
   const { hasNewActivity, clearBadge, refreshBadge } = useActivity();
   const [activeSection, setActiveSection] = useState<SectionId>(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -57,6 +59,7 @@ export const SettingsPage: React.FC = () => {
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [activityEntries, setActivityEntries] = useState<AuditLogEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
+  const [isCalendarSyncing, setIsCalendarSyncing] = useState(false);
   const authSectionRef = useRef<HTMLDivElement>(null);
 
   const refreshDriveDebug = () => {
@@ -295,9 +298,30 @@ export const SettingsPage: React.FC = () => {
               {connectError && <p className="text-sm text-destructive mt-2">{t('auth_connect_error')}</p>}
             </div>
 
-            {/* Sync options - three cards */}
+            {/* Sync options */}
             <div className="border-b border-border pb-6">
               <h3 className="text-sm font-semibold text-foreground mb-3">{t('sync_options_title')}</h3>
+              {isConnected && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsCalendarSyncing(true);
+                    try {
+                      const { synced, created } = await syncCalendarToGoogle();
+                      showToast(t('sync_calendar_done').replace('{synced}', String(synced)).replace('{created}', String(created)), 'success');
+                    } catch (e) {
+                      showToast(e instanceof Error ? e.message : 'Sync failed', 'error');
+                    } finally {
+                      setIsCalendarSyncing(false);
+                    }
+                  }}
+                  disabled={!canEdit || isCalendarSyncing}
+                  className="flex items-center gap-2 w-full mb-4 px-4 py-3 rounded-xl border border-border bg-card text-foreground hover:bg-muted font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`w-5 h-5 ${isCalendarSyncing ? 'animate-spin' : ''}`} />
+                  <span>{t('sync_calendar_btn')}</span>
+                </button>
+              )}
               <div className="space-y-2">
                 <button
                   type="button"
