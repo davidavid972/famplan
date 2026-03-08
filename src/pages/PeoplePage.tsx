@@ -212,11 +212,13 @@ export const PeoplePage: React.FC = () => {
                   </button>
                 </div>
                 <PersonAvatar person={person} size="md" className={`shrink-0 ${isDefaultDesign ? 'w-14 h-14 text-2xl' : 'mt-1'}`} />
-                <div className="flex-1 min-w-0 pe-16 overflow-hidden">
+                <div className="flex-1 min-w-0 pe-16 overflow-hidden shrink" dir={dir}>
                   <h3
-                    className={`font-semibold text-foreground break-words ${
+                    className={`font-semibold text-foreground w-full max-w-full text-end ${
                       person.name.length > 10 ? 'text-xs' : person.name.length > 3 ? 'text-sm' : 'text-base'
                     }`}
+                    style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', overflowWrap: 'normal', wordBreak: 'keep-all' }}
+                    title={person.name}
                   >
                     {person.name}
                   </h3>
